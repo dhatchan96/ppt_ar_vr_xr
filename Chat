@@ -1,11 +1,11 @@
-To include a chatbot in your template as a floating chat logo that opens a chat UI in a popup when clicked, follow these steps:
+To display the chatbot as a chat window above the logo instead of a popup, follow these steps:
 
 
 ---
 
 Updated HTML Template
 
-Here’s how you can include a chat logo and make it trigger a popup for your chatbot URL:
+Here's the modified code to implement an embedded chat window that toggles visibility above the chatbot logo:
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +22,9 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
             height: 100vh;
             margin: 0;
             background-color: #f4f4f4;
+            position: relative;
         }
+
         .container {
             text-align: center;
             background: #ffffff;
@@ -32,6 +34,7 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
             width: 90%;
             max-width: 600px;
         }
+
         input[type="text"] {
             width: calc(100% - 40px);
             padding: 8px;
@@ -40,6 +43,7 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         /* Chatbot button styles */
         .chatbot-button {
             position: fixed;
@@ -56,57 +60,67 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
             cursor: pointer;
             z-index: 1000;
         }
+
         .chatbot-button:hover {
             background-color: #0056b3;
         }
+
         .chatbot-button img {
             width: 35px;
             height: 35px;
         }
+
+        /* Chat window styles */
+        .chat-window {
+            position: fixed;
+            bottom: 90px; /* Place above the chatbot button */
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: none; /* Initially hidden */
+            z-index: 1000;
+        }
+
+        .chat-window iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .chat-window .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .chat-window .chat-header .close-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
     </style>
     <script>
-        function handleKeyPress(event) {
-            if (event.key === "Enter") {
-                submitQuery();
-            }
+        function toggleChatWindow() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.style.display = chatWindow.style.display === 'block' ? 'none' : 'block';
         }
 
-        function submitQuery() {
-            const query = document.getElementById('query').value;
-
-            if (!query) {
-                alert("Please enter a query.");
-                return;
-            }
-
-            fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ query: query }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    alert(data.message);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-        }
-
-        function openChatbot() {
-            const chatbotUrl = "https://your-chatbot-url.com"; // Replace with your chatbot URL
-            const width = 400; // Adjust width as needed
-            const height = 600; // Adjust height as needed
-            const left = (window.innerWidth - width) / 2;
-            const top = (window.innerHeight - height) / 2;
-
-            window.open(
-                chatbotUrl,
-                "Chatbot",
-                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-            );
+        function closeChatWindow() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.style.display = 'none';
         }
     </script>
 </head>
@@ -117,12 +131,21 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
             type="text"
             id="query"
             placeholder="Enter your query, e.g., 'Use directory /path/to/dir and dbname my_database'"
-            onkeypress="handleKeyPress(event)"
+            onkeypress="if (event.key === 'Enter') submitQuery()"
         />
     </div>
 
+    <!-- Chat Window -->
+    <div id="chat-window" class="chat-window">
+        <div class="chat-header">
+            Chatbot
+            <button class="close-btn" onclick="closeChatWindow()">×</button>
+        </div>
+        <iframe src="https://your-chatbot-url.com"></iframe> <!-- Replace with your chatbot URL -->
+    </div>
+
     <!-- Chatbot Button -->
-    <div class="chatbot-button" onclick="openChatbot()">
+    <div class="chatbot-button" onclick="toggleChatWindow()">
         <img src="static/chat-icon.png" alt="Chatbot"> <!-- Replace with your chatbot logo path -->
     </div>
 </body>
@@ -131,41 +154,35 @@ Here’s how you can include a chat logo and make it trigger a popup for your ch
 
 ---
 
-Steps to Implement:
+Key Changes:
 
-1. Floating Chat Logo:
+1. Chat Window (.chat-window):
 
-The .chatbot-button is a fixed button at the bottom-right corner.
+Added a div with the class chat-window to serve as the embedded chat UI.
 
-It uses a div styled as a circle with a background color and an icon inside it.
-
-
-
-2. Chatbot Popup:
-
-The openChatbot() function triggers a popup window when the button is clicked.
-
-Replace "https://your-chatbot-url.com" with the actual URL of your chatbot.
-
-The popup dimensions (width and height) and position are set dynamically to center the popup on the screen.
+Includes an iframe to load your chatbot URL (https://your-chatbot-url.com).
 
 
 
-3. Chat Icon:
+2. Header in Chat Window:
 
-Use your chatbot logo as the icon. Replace static/chat-icon.png with the correct path to your logo file.
-
-
+Added a header to the chat window with a close button (×).
 
 
 
----
+3. Toggle Visibility:
 
-Example:
+toggleChatWindow() toggles the visibility of the chat window by updating the display CSS property.
 
-Chatbot URL: If your chatbot is hosted at https://example.com/chatbot, replace the URL in the openChatbot() function.
+closeChatWindow() hides the chat window.
 
-Chatbot Button: A floating button with your chatbot logo will appear at the bottom-right corner.
+
+
+4. Chatbot Button:
+
+Clicking on the chatbot button calls the toggleChatWindow() function.
+
+
 
 
 
@@ -173,8 +190,22 @@ Chatbot Button: A floating button with your chatbot logo will appear at the bott
 
 Output:
 
-A sleek chat button will appear in the bottom-right corner.
+1. A chat button is fixed at the bottom-right corner.
 
-When clicked, a popup opens the chatbot in a new window.
 
+2. Clicking on the chat button toggles the visibility of the chat window above the button.
+
+
+3. The chat window includes an iframe displaying your chatbot and a close button for user convenience.
+
+
+
+
+---
+
+Replace Placeholder:
+
+Replace https://your-chatbot-url.com with the actual URL of your chatbot.
+
+Replace static/chat-icon.png with the correct path to your chatbot logo.
 
