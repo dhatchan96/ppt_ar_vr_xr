@@ -1,0 +1,180 @@
+To include a chatbot in your template as a floating chat logo that opens a chat UI in a popup when clicked, follow these steps:
+
+
+---
+
+Updated HTML Template
+
+Here’s how you can include a chat logo and make it trigger a popup for your chatbot URL:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Handler with Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        input[type="text"] {
+            width: calc(100% - 40px);
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        /* Chatbot button styles */
+        .chatbot-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #007bff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .chatbot-button:hover {
+            background-color: #0056b3;
+        }
+        .chatbot-button img {
+            width: 35px;
+            height: 35px;
+        }
+    </style>
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                submitQuery();
+            }
+        }
+
+        function submitQuery() {
+            const query = document.getElementById('query').value;
+
+            if (!query) {
+                alert("Please enter a query.");
+                return;
+            }
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query }),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    alert(data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function openChatbot() {
+            const chatbotUrl = "https://your-chatbot-url.com"; // Replace with your chatbot URL
+            const width = 400; // Adjust width as needed
+            const height = 600; // Adjust height as needed
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+
+            window.open(
+                chatbotUrl,
+                "Chatbot",
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+            );
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Query Handler</h1>
+        <input
+            type="text"
+            id="query"
+            placeholder="Enter your query, e.g., 'Use directory /path/to/dir and dbname my_database'"
+            onkeypress="handleKeyPress(event)"
+        />
+    </div>
+
+    <!-- Chatbot Button -->
+    <div class="chatbot-button" onclick="openChatbot()">
+        <img src="static/chat-icon.png" alt="Chatbot"> <!-- Replace with your chatbot logo path -->
+    </div>
+</body>
+</html>
+
+
+---
+
+Steps to Implement:
+
+1. Floating Chat Logo:
+
+The .chatbot-button is a fixed button at the bottom-right corner.
+
+It uses a div styled as a circle with a background color and an icon inside it.
+
+
+
+2. Chatbot Popup:
+
+The openChatbot() function triggers a popup window when the button is clicked.
+
+Replace "https://your-chatbot-url.com" with the actual URL of your chatbot.
+
+The popup dimensions (width and height) and position are set dynamically to center the popup on the screen.
+
+
+
+3. Chat Icon:
+
+Use your chatbot logo as the icon. Replace static/chat-icon.png with the correct path to your logo file.
+
+
+
+
+
+---
+
+Example:
+
+Chatbot URL: If your chatbot is hosted at https://example.com/chatbot, replace the URL in the openChatbot() function.
+
+Chatbot Button: A floating button with your chatbot logo will appear at the bottom-right corner.
+
+
+
+---
+
+Output:
+
+A sleek chat button will appear in the bottom-right corner.
+
+When clicked, a popup opens the chatbot in a new window.
+
+
