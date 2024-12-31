@@ -1,211 +1,193 @@
-To display the chatbot as a chat window above the logo instead of a popup, follow these steps:
+To add options for maximizing and minimizing the chat window in the pop-up, you can use JavaScript and CSS. Here’s the updated implementation:
 
 
 ---
 
-Updated HTML Template
+1. Updated Chat Window with Maximize/Minimize Buttons
 
-Here's the modified code to implement an embedded chat window that toggles visibility above the chatbot logo:
+Here’s the HTML, CSS, and JavaScript for the chat window:
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Query Handler with Chatbot</title>
+    <title>Chat Window</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #f4f4f4;
-            position: relative;
+            padding: 0;
         }
 
-        .container {
-            text-align: center;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 600px;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 40px);
-            padding: 8px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        /* Chatbot button styles */
-        .chatbot-button {
+        /* Chat Icon */
+        #chat-icon {
             position: fixed;
             bottom: 20px;
             right: 20px;
             width: 60px;
             height: 60px;
-            background-color: #007bff;
             border-radius: 50%;
+            background-color: #007bff;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 30px;
             cursor: pointer;
-            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .chatbot-button:hover {
-            background-color: #0056b3;
-        }
-
-        .chatbot-button img {
-            width: 35px;
-            height: 35px;
-        }
-
-        /* Chat window styles */
-        .chat-window {
+        /* Chat Window */
+        #chat-window {
             position: fixed;
-            bottom: 90px; /* Place above the chatbot button */
+            bottom: 90px;
             right: 20px;
-            width: 300px;
-            height: 400px;
-            background-color: #ffffff;
+            width: 400px;
+            height: 500px;
+            background-color: white;
             border: 1px solid #ccc;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             display: none; /* Initially hidden */
-            z-index: 1000;
+            flex-direction: column;
         }
 
-        .chat-window iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .chat-window .chat-header {
+        /* Chat Header */
+        #chat-header {
             background-color: #007bff;
             color: white;
             padding: 10px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            text-align: center;
-            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
         }
 
-        .chat-window .chat-header .close-btn {
-            position: absolute;
-            right: 10px;
-            top: 10px;
+        /* Maximize and Minimize Buttons */
+        #maximize-button, #minimize-button {
             background: none;
             border: none;
             color: white;
-            font-size: 1.2em;
+            font-size: 20px;
             cursor: pointer;
         }
-    </style>
-    <script>
-        function toggleChatWindow() {
-            const chatWindow = document.getElementById('chat-window');
-            chatWindow.style.display = chatWindow.style.display === 'block' ? 'none' : 'block';
-        }
 
-        function closeChatWindow() {
-            const chatWindow = document.getElementById('chat-window');
-            chatWindow.style.display = 'none';
+        /* Chat Iframe */
+        #chat-iframe {
+            flex: 1;
+            width: 100%;
+            height: calc(100% - 50px);
+            border: none;
         }
-    </script>
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Query Handler</h1>
-        <input
-            type="text"
-            id="query"
-            placeholder="Enter your query, e.g., 'Use directory /path/to/dir and dbname my_database'"
-            onkeypress="if (event.key === 'Enter') submitQuery()"
-        />
-    </div>
+    <!-- Chat Icon -->
+    <div id="chat-icon">💬</div>
 
     <!-- Chat Window -->
-    <div id="chat-window" class="chat-window">
-        <div class="chat-header">
-            Chatbot
-            <button class="close-btn" onclick="closeChatWindow()">×</button>
+    <div id="chat-window">
+        <div id="chat-header">
+            <span>Chat</span>
+            <div>
+                <button id="maximize-button" title="Maximize">🔍</button>
+                <button id="minimize-button" title="Minimize">➖</button>
+            </div>
         </div>
-        <iframe src="https://your-chatbot-url.com"></iframe> <!-- Replace with your chatbot URL -->
+        <iframe id="chat-iframe" src="https://chatbot-url.com"></iframe>
     </div>
 
-    <!-- Chatbot Button -->
-    <div class="chatbot-button" onclick="toggleChatWindow()">
-        <img src="static/chat-icon.png" alt="Chatbot"> <!-- Replace with your chatbot logo path -->
-    </div>
+    <script>
+        const chatIcon = document.getElementById('chat-icon');
+        const chatWindow = document.getElementById('chat-window');
+        const maximizeButton = document.getElementById('maximize-button');
+        const minimizeButton = document.getElementById('minimize-button');
+
+        let isMaximized = false;
+
+        // Toggle chat window visibility
+        chatIcon.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        // Maximize the chat window
+        maximizeButton.addEventListener('click', () => {
+            if (!isMaximized) {
+                chatWindow.style.width = '100%';
+                chatWindow.style.height = '100%';
+                chatWindow.style.bottom = '0';
+                chatWindow.style.right = '0';
+                maximizeButton.textContent = '❎'; // Change icon to close
+                isMaximized = true;
+            } else {
+                chatWindow.style.width = '400px';
+                chatWindow.style.height = '500px';
+                chatWindow.style.bottom = '90px';
+                chatWindow.style.right = '20px';
+                maximizeButton.textContent = '🔍'; // Reset icon
+                isMaximized = false;
+            }
+        });
+
+        // Minimize the chat window
+        minimizeButton.addEventListener('click', () => {
+            chatWindow.style.display = 'none';
+        });
+    </script>
 </body>
 </html>
 
 
 ---
 
-Key Changes:
+2. How It Works
 
-1. Chat Window (.chat-window):
+1. Chat Icon:
 
-Added a div with the class chat-window to serve as the embedded chat UI.
-
-Includes an iframe to load your chatbot URL (https://your-chatbot-url.com).
+The #chat-icon element acts as the button to open and close the chat window.
 
 
 
-2. Header in Chat Window:
+2. Chat Window:
 
-Added a header to the chat window with a close button (×).
+Initially hidden (display: none).
 
-
-
-3. Toggle Visibility:
-
-toggleChatWindow() toggles the visibility of the chat window by updating the display CSS property.
-
-closeChatWindow() hides the chat window.
+Appears when the chat icon is clicked.
 
 
 
-4. Chatbot Button:
+3. Maximize Button:
 
-Clicking on the chatbot button calls the toggleChatWindow() function.
+Expands the chat window to cover the entire screen.
 
-
-
-
-
----
-
-Output:
-
-1. A chat button is fixed at the bottom-right corner.
+Clicking it again restores the window to its original size.
 
 
-2. Clicking on the chat button toggles the visibility of the chat window above the button.
+
+4. Minimize Button:
+
+Hides the chat window but leaves the chat icon visible.
 
 
-3. The chat window includes an iframe displaying your chatbot and a close button for user convenience.
+
+5. Iframe:
+
+Displays the chatbot interface. Update the src attribute to point to your chatbot's URL.
+
 
 
 
 
 ---
 
-Replace Placeholder:
+Customization Options
 
-Replace https://your-chatbot-url.com with the actual URL of your chatbot.
+Colors: Update background-color for the header and icon to match your theme.
 
-Replace static/chat-icon.png with the correct path to your chatbot logo.
+Size: Adjust the width/height of the chat window (400px and 500px) as needed.
+
+Icons: Replace 🔍, ❎, and ➖ with custom icons or images.
+
+
+Let me know if you need further adjustments!
 
