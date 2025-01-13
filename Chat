@@ -1,193 +1,57 @@
-To add options for maximizing and minimizing the chat window in the pop-up, you can use JavaScript and CSS. Here’s the updated implementation:
+from graphviz import Digraph
 
+# Create a directed graph with graphviz
+diagram = Digraph(format="png", engine="dot")
+diagram.attr(rankdir="LR", size="30,15")  # Layout direction and size
+diagram.attr(dpi="300")  # Set high resolution
 
----
+# Define grouped states
+grouped_states = {
+    "Ticket Creation": ["createTicket", "handleTicketCreated", "cancelTimeout"],
+    "Awaiting States": ["AwaitingCancel", "AwaitingCompletion", "PlanningInProgress"],
+    "Implementation": [
+        "TaskUpdateStatus", "ChangeUpdateStatus", "InstallRequested",
+        "ImplementationInProgress", "ImplementedSent"
+    ],
+    "Completion": [
+        "ReleaseCompleted", "ReleaseSuccessful", "RequestCompletedSync",
+        "TaskCancelTimeout", "ChangeCompleted", "AwaitingChangeCompleted",
+        "Completed Transition", "Finished"
+    ]
+}
 
-1. Updated Chat Window with Maximize/Minimize Buttons
+# Add states to the diagram with grouping
+for group, states in grouped_states.items():
+    with diagram.subgraph(name=f"cluster_{group}") as cluster:
+        cluster.attr(label=group, style="dashed")
+        for state in states:
+            cluster.node(state, state)
 
-Here’s the HTML, CSS, and JavaScript for the chat window:
+# Define transitions
+transitions = [
+    ("createTicket", "handleTicketCreated", "Handle Created Ticket"),
+    ("handleTicketCreated", "cancelTimeout", "Cancel Timeout"),
+    ("cancelTimeout", "AwaitingCancel", "Await Cancel"),
+    ("AwaitingCancel", "AwaitingCompletion", "Await Completion"),
+    ("AwaitingCompletion", "PlanningInProgress", "Begin Planning"),
+    ("PlanningInProgress", "TaskUpdateStatus", "Task Update"),
+    ("TaskUpdateStatus", "ChangeUpdateStatus", "Change Update"),
+    ("ChangeUpdateStatus", "InstallRequested", "Request Install"),
+    ("InstallRequested", "ImplementationInProgress", "Start Implementation"),
+    ("ImplementationInProgress", "ImplementedSent", "Implementation Sent"),
+    ("ImplementedSent", "ReleaseCompleted", "Release Completed"),
+    ("ReleaseCompleted", "ReleaseSuccessful", "Release Successful"),
+    ("ReleaseSuccessful", "RequestCompletedSync", "Request Sync Completed"),
+    ("RequestCompletedSync", "TaskCancelTimeout", "Task Cancel Timeout"),
+    ("TaskCancelTimeout", "ChangeCompleted", "Change Completed"),
+    ("ChangeCompleted", "AwaitingChangeCompleted", "Await Change"),
+    ("AwaitingChangeCompleted", "Completed Transition", "Final Transition"),
+    ("Completed Transition", "Finished", "Finish Workflow")
+]
 
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Chat Window</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+# Add transitions to the diagram
+for src, dest, label in transitions:
+    diagram.edge(src, dest, label)
 
-        /* Chat Icon */
-        #chat-icon {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #007bff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Chat Window */
-        #chat-window {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 400px;
-            height: 500px;
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            display: none; /* Initially hidden */
-            flex-direction: column;
-        }
-
-        /* Chat Header */
-        #chat-header {
-            background-color: #007bff;
-            color: white;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 8px 8px 0 0;
-        }
-
-        /* Maximize and Minimize Buttons */
-        #maximize-button, #minimize-button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        /* Chat Iframe */
-        #chat-iframe {
-            flex: 1;
-            width: 100%;
-            height: calc(100% - 50px);
-            border: none;
-        }
-    </style>
-</head>
-<body>
-    <!-- Chat Icon -->
-    <div id="chat-icon">💬</div>
-
-    <!-- Chat Window -->
-    <div id="chat-window">
-        <div id="chat-header">
-            <span>Chat</span>
-            <div>
-                <button id="maximize-button" title="Maximize">🔍</button>
-                <button id="minimize-button" title="Minimize">➖</button>
-            </div>
-        </div>
-        <iframe id="chat-iframe" src="https://chatbot-url.com"></iframe>
-    </div>
-
-    <script>
-        const chatIcon = document.getElementById('chat-icon');
-        const chatWindow = document.getElementById('chat-window');
-        const maximizeButton = document.getElementById('maximize-button');
-        const minimizeButton = document.getElementById('minimize-button');
-
-        let isMaximized = false;
-
-        // Toggle chat window visibility
-        chatIcon.addEventListener('click', () => {
-            chatWindow.style.display = chatWindow.style.display === 'none' ? 'flex' : 'none';
-        });
-
-        // Maximize the chat window
-        maximizeButton.addEventListener('click', () => {
-            if (!isMaximized) {
-                chatWindow.style.width = '100%';
-                chatWindow.style.height = '100%';
-                chatWindow.style.bottom = '0';
-                chatWindow.style.right = '0';
-                maximizeButton.textContent = '❎'; // Change icon to close
-                isMaximized = true;
-            } else {
-                chatWindow.style.width = '400px';
-                chatWindow.style.height = '500px';
-                chatWindow.style.bottom = '90px';
-                chatWindow.style.right = '20px';
-                maximizeButton.textContent = '🔍'; // Reset icon
-                isMaximized = false;
-            }
-        });
-
-        // Minimize the chat window
-        minimizeButton.addEventListener('click', () => {
-            chatWindow.style.display = 'none';
-        });
-    </script>
-</body>
-</html>
-
-
----
-
-2. How It Works
-
-1. Chat Icon:
-
-The #chat-icon element acts as the button to open and close the chat window.
-
-
-
-2. Chat Window:
-
-Initially hidden (display: none).
-
-Appears when the chat icon is clicked.
-
-
-
-3. Maximize Button:
-
-Expands the chat window to cover the entire screen.
-
-Clicking it again restores the window to its original size.
-
-
-
-4. Minimize Button:
-
-Hides the chat window but leaves the chat icon visible.
-
-
-
-5. Iframe:
-
-Displays the chatbot interface. Update the src attribute to point to your chatbot's URL.
-
-
-
-
-
----
-
-Customization Options
-
-Colors: Update background-color for the header and icon to match your theme.
-
-Size: Adjust the width/height of the chat window (400px and 500px) as needed.
-
-Icons: Replace 🔍, ❎, and ➖ with custom icons or images.
-
-
-Let me know if you need further adjustments!
-
+# Render the diagram
+diagram.render("workflow_state_machine_diagram", format="png", cleanup=False)
