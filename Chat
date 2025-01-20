@@ -1,122 +1,129 @@
-Here’s the Python code to generate the state diagram using the graphviz library:
-
 from graphviz import Digraph
 
-# Create a directed graph
-dot = Digraph(comment="Workflow State Diagram", format="png")
+# Create the Digraph
+diagram = Digraph(format='png')
+diagram.attr(rankdir='LR', size='10,8')
 
-# Define clusters for grouped lifecycles
-with dot.subgraph(name="cluster_RequestForAuthorization") as c1:
-    c1.attr(label="RequestForAuthorization Lifecycle")
-    c1.node("Started", "Started")
-    c1.node("TicketCreated", "Ticket Created")
-    c1.node("PlanningMessage", "Planning Message")
-    c1.node("MoveToPlanning", "Move To Planning")
-    c1.node("AwaitingCancel", "Awaiting Cancel")
-    c1.node("Cancelled", "Cancelled")
-    c1.node("MessageReceived", "Message Received")
-    c1.node("ReleaseCancelled", "Release Cancelled")
-    c1.edges([
-        ("Started", "TicketCreated"),
-        ("TicketCreated", "PlanningMessage"),
-        ("PlanningMessage", "MoveToPlanning"),
-        ("MoveToPlanning", "AwaitingCancel"),
-        ("AwaitingCancel", "Cancelled"),
-        ("AwaitingCancel", "MessageReceived"),
-        ("MessageReceived", "ReleaseCancelled")
+# Main flow states
+with diagram.subgraph(name='cluster_main') as main:
+    main.attr(label='Main Lifecycle', style='dashed')
+    main.node('Start', shape='ellipse')
+    main.node('Start Process', shape='ellipse')
+    main.node('Initialized', shape='ellipse')
+    main.node('Waiting Create To Be Sent', shape='ellipse')
+    main.node('Request For Authorization', shape='ellipse')
+    main.node('Planning In Progress', shape='ellipse')
+    main.node('Scheduled For Approval', shape='ellipse')
+    main.node('Scheduled', shape='ellipse')
+    main.node('Implementation In Progress', shape='ellipse')
+    main.node('Completed', shape='ellipse')
+    main.node('Cancelled', shape='ellipse')
+    main.node('Failed', shape='ellipse')
+    main.node('Timeout', shape='ellipse')
+
+    # Main lifecycle connections
+    main.edges([
+        ('Start', 'Start Process'),
+        ('Start Process', 'Initialized'),
+        ('Initialized', 'Waiting Create To Be Sent'),
+        ('Waiting Create To Be Sent', 'Request For Authorization'),
+        ('Request For Authorization', 'Planning In Progress'),
+        ('Planning In Progress', 'Scheduled For Approval'),
+        ('Scheduled For Approval', 'Scheduled'),
+        ('Scheduled', 'Implementation In Progress'),
+        ('Implementation In Progress', 'Completed'),
+        ('Implementation In Progress', 'Cancelled'),
+        ('Implementation In Progress', 'Failed'),
+        ('Implementation In Progress', 'Timeout')
     ])
 
-with dot.subgraph(name="cluster_PlanningInProgress") as c2:
-    c2.attr(label="PlanningInProgress Lifecycle")
-    c2.node("Started_P", "Started")
-    c2.node("CheckAIT", "Check AIT Association")
-    c2.node("ResolveCollisions", "Resolve Collisions")
-    c2.node("GISResolution", "GIS Resolution")
-    c2.node("GISApproval", "GIS Approval")
-    c2.node("ApprovalGranted", "Approval Granted")
-    c2.node("ImplementationApproved", "Implementation Approved")
-    c2.edges([
-        ("Started_P", "CheckAIT"),
-        ("CheckAIT", "ResolveCollisions"),
-        ("ResolveCollisions", "GISResolution"),
-        ("GISResolution", "GISApproval"),
-        ("GISApproval", "ApprovalGranted"),
-        ("ApprovalGranted", "ImplementationApproved")
+# Request For Authorization Lifecycle
+with diagram.subgraph(name='cluster_rfa') as rfa:
+    rfa.attr(label='RequestForAuthorization Lifecycle', style='dashed')
+    rfa.node('Started', shape='ellipse')
+    rfa.node('Ticket Created', shape='ellipse')
+    rfa.node('Planning Message', shape='ellipse')
+    rfa.node('Move To Planning', shape='ellipse')
+    rfa.node('Awaiting Cancel', shape='ellipse')
+    rfa.node('Message Received', shape='ellipse')
+    rfa.node('Release Cancelled', shape='ellipse')
+
+    # RFA lifecycle connections
+    rfa.edges([
+        ('Started', 'Ticket Created'),
+        ('Ticket Created', 'Planning Message'),
+        ('Planning Message', 'Move To Planning'),
+        ('Move To Planning', 'Awaiting Cancel'),
+        ('Awaiting Cancel', 'Message Received'),
+        ('Message Received', 'Release Cancelled')
+    ])
+    rfa.node('Cancelled', shape='ellipse')
+    rfa.edge('Awaiting Cancel', 'Cancelled')
+
+# Planning In Progress Lifecycle
+with diagram.subgraph(name='cluster_pip') as pip:
+    pip.attr(label='PlanningInProgress Lifecycle', style='dashed')
+    pip.node('Started', shape='ellipse')
+    pip.node('Check AIT Association', shape='ellipse')
+    pip.node('Resolve Collisions', shape='ellipse')
+    pip.node('GIS Resolution', shape='ellipse')
+    pip.node('GIS Approval', shape='ellipse')
+    pip.node('Approval Granted', shape='ellipse')
+    pip.node('Implementation Approved', shape='ellipse')
+
+    # PIP lifecycle connections
+    pip.edges([
+        ('Started', 'Check AIT Association'),
+        ('Check AIT Association', 'Resolve Collisions'),
+        ('Resolve Collisions', 'GIS Resolution'),
+        ('GIS Resolution', 'GIS Approval'),
+        ('GIS Approval', 'Approval Granted'),
+        ('Approval Granted', 'Implementation Approved')
     ])
 
-with dot.subgraph(name="cluster_ScheduledLifecycle") as c3:
-    c3.attr(label="Scheduled Lifecycle")
-    c3.node("Started_S", "Started")
-    c3.node("InstallRequested", "Install Requested")
-    c3.node("ImplementationInProgress", "Implementation In Progress")
-    c3.edges([
-        ("Started_S", "InstallRequested"),
-        ("InstallRequested", "ImplementationInProgress")
+# Scheduled For Approval Lifecycle
+with diagram.subgraph(name='cluster_sfa') as sfa:
+    sfa.attr(label='Scheduled For Approval Lifecycle', style='dashed')
+    sfa.node('Pre QA', shape='ellipse')
+    sfa.node('Maps Team Approval', shape='ellipse')
+    sfa.node('Dev Lob Team', shape='ellipse')
+    sfa.node('Overall Test Approval', shape='ellipse')
+    sfa.node('QA Check', shape='ellipse')
+
+    # SFA lifecycle connections
+    sfa.edges([
+        ('Pre QA', 'Maps Team Approval'),
+        ('Maps Team Approval', 'Dev Lob Team'),
+        ('Dev Lob Team', 'Overall Test Approval'),
+        ('Overall Test Approval', 'QA Check'),
+        ('QA Check', 'Scheduled')
     ])
 
-with dot.subgraph(name="cluster_ImplementationInProgress") as c4:
-    c4.attr(label="ImplementationInProgress Lifecycle")
-    c4.node("Started_I", "Started")
-    c4.node("ImplementationSent", "Implementation Sent")
-    c4.node("ImplementationAcked", "Implementation Acked")
-    c4.node("ImplementationCompletedAwaiting", "Implementation Completed Awaiting")
-    c4.node("ImplementationSuccessful", "Implementation Successful")
-    c4.node("ImplementationUnsuccessful", "Implementation Unsuccessful")
-    c4.edges([
-        ("Started_I", "ImplementationSent"),
-        ("ImplementationSent", "ImplementationAcked"),
-        ("ImplementationAcked", "ImplementationCompletedAwaiting"),
-        ("ImplementationCompletedAwaiting", "ImplementationSuccessful"),
-        ("ImplementationCompletedAwaiting", "ImplementationUnsuccessful")
+# Implementation In Progress Lifecycle
+with diagram.subgraph(name='cluster_iip') as iip:
+    iip.attr(label='ImplementationInProgress Lifecycle', style='dashed')
+    iip.node('Started', shape='ellipse')
+    iip.node('Implementation Sent', shape='ellipse')
+    iip.node('Implementation Acked', shape='ellipse')
+    iip.node('Implementation Completed Awaiting', shape='ellipse')
+    iip.node('Implementation Successful', shape='ellipse')
+    iip.node('Implementation Unsuccessful', shape='ellipse')
+
+    # IIP lifecycle connections
+    iip.edges([
+        ('Started', 'Implementation Sent'),
+        ('Implementation Sent', 'Implementation Acked'),
+        ('Implementation Acked', 'Implementation Completed Awaiting'),
+        ('Implementation Completed Awaiting', 'Implementation Successful'),
+        ('Implementation Completed Awaiting', 'Implementation Unsuccessful')
     ])
 
-# Main flow
-dot.node("Start", "Start")
-dot.node("StartProcess", "Start Process")
-dot.node("Initialized", "Initialized")
-dot.node("WaitingCreateToBeSent", "Waiting CreateToBeSent")
-dot.node("RequestForAuthorization", "Request For Authorization (Grouped Lifecycle)")
-dot.node("PlanningInProgress", "Planning In Progress (Grouped Lifecycle)")
-dot.node("Scheduled", "Scheduled")
-dot.node("Completed", "Completed")
-dot.node("Cancelled_Main", "Cancelled")
-dot.node("Failed", "Failed")
-dot.node("Timeout", "Timeout")
+# Optional Awaiting Cancel state
+diagram.node('Awaiting Cancel (Optional)', shape='ellipse', style='dashed')
+diagram.edge('Request For Authorization', 'Awaiting Cancel (Optional)', style='dotted')
+diagram.edge('Planning In Progress', 'Awaiting Cancel (Optional)', style='dotted')
+diagram.edge('Scheduled For Approval', 'Awaiting Cancel (Optional)', style='dotted')
+diagram.edge('Implementation In Progress', 'Awaiting Cancel (Optional)', style='dotted')
 
-dot.edges([
-    ("Start", "StartProcess"),
-    ("StartProcess", "Initialized"),
-    ("Initialized", "WaitingCreateToBeSent"),
-    ("WaitingCreateToBeSent", "RequestForAuthorization"),
-    ("RequestForAuthorization", "PlanningInProgress"),
-    ("PlanningInProgress", "Scheduled"),
-    ("Scheduled", "ImplementationInProgress"),
-    ("ImplementationInProgress", "Completed"),
-    ("ImplementationInProgress", "Cancelled_Main"),
-    ("ImplementationInProgress", "Failed"),
-    ("ImplementationInProgress", "Timeout")
-])
-
-# Save and render the diagram
-dot.render("workflow_state_diagram", format="png", cleanup=True)
-print("State diagram generated as 'workflow_state_diagram.png'")
-
-Instructions:
-
-1. Install the graphviz library if you don’t have it already:
-
-pip install graphviz
-
-
-2. Copy the code into a Python file, e.g., generate_state_diagram.py.
-
-
-3. Run the Python script.
-
-
-4. The state diagram will be saved as workflow_state_diagram.png in your current working directory.
-
-
-
-Let me know if you'd like further assistance!
-
+# Render the diagram
+diagram.render('workflow_state_diagram', view=True)
