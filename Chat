@@ -1,98 +1,17 @@
-To add a button on top of the table that, when clicked, displays the selected checkbox values, you can use JavaScript. Here's the updated Jinja2 template and JavaScript code:
+function displaySelectedValues() {
+    // Get all checked checkboxes
+    const checkboxes = document.querySelectorAll('input[name="row_select"]:checked');
+    const selectedValues = [];
 
-Updated Jinja2 Template
+    // Iterate over the NodeList using forEach
+    checkboxes.forEach(checkbox => {
+        selectedValues.push(checkbox.value);
+    });
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jira Table</title>
-    <script>
-        function displaySelectedValues() {
-            // Get all checkboxes with the name "row_select"
-            const checkboxes = document.querySelectorAll('input[name="row_select"]:checked');
-            const selectedValues = Array.from(checkboxes).map(checkbox => checkbox.value);
-
-            // Display the selected values
-            if (selectedValues.length > 0) {
-                alert("Selected Rows: " + selectedValues.join(", "));
-            } else {
-                alert("No rows selected.");
-            }
-        }
-    </script>
-</head>
-<body>
-    <button onclick="displaySelectedValues()">Display Selected Values</button>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Summary</th>
-                <th>Status</th>
-                <th>Select</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in table.rows %}
-                <tr>
-                    {% for cell in row %}
-                        <td>{{ cell }}</td>
-                    {% endfor %}
-                    <td>
-                        <input type="checkbox" name="row_select" value="{{ row[0] }}">
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
-
-Explanation of Changes
-
-1. Button:
-
-A button is added at the top with an onclick handler to call the displaySelectedValues function.
-
-
-
-2. JavaScript:
-
-document.querySelectorAll('input[name="row_select"]:checked') selects all checked checkboxes.
-
-Array.from(checkboxes).map(checkbox => checkbox.value) collects their value attributes (e.g., row IDs).
-
-alert() displays the selected row IDs in a comma-separated format.
-
-
-
-3. Checkbox Values:
-
-Each checkbox's value is set to the first column (row ID) for easier identification.
-
-
-
-
-Example Output
-
-1. If rows with IDs 1 and 3 are selected, clicking the button displays:
-
-Selected Rows: 1, 3
-
-
-2. If no rows are selected, it displays:
-
-No rows selected.
-
-
-
-Key Points
-
-Dynamic Data: The checkbox values correspond to the row IDs dynamically populated by the Jinja2 template.
-
-Reusability: The function can handle any number of rows without modification.
-
-Interactive Feedback: Users receive immediate feedback on their selection.
-
+    // Display the selected values
+    if (selectedValues.length > 0) {
+        alert("Selected Rows: " + selectedValues.join(", "));
+    } else {
+        alert("No rows selected.");
+    }
+}
