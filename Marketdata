@@ -17,8 +17,7 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
       // Handle array values for Consumer
       nextOptions = [
         ...new Set(
-          filteredValues
-            .flatMap(item => item[nextKey]) // Flatten arrays
+          filteredValues.flatMap(item => item[nextKey]) // Flatten Consumer arrays
         )
       ];
     } else {
@@ -31,6 +30,18 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
     // Reset the subsequent dropdown if no value is selected
     updateDropdown(nextDropdownId, []);
   }
+}
+
+// Function to update dropdown options
+function updateDropdown(id, options) {
+  const dropdown = document.getElementById(id);
+  dropdown.innerHTML = '<option value="">Select</option>'; // Reset dropdown
+  options.forEach(option => {
+    const opt = document.createElement("option");
+    opt.value = option;
+    opt.textContent = option;
+    dropdown.appendChild(opt);
+  });
 }
 
 // Initialize dropdowns on page load
