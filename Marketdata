@@ -1,5 +1,5 @@
 function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-  const currentDropdownId = keyToIdMap[currentKey]; // Map key to dropdown id
+  const currentDropdownId = keyToIdMap[currentKey]; // Map JSON key to dropdown id
   const currentDropdown = document.getElementById(currentDropdownId);
 
   if (!currentDropdown) {
@@ -11,7 +11,21 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
 
   if (selectedValue) {
     const filteredValues = values.filter(item => item[currentKey] === selectedValue);
-    const nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+
+    let nextOptions = [];
+    if (nextKey === "Consumer") {
+      // Handle array values for Consumer
+      nextOptions = [
+        ...new Set(
+          filteredValues
+            .flatMap(item => item[nextKey]) // Flatten arrays
+        )
+      ];
+    } else {
+      // Handle normal keys
+      nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+    }
+
     updateDropdown(nextDropdownId, nextOptions);
   } else {
     // Reset the subsequent dropdown if no value is selected
