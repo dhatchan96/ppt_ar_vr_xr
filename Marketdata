@@ -1,25 +1,8 @@
-from flask import Flask, render_template, jsonify
-import os
-import json
-
-app = Flask(__name__)
-
-# Route to load the index page
-@app.route("/")
-def index():
-    # Define the path to the JSON file
-    file_path = os.path.join(app.root_path, "static/data/qfs_filter.json")
-
-    try:
-        # Load JSON data from the file
-        with open(file_path, "r") as file:
-            json_data = json.load(file)
-            values = json_data.get("values", [])  # Extract "values" key
-    except FileNotFoundError:
-        return "JSON file not found. Please check the file path.", 404
-
-    # Pass JSON values to the template
-    return render_template("index.html", values=values)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+const keyToIdMap = {
+  "Run Date": "runDate",
+  "Cob Date": "cobDate",
+  "Consumer": "consumer",
+  "Cutoff": "cutoff",
+  "Exposure": "exposure",
+  "Scenario": "scenario"
+};
