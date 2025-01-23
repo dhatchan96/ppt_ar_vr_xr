@@ -1,5 +1,5 @@
 function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-  const currentDropdownId = keyToIdMap[currentKey];
+  const currentDropdownId = keyToIdMap[currentKey]; // Map JSON key to dropdown id
   const currentDropdown = document.getElementById(currentDropdownId);
 
   if (!currentDropdown) {
@@ -10,28 +10,26 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
   const selectedValue = currentDropdown.value;
 
   if (selectedValue) {
-    const filteredValues = values.filter(item => item[currentKey] === selectedValue);
+    // Filter values based on the current selection
+    const filteredValues = values.filter(item => {
+      if (Array.isArray(item[currentKey])) {
+        return item[currentKey].includes(selectedValue); // Handle arrays for Consumer
+      } else {
+        return item[currentKey] === selectedValue; // Handle normal fields
+      }
+    });
 
     let nextOptions = [];
-    if (nextKey === "Consumer") {
-      // Flatten and deduplicate array values for Consumer
-      const consumers = [];
-      filteredValues.forEach(item => {
-        if (Array.isArray(item[nextKey])) {
-          consumers.push(...item[nextKey]);
-        } else {
-          consumers.push(item[nextKey]);
-        }
-      });
-      nextOptions = [...new Set(consumers)];
+    if (Array.isArray(filteredValues) && nextKey === "Cutoff") {
+      nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
     } else {
-      // Handle normal keys
+      // Handle normal keys for other dropdowns
       nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
     }
 
-    console.log(`Options for ${nextKey}:`, nextOptions); // Debugging line
+    console.log(`Options for ${nextKey}:`, nextOptions); // Debugging log
     updateDropdown(nextDropdownId, nextOptions);
   } else {
-    updateDropdown(nextDropdownId, []);
+    updateDropdown(nextDropdownId, []); // Reset subsequent dropdown if no value is selected
   }
 }
