@@ -1,121 +1,98 @@
-from graphviz import Digraph
+To add a button on top of the table that, when clicked, displays the selected checkbox values, you can use JavaScript. Here's the updated Jinja2 template and JavaScript code:
 
-# Create a directed graph
-dot = Digraph(format='png', graph_attr={'rankdir': 'TB'}, node_attr={'shape': 'ellipse'})
+Updated Jinja2 Template
 
-# Main lifecycle
-dot.node('Start', 'Start')
-dot.node('Start_Process', 'Start Process')
-dot.node('Initialized', 'Initialized')
-dot.node('Waiting_Create', 'Waiting Create To Be Sent')
-dot.node('Request_Authorization', 'Request For Authorization (Grouped Lifecycle)')
-dot.node('Planning_In_Progress', 'Planning In Progress (Grouped Lifecycle)')
-dot.node('Scheduled_For_Approval', 'Scheduled For Approval')
-dot.node('Scheduled', 'Scheduled')
-dot.node('Implementation_In_Progress', 'Implementation In Progress')
-dot.node('Completed', 'Completed')
-dot.node('Cancelled', 'Cancelled')
-dot.node('Failed', 'Failed')
-dot.node('Timeout', 'Timeout')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira Table</title>
+    <script>
+        function displaySelectedValues() {
+            // Get all checkboxes with the name "row_select"
+            const checkboxes = document.querySelectorAll('input[name="row_select"]:checked');
+            const selectedValues = Array.from(checkboxes).map(checkbox => checkbox.value);
 
-dot.edges([
-    ('Start', 'Start_Process'),
-    ('Start_Process', 'Initialized'),
-    ('Initialized', 'Waiting_Create'),
-    ('Waiting_Create', 'Request_Authorization'),
-    ('Request_Authorization', 'Planning_In_Progress'),
-    ('Planning_In_Progress', 'Scheduled_For_Approval'),
-    ('Scheduled_For_Approval', 'Scheduled'),
-    ('Scheduled', 'Implementation_In_Progress'),
-    ('Implementation_In_Progress', 'Completed'),
-    ('Implementation_In_Progress', 'Cancelled'),
-    ('Implementation_In_Progress', 'Failed'),
-    ('Implementation_In_Progress', 'Timeout')
-])
+            // Display the selected values
+            if (selectedValues.length > 0) {
+                alert("Selected Rows: " + selectedValues.join(", "));
+            } else {
+                alert("No rows selected.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <button onclick="displaySelectedValues()">Display Selected Values</button>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Summary</th>
+                <th>Status</th>
+                <th>Select</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table.rows %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td>
+                        <input type="checkbox" name="row_select" value="{{ row[0] }}">
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
 
-# Request For Authorization Lifecycle
-with dot.subgraph(name='cluster_request_authorization') as c:
-    c.attr(label='RequestForAuthorization Lifecycle', style='dotted')
-    c.node('RA_Started', 'Started')
-    c.node('RA_Ticket_Created', 'Ticket Created')
-    c.node('RA_Planning_Message', 'Planning Message')
-    c.node('RA_Move_To_Planning', 'Move To Planning')
-    c.node('RA_Awaiting_Cancel', 'Awaiting Cancel')
-    c.node('RA_Message_Received', 'Message Received')
-    c.node('RA_Release_Cancelled', 'Release Cancelled')
+Explanation of Changes
 
-    c.edges([
-        ('RA_Started', 'RA_Ticket_Created'),
-        ('RA_Ticket_Created', 'RA_Planning_Message'),
-        ('RA_Planning_Message', 'RA_Move_To_Planning'),
-        ('RA_Move_To_Planning', 'RA_Awaiting_Cancel'),
-        ('RA_Awaiting_Cancel', 'RA_Message_Received'),
-        ('RA_Awaiting_Cancel', 'RA_Release_Cancelled'),
-    ])
+1. Button:
 
-# Planning In Progress Lifecycle
-with dot.subgraph(name='cluster_planning') as c:
-    c.attr(label='PlanningInProgress Lifecycle', style='dotted')
-    c.node('PIP_Started', 'Started')
-    c.node('PIP_Check_AIT', 'Check AIT Association')
-    c.node('PIP_Resolve_Collisions', 'Resolve Collisions')
-    c.node('PIP_GIS_Resolution', 'GIS Resolution')
-    c.node('PIP_GIS_Approval', 'GIS Approval')
-    c.node('PIP_Approval_Granted', 'Approval Granted')
-    c.node('PIP_Implementation_Approved', 'Implementation Approved')
+A button is added at the top with an onclick handler to call the displaySelectedValues function.
 
-    c.edges([
-        ('PIP_Started', 'PIP_Check_AIT'),
-        ('PIP_Check_AIT', 'PIP_Resolve_Collisions'),
-        ('PIP_Resolve_Collisions', 'PIP_GIS_Resolution'),
-        ('PIP_GIS_Resolution', 'PIP_GIS_Approval'),
-        ('PIP_GIS_Approval', 'PIP_Approval_Granted'),
-        ('PIP_Approval_Granted', 'PIP_Implementation_Approved')
-    ])
 
-# Scheduled For Approval Lifecycle
-with dot.subgraph(name='cluster_scheduled_for_approval') as c:
-    c.attr(label='Scheduled For Approval Lifecycle', style='dotted')
-    c.node('SFA_Pre_QA', 'Pre QA')
-    c.node('SFA_Maps_Team', 'Maps Team Approval')
-    c.node('SFA_Dev_Lob', 'Dev Lob Team')
-    c.node('SFA_Test_Approval', 'Overall Test Approval')
-    c.node('SFA_QA_Check', 'QA Check')
 
-    c.edges([
-        ('SFA_Pre_QA', 'SFA_Maps_Team'),
-        ('SFA_Maps_Team', 'SFA_Dev_Lob'),
-        ('SFA_Dev_Lob', 'SFA_Test_Approval'),
-        ('SFA_Test_Approval', 'SFA_QA_Check')
-    ])
+2. JavaScript:
 
-# Scheduled Lifecycle
-with dot.subgraph(name='cluster_scheduled') as c:
-    c.attr(label='Scheduled Lifecycle', style='dotted')
-    c.node('SCH_Started', 'Started')
-    c.node('SCH_Install_Requested', 'Install Requested')
+document.querySelectorAll('input[name="row_select"]:checked') selects all checked checkboxes.
 
-    c.edges([
-        ('SCH_Started', 'SCH_Install_Requested')
-    ])
+Array.from(checkboxes).map(checkbox => checkbox.value) collects their value attributes (e.g., row IDs).
 
-# Implementation In Progress Lifecycle
-with dot.subgraph(name='cluster_implementation') as c:
-    c.attr(label='ImplementationInProgress Lifecycle', style='dotted')
-    c.node('IIP_Started', 'Started')
-    c.node('IIP_Implementation_Sent', 'Implementation Sent')
-    c.node('IIP_Implementation_Acked', 'Implementation Acked')
-    c.node('IIP_Completed_Awaiting', 'Implementation Completed Awaiting')
-    c.node('IIP_Successful', 'Implementation Successful')
-    c.node('IIP_Unsuccessful', 'Implementation Unsuccessful')
+alert() displays the selected row IDs in a comma-separated format.
 
-    c.edges([
-        ('IIP_Started', 'IIP_Implementation_Sent'),
-        ('IIP_Implementation_Sent', 'IIP_Implementation_Acked'),
-        ('IIP_Implementation_Acked', 'IIP_Completed_Awaiting'),
-        ('IIP_Completed_Awaiting', 'IIP_Successful'),
-        ('IIP_Completed_Awaiting', 'IIP_Unsuccessful')
-    ])
 
-# Render diagram
-dot.render('workflow_state_diagram', format='png', cleanup=False)
+
+3. Checkbox Values:
+
+Each checkbox's value is set to the first column (row ID) for easier identification.
+
+
+
+
+Example Output
+
+1. If rows with IDs 1 and 3 are selected, clicking the button displays:
+
+Selected Rows: 1, 3
+
+
+2. If no rows are selected, it displays:
+
+No rows selected.
+
+
+
+Key Points
+
+Dynamic Data: The checkbox values correspond to the row IDs dynamically populated by the Jinja2 template.
+
+Reusability: The function can handle any number of rows without modification.
+
+Interactive Feedback: Users receive immediate feedback on their selection.
+
