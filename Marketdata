@@ -1,84 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cascading Dropdowns</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <script>
-    let values = {{ values | tojson }};
+from flask import Flask, render_template, jsonify
+import os
+import json
 
-    function updateDropdown(id, options) {
-      const dropdown = document.getElementById(id);
-      dropdown.innerHTML = '<option value="">Select</option>'; // Reset dropdown
-      options.forEach(option => {
-        const opt = document.createElement("option");
-        opt.value = option;
-        opt.textContent = option;
-        dropdown.appendChild(opt);
-      });
-    }
+app = Flask(__name__)
 
-    function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-      const selectedValue = document.getElementById(currentKey).value;
+# Route to load the index page
+@app.route("/")
+def index():
+    # Define the path to the JSON file
+    file_path = os.path.join(app.root_path, "static/data/qfs_filter.json")
 
-      if (selectedValue) {
-        const filteredValues = values.filter(item => item[currentKey] === selectedValue);
-        const nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+    try:
+        # Load JSON data from the file
+        with open(file_path, "r") as file:
+            json_data = json.load(file)
+            values = json_data.get("values", [])  # Extract "values" key
+    except FileNotFoundError:
+        return "JSON file not found. Please check the file path.", 404
 
-        updateDropdown(nextDropdownId, nextOptions);
-      } else {
-        updateDropdown(nextDropdownId, []);
-      }
-    }
+    # Pass JSON values to the template
+    return render_template("index.html", values=values)
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const runDateOptions = [...new Set(values.map(item => item["Run Date"]))];
-      updateDropdown("runDate", runDateOptions);
-    });
-  </script>
-</head>
-<body class="bg-light">
-  <div class="container my-4">
-    <h1 class="text-center">Cascading Dropdowns</h1>
-    <div class="row mb-4">
-      <div class="col">
-        <label for="runDate" class="form-label">Run Date</label>
-        <select id="runDate" class="form-select" onchange="handleSelectionChange('Run Date', 'Cob Date', 'cobDate')">
-          <option value="">Select</option>
-        </select>
-      </div>
-      <div class="col">
-        <label for="cobDate" class="form-label">Cob Date</label>
-        <select id="cobDate" class="form-select" onchange="handleSelectionChange('Cob Date', 'Consumer', 'consumer')">
-          <option value="">Select</option>
-        </select>
-      </div>
-      <div class="col">
-        <label for="consumer" class="form-label">Consumer</label>
-        <select id="consumer" class="form-select" onchange="handleSelectionChange('Consumer', 'Cutoff', 'cutoff')">
-          <option value="">Select</option>
-        </select>
-      </div>
-      <div class="col">
-        <label for="cutoff" class="form-label">Cutoff</label>
-        <select id="cutoff" class="form-select" onchange="handleSelectionChange('Cutoff', 'Exposure', 'exposure')">
-          <option value="">Select</option>
-        </select>
-      </div>
-      <div class="col">
-        <label for="exposure" class="form-label">Exposure</label>
-        <select id="exposure" class="form-select" onchange="handleSelectionChange('Exposure', 'Scenario', 'scenario')">
-          <option value="">Select</option>
-        </select>
-      </div>
-      <div class="col">
-        <label for="scenario" class="form-label">Scenario</label>
-        <select id="scenario" class="form-select">
-          <option value="">Select</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+if __name__ == "__main__":
+    app.run(debug=True)
