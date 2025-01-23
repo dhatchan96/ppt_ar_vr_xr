@@ -1,5 +1,5 @@
 function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-  const currentDropdownId = keyToIdMap[currentKey]; // Map JSON key to dropdown id
+  const currentDropdownId = keyToIdMap[currentKey];
   const currentDropdown = document.getElementById(currentDropdownId);
 
   if (!currentDropdown) {
@@ -14,38 +14,24 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
 
     let nextOptions = [];
     if (nextKey === "Consumer") {
-      // Handle array values for Consumer
-      nextOptions = [
-        ...new Set(
-          filteredValues.flatMap(item => item[nextKey]) // Flatten Consumer arrays
-        )
-      ];
+      // Flatten and deduplicate array values for Consumer
+      const consumers = [];
+      filteredValues.forEach(item => {
+        if (Array.isArray(item[nextKey])) {
+          consumers.push(...item[nextKey]);
+        } else {
+          consumers.push(item[nextKey]);
+        }
+      });
+      nextOptions = [...new Set(consumers)];
     } else {
       // Handle normal keys
       nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
     }
 
+    console.log(`Options for ${nextKey}:`, nextOptions); // Debugging line
     updateDropdown(nextDropdownId, nextOptions);
   } else {
-    // Reset the subsequent dropdown if no value is selected
     updateDropdown(nextDropdownId, []);
   }
 }
-
-// Function to update dropdown options
-function updateDropdown(id, options) {
-  const dropdown = document.getElementById(id);
-  dropdown.innerHTML = '<option value="">Select</option>'; // Reset dropdown
-  options.forEach(option => {
-    const opt = document.createElement("option");
-    opt.value = option;
-    opt.textContent = option;
-    dropdown.appendChild(opt);
-  });
-}
-
-// Initialize dropdowns on page load
-document.addEventListener("DOMContentLoaded", () => {
-  const runDateOptions = [...new Set(values.map(item => item["Run Date"]))];
-  updateDropdown(keyToIdMap["Run Date"], runDateOptions); // Use mapping to get the correct id
-});
