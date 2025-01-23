@@ -10,26 +10,32 @@ function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
   const selectedValue = currentDropdown.value;
 
   if (selectedValue) {
-    // Filter values based on the current selection
+    // Filter the values based on the current selection
     const filteredValues = values.filter(item => {
       if (Array.isArray(item[currentKey])) {
-        return item[currentKey].includes(selectedValue); // Handle arrays for Consumer
+        return item[currentKey].includes(selectedValue); // Handle arrays for fields like Consumer
       } else {
         return item[currentKey] === selectedValue; // Handle normal fields
       }
     });
 
     let nextOptions = [];
-    if (Array.isArray(filteredValues) && nextKey === "Cutoff") {
-      nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+    if (nextKey === "Consumer") {
+      // Handle array values for Consumer
+      nextOptions = [
+        ...new Set(
+          filteredValues.flatMap(item => item[nextKey]) // Flatten arrays and deduplicate
+        )
+      ];
     } else {
-      // Handle normal keys for other dropdowns
+      // Handle normal keys (non-array fields)
       nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
     }
 
     console.log(`Options for ${nextKey}:`, nextOptions); // Debugging log
     updateDropdown(nextDropdownId, nextOptions);
   } else {
-    updateDropdown(nextDropdownId, []); // Reset subsequent dropdown if no value is selected
+    // Reset the subsequent dropdown if no value is selected
+    updateDropdown(nextDropdownId, []);
   }
 }
