@@ -3,10 +3,10 @@ function displaySelectedValues() {
     const checkboxes = document.querySelectorAll('input[name="row_select"]:checked');
     const selectedValues = [];
 
-    // Iterate over the NodeList using forEach
-    checkboxes.forEach(checkbox => {
-        selectedValues.push(checkbox.value);
-    });
+    // Use a regular for loop to iterate over the NodeList
+    for (let i = 0; i < checkboxes.length; i++) {
+        selectedValues.push(checkboxes[i].value);
+    }
 
     // Display the selected values
     if (selectedValues.length > 0) {
