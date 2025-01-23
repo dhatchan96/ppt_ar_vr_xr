@@ -1,8 +1,26 @@
-const keyToIdMap = {
-  "Run Date": "runDate",
-  "Cob Date": "cobDate",
-  "Consumer": "consumer",
-  "Cutoff": "cutoff",
-  "Exposure": "exposure",
-  "Scenario": "scenario"
-};
+function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
+  const currentDropdownId = keyToIdMap[currentKey]; // Map key to dropdown id
+  const currentDropdown = document.getElementById(currentDropdownId);
+
+  if (!currentDropdown) {
+    console.error(`Dropdown with id "${currentDropdownId}" not found.`);
+    return;
+  }
+
+  const selectedValue = currentDropdown.value;
+
+  if (selectedValue) {
+    const filteredValues = values.filter(item => item[currentKey] === selectedValue);
+    const nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+    updateDropdown(nextDropdownId, nextOptions);
+  } else {
+    // Reset the subsequent dropdown if no value is selected
+    updateDropdown(nextDropdownId, []);
+  }
+}
+
+// Initialize dropdowns on page load
+document.addEventListener("DOMContentLoaded", () => {
+  const runDateOptions = [...new Set(values.map(item => item["Run Date"]))];
+  updateDropdown(keyToIdMap["Run Date"], runDateOptions); // Use mapping to get the correct id
+});
