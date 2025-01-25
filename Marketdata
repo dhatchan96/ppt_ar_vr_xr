@@ -1,86 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Submit Form</title>
-  <script>
-    // Function to check if all dropdowns have values and submit the form
-    function checkAndSubmitForm() {
-      const dropdowns = document.querySelectorAll("select");
-      
-      // Log dropdown values for debugging
-      console.log("Dropdown values:", Array.from(dropdowns).map(dropdown => dropdown.value));
+function checkAndSubmitForm() {
+  // Get all dropdowns
+  const dropdowns = document.querySelectorAll("select");
 
-      // Check if all dropdowns have values
-      const allFilled = Array.from(dropdowns).every(dropdown => dropdown.value !== "");
-      console.log("All dropdowns filled:", allFilled);
+  // Debug: Log the current values of all dropdowns
+  console.log("Dropdown values:", Array.from(dropdowns).map(dropdown => dropdown.value));
 
-      if (allFilled) {
-        console.log("Submitting form...");
-        document.getElementById("dropdownForm").submit(); // Submit the form
-      }
-    }
+  // Check if all dropdowns have been selected (none is empty)
+  const allFilled = Array.from(dropdowns).every(dropdown => dropdown.value !== "");
 
-    // Add event listeners to all dropdowns to trigger form submission check
-    document.addEventListener("DOMContentLoaded", () => {
-      const dropdowns = document.querySelectorAll("select");
-      dropdowns.forEach(dropdown => {
-        dropdown.addEventListener("change", checkAndSubmitForm); // Attach change event listener
-      });
-    });
-  </script>
-</head>
-<body>
-  <form id="dropdownForm" method="POST" action="/">
-    <div>
-      <label for="runDate">Run Date</label>
-      <select id="runDate" name="runDate">
-        <option value="">Select Run Date</option>
-        <option value="2025-01-01">2025-01-01</option>
-        <option value="2025-01-02">2025-01-02</option>
-      </select>
-    </div>
-    <div>
-      <label for="cobDate">Cob Date</label>
-      <select id="cobDate" name="cobDate">
-        <option value="">Select Cob Date</option>
-        <option value="2025-01-01">2025-01-01</option>
-        <option value="2025-01-02">2025-01-02</option>
-      </select>
-    </div>
-    <div>
-      <label for="consumer">Consumer</label>
-      <select id="consumer" name="consumer">
-        <option value="">Select Consumer</option>
-        <option value="Consumer1">Consumer1</option>
-        <option value="Consumer2">Consumer2</option>
-      </select>
-    </div>
-    <div>
-      <label for="cutoff">Cutoff</label>
-      <select id="cutoff" name="cutoff">
-        <option value="">Select Cutoff</option>
-        <option value="Cutoff1">Cutoff1</option>
-        <option value="Cutoff2">Cutoff2</option>
-      </select>
-    </div>
-    <div>
-      <label for="exposure">Exposure</label>
-      <select id="exposure" name="exposure">
-        <option value="">Select Exposure</option>
-        <option value="Exposure1">Exposure1</option>
-        <option value="Exposure2">Exposure2</option>
-      </select>
-    </div>
-    <div>
-      <label for="scenario">Scenario</label>
-      <select id="scenario" name="scenario">
-        <option value="">Select Scenario</option>
-        <option value="Scenario1">Scenario1</option>
-        <option value="Scenario2">Scenario2</option>
-      </select>
-    </div>
-  </form>
-</body>
-</html>
+  console.log("All dropdowns filled:", allFilled);
+
+  // If all dropdowns are filled, submit the form
+  if (allFilled) {
+    console.log("Submitting form...");
+    document.getElementById("dropdownForm").submit(); // Submit the form
+  }
+}
+
+// Attach the `onchange` event listener to all dropdowns when the page loads
+document.addEventListener("DOMContentLoaded", () => {
+  const dropdowns = document.querySelectorAll("select");
+  dropdowns.forEach(dropdown => {
+    dropdown.addEventListener("change", checkAndSubmitForm); // Attach event listener
+  });
+});
