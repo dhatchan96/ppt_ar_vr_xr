@@ -1,41 +1,211 @@
-function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-  const currentDropdownId = keyToIdMap[currentKey]; // Map JSON key to dropdown id
-  const currentDropdown = document.getElementById(currentDropdownId);
+<!doctype html>
+<html lang="en">
 
-  if (!currentDropdown) {
-    console.error(`Dropdown with id "${currentDropdownId}" not found.`);
-    return;
-  }
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QzInsights</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/custom.css">
 
-  const selectedValue = currentDropdown.value;
-
-  if (selectedValue) {
-    // Filter the values based on the current selection
-    const filteredValues = values.filter(item => {
-      if (Array.isArray(item[currentKey])) {
-        return item[currentKey].includes(selectedValue); // Handle arrays for fields like Consumer
-      } else {
-        return item[currentKey] === selectedValue; // Handle normal fields
-      }
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.style.display = 'none';
     });
 
-    let nextOptions = [];
-    if (nextKey === "Consumer") {
-      // Handle array values for Consumer
-      nextOptions = [
-        ...new Set(
-          filteredValues.flatMap(item => item[nextKey]) // Flatten arrays and deduplicate
-        )
-      ];
-    } else {
-      // Handle normal keys (non-array fields)
-      nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+    let progress = 0;
+    let loadingInterval;
+
+    function startLoading() {
+      const bar = document.querySelector('.loading-bar');
+      loadingInterval = setInterval(() => {
+        progress += Math.random() * 10; // Simulate random progress
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(loadingInterval);
+        }
+        bar.style.width = progress + '%';
+      }, 200);
     }
 
-    console.log(`Options for ${nextKey}:`, nextOptions); // Debugging log
-    updateDropdown(nextDropdownId, nextOptions);
-  } else {
-    // Reset the subsequent dropdown if no value is selected
-    updateDropdown(nextDropdownId, []);
-  }
-}
+    function showLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.style.display = 'flex';
+      progress = 0;
+      startLoading();
+    }
+
+    function goFullScreen() {
+      const containerDiv = document.getElementById('embed-container');
+      const iframe = containerDiv.getElementsByTagName('iframe')[0];
+      if (iframe.requestFullscreen) iframe.requestFullscreen();
+      else if (iframe.mozRequestFullScreen) iframe.mozRequestFullScreen();
+      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+      else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+    }
+
+    function startDictation() {
+      if (window.hasOwnProperty('webkitSpeechRecognition')) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
+        recognition.start();
+
+        recognition.onresult = function (event) {
+          document.getElementById('query').value = event.results[0][0].transcript;
+          recognition.stop();
+          showLoading();
+          document.querySelector('form').submit();
+        };
+
+        recognition.onerror = function () {
+          recognition.stop();
+        };
+      }
+    }
+
+    function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
+      const currentDropdownId = keyToIdMap[currentKey];
+      const currentDropdown = document.getElementById(currentDropdownId);
+
+      if (!currentDropdown) {
+        console.error(`Dropdown with id "${currentDropdownId}" not found.`);
+        return;
+      }
+
+      const selectedValue = currentDropdown.value;
+
+      if (selectedValue) {
+        const filteredValues = values.filter(item => {
+          if (Array.isArray(item[currentKey])) {
+            return item[currentKey].includes(selectedValue);
+          } else {
+            return item[currentKey] === selectedValue;
+          }
+        });
+
+        let nextOptions = [];
+        if (nextKey === "Consumer") {
+          nextOptions = [...new Set(filteredValues.flatMap(item => item[nextKey]))];
+        } else {
+          nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
+        }
+
+        updateDropdown(nextDropdownId, nextOptions);
+      } else {
+        updateDropdown(nextDropdownId, []);
+      }
+
+      // Check if all dropdowns have been filled and initiate form submission
+      const allDropdowns = ['runDate', 'cobDate', 'consumer', 'cutoff', 'exposure', 'scenario'];
+      const allFilled = allDropdowns.every(id => document.getElementById(id).value);
+
+      if (allFilled) {
+        const selectedValues = allDropdowns.map(id => document.getElementById(id).value);
+        const formAction = selectedValues.join('/');
+        document.querySelector('form').action = formAction;
+        document.querySelector('form').submit();
+      }
+    }
+
+    function updateDropdown(id, options) {
+      const dropdown = document.getElementById(id);
+      dropdown.innerHTML = '<option value="">Select</option>';
+      options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        dropdown.appendChild(opt);
+      });
+    }
+
+    const keyToIdMap = {
+      "Run Date": "runDate",
+      "Cob Date": "cobDate",
+      "Consumer": "consumer",
+      "Cutoff": "cutoff",
+      "Exposure": "exposure",
+      "Scenario": "scenario"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const runDateOptions = [...new Set(values.map(item => item["Run Date"]))];
+      updateDropdown(keyToIdMap["Run Date"], runDateOptions);
+    });
+  </script>
+</head>
+
+<body class="bg1 vh-100">
+  <div id="loading-overlay">
+    <div>Creating dashboard and charts. Please wait...</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+
+  <nav class="navbar bg-dark bg-gradient bg-opacity-10 py-2">
+    <div class="container-fluid">
+      <a class="navbar-brand fs-4" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-building-fill-up" viewBox="0 0 16 16">
+          <path d="..."></path>
+        </svg>
+        QzInsights
+      </a>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="row mb-4">
+      <div class="col">
+        <label for="runDate" class="form-label">Run Date</label>
+        <select id="runDate" class="form-select" onchange="handleSelectionChange('Run Date', 'Cob Date', 'cobDate')"></select>
+      </div>
+      <div class="col">
+        <label for="cobDate" class="form-label">Cob Date</label>
+        <select id="cobDate" class="form-select" onchange="handleSelectionChange('Cob Date', 'Consumer', 'consumer')"></select>
+      </div>
+      <div class="col">
+        <label for="consumer" class="form-label">Consumer</label>
+        <select id="consumer" class="form-select" onchange="handleSelectionChange('Consumer', 'Cutoff', 'cutoff')"></select>
+      </div>
+      <div class="col">
+        <label for="cutoff" class="form-label">Cutoff</label>
+        <select id="cutoff" class="form-select" onchange="handleSelectionChange('Cutoff', 'Exposure', 'exposure')"></select>
+      </div>
+      <div class="col">
+        <label for="exposure" class="form-label">Exposure</label>
+        <select id="exposure" class="form-select" onchange="handleSelectionChange('Exposure', 'Scenario', 'scenario')"></select>
+      </div>
+      <div class="col">
+        <label for="scenario" class="form-label">Scenario</label>
+        <select id="scenario" class="form-select"></select>
+      </div>
+    </div>
+
+    <div id="embed-container"></div>
+    <script>
+      const token = "{{token}}";
+      const supersetDomain = 'http://your-superset-domain';
+      const dashboardId = "{{embed_uuid}}";
+
+      supersetEmbeddedSdk.embedDashboard({
+        id: dashboardId,
+        supersetDomain: supersetDomain,
+        mountPoint: document.getElementById('embed-container'),
+        fetchGuestToken: () => Promise.resolve(token),
+        dashboardUiConfig: {
+          hideTitle: true,
+          filters: { expanded: false },
+        },
+        iframeSandboxExtras: ['allow-scripts', 'allow-same-origin', 'allowFullScreen'],
+      });
+    </script>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
