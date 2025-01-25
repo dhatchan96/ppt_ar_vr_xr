@@ -1,26 +1,32 @@
-function checkAndSubmitForm() {
-  // Get all dropdowns
-  const dropdowns = document.querySelectorAll("select");
+from flask import Flask, render_template, request, jsonify
 
-  // Debug: Log the current values of all dropdowns
-  console.log("Dropdown values:", Array.from(dropdowns).map(dropdown => dropdown.value));
+app = Flask(__name__)
 
-  // Check if all dropdowns have been selected (none is empty)
-  const allFilled = Array.from(dropdowns).every(dropdown => dropdown.value !== "");
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # Get the dropdown values from the form
+        run_date = request.form.get('runDate', '')
+        cob_date = request.form.get('cobDate', '')
+        consumer = request.form.get('consumer', '')
+        cutoff = request.form.get('cutoff', '')
+        exposure = request.form.get('exposure', '')
+        scenario = request.form.get('scenario', '')
 
-  console.log("All dropdowns filled:", allFilled);
+        # Combine values with '/'
+        joined_values = '/'.join([run_date, cob_date, consumer, cutoff, exposure, scenario])
 
-  // If all dropdowns are filled, submit the form
-  if (allFilled) {
-    console.log("Submitting form...");
-    document.getElementById("dropdownForm").submit(); // Submit the form
-  }
-}
+        # Debug: Print the joined values
+        print(f"Joined Values: {joined_values}")
 
-// Attach the `onchange` event listener to all dropdowns when the page loads
-document.addEventListener("DOMContentLoaded", () => {
-  const dropdowns = document.querySelectorAll("select");
-  dropdowns.forEach(dropdown => {
-    dropdown.addEventListener("change", checkAndSubmitForm); // Attach event listener
-  });
-});
+        # Return a response (JSON or render a new template)
+        return jsonify({
+            'status': 'success',
+            'joined_values': joined_values
+        })
+
+    # Render the form on GET request
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
