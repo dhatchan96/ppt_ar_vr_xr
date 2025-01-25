@@ -1,46 +1,86 @@
-function handleSelectionChange(currentKey, nextKey, nextDropdownId) {
-  const currentDropdownId = keyToIdMap[currentKey];
-  const currentDropdown = document.getElementById(currentDropdownId);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Submit Form</title>
+  <script>
+    // Function to check if all dropdowns have values and submit the form
+    function checkAndSubmitForm() {
+      const dropdowns = document.querySelectorAll("select");
+      
+      // Log dropdown values for debugging
+      console.log("Dropdown values:", Array.from(dropdowns).map(dropdown => dropdown.value));
 
-  if (!currentDropdown) {
-    console.error(`Dropdown with id "${currentDropdownId}" not found.`);
-    return;
-  }
+      // Check if all dropdowns have values
+      const allFilled = Array.from(dropdowns).every(dropdown => dropdown.value !== "");
+      console.log("All dropdowns filled:", allFilled);
 
-  const selectedValue = currentDropdown.value;
-
-  if (selectedValue) {
-    const filteredValues = values.filter(item => {
-      if (Array.isArray(item[currentKey])) {
-        return item[currentKey].includes(selectedValue);
-      } else {
-        return item[currentKey] === selectedValue;
+      if (allFilled) {
+        console.log("Submitting form...");
+        document.getElementById("dropdownForm").submit(); // Submit the form
       }
-    });
-
-    let nextOptions = [];
-    if (nextKey === "Consumer") {
-      nextOptions = [...new Set(filteredValues.flatMap(item => item[nextKey]))];
-    } else {
-      nextOptions = [...new Set(filteredValues.map(item => item[nextKey]))];
     }
 
-    updateDropdown(nextDropdownId, nextOptions);
-  } else {
-    updateDropdown(nextDropdownId, []);
-  }
-
-  // Check if all dropdowns have non-empty values
-  const allDropdownIds = ['runDate', 'cobDate', 'consumer', 'cutoff', 'exposure', 'scenario'];
-  const allFilled = allDropdownIds.every(id => {
-    const dropdown = document.getElementById(id);
-    return dropdown && dropdown.value !== ""; // Ensure dropdown exists and has a selected value
-  });
-
-  if (allFilled) {
-    const selectedValues = allDropdownIds.map(id => document.getElementById(id).value);
-    const formAction = selectedValues.join('/');
-    document.querySelector('form').action = formAction;
-    document.querySelector('form').submit();
-  }
-}
+    // Add event listeners to all dropdowns to trigger form submission check
+    document.addEventListener("DOMContentLoaded", () => {
+      const dropdowns = document.querySelectorAll("select");
+      dropdowns.forEach(dropdown => {
+        dropdown.addEventListener("change", checkAndSubmitForm); // Attach change event listener
+      });
+    });
+  </script>
+</head>
+<body>
+  <form id="dropdownForm" method="POST" action="/">
+    <div>
+      <label for="runDate">Run Date</label>
+      <select id="runDate" name="runDate">
+        <option value="">Select Run Date</option>
+        <option value="2025-01-01">2025-01-01</option>
+        <option value="2025-01-02">2025-01-02</option>
+      </select>
+    </div>
+    <div>
+      <label for="cobDate">Cob Date</label>
+      <select id="cobDate" name="cobDate">
+        <option value="">Select Cob Date</option>
+        <option value="2025-01-01">2025-01-01</option>
+        <option value="2025-01-02">2025-01-02</option>
+      </select>
+    </div>
+    <div>
+      <label for="consumer">Consumer</label>
+      <select id="consumer" name="consumer">
+        <option value="">Select Consumer</option>
+        <option value="Consumer1">Consumer1</option>
+        <option value="Consumer2">Consumer2</option>
+      </select>
+    </div>
+    <div>
+      <label for="cutoff">Cutoff</label>
+      <select id="cutoff" name="cutoff">
+        <option value="">Select Cutoff</option>
+        <option value="Cutoff1">Cutoff1</option>
+        <option value="Cutoff2">Cutoff2</option>
+      </select>
+    </div>
+    <div>
+      <label for="exposure">Exposure</label>
+      <select id="exposure" name="exposure">
+        <option value="">Select Exposure</option>
+        <option value="Exposure1">Exposure1</option>
+        <option value="Exposure2">Exposure2</option>
+      </select>
+    </div>
+    <div>
+      <label for="scenario">Scenario</label>
+      <select id="scenario" name="scenario">
+        <option value="">Select Scenario</option>
+        <option value="Scenario1">Scenario1</option>
+        <option value="Scenario2">Scenario2</option>
+      </select>
+    </div>
+  </form>
+</body>
+</html>
