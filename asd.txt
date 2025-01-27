@@ -1,15 +1,18 @@
-<script>
-    function showPopup(message) {
-        if (message) {
-            alert(message); // Show a simple popup
-        }
-    }
+@dag.cellfn
+def Html(self):
+    """
+    Render the dynamic HTML for the browser.
+    """
+    t = self.Template()
+    html_content = t.render(**self.TemplateParams())
 
-    // Automatically trigger the popup if a message exists
-    document.addEventListener("DOMContentLoaded", function() {
-        const popupMessage = "{{ popup_message }}"; // Injected by Python
-        if (popupMessage) {
-            showPopup(popupMessage);
-        }
-    });
-</script>
+    # Inject JavaScript for showing the popup if a message is set
+    if hasattr(self, "popup_message") and self.popup_message:
+        html_content += f"""
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {{
+                alert("{self.popup_message}");
+            }});
+        </script>
+        """
+    return html_content
