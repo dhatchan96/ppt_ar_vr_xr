@@ -1,18 +1,22 @@
-@dag.cellfn
-def Html(self):
-    """
-    Render the dynamic HTML for the browser.
-    """
-    t = self.Template()
-    html_content = t.render(**self.TemplateParams())
+<section class="info">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>{{ jira_tickets | length }} Jira Tickets</h2>
+        <button onclick="linkJira()">Link Jira</button>
+    </div>
+    <br>
+    {{ jira_table(jira_tickets.project(jira_cols), include_checkbox=True) }}
+</section>
 
-    # Inject JavaScript for showing the popup if a message is set
-    if hasattr(self, "popup_message") and self.popup_message:
-        html_content += f"""
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {{
-                alert("{self.popup_message}");
-            }});
-        </script>
-        """
-    return html_content
+<script>
+    function linkJira() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        const selectedTickets = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedTickets.length > 0) {
+            const data = encodeURIComponent(JSON.stringify(selectedTickets));
+            window.location.href = `custom-protocol:${data}`;
+        } else {
+            alert("No tickets selected.");
+        }
+    }
+</script>
