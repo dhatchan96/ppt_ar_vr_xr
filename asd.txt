@@ -1,22 +1,22 @@
-def handle_navigation(self, url):
-    """
-    Handle navigation events from the HyperBrowser.
-    :param url: The navigation URL as a string.
-    """
-    print(f"Navigation URL intercepted: {url}")
-    if "about:custom-protocol" in url:
-        # Extract the data inside the brackets
-        start_index = url.find("[")
-        end_index = url.rfind("]")
-        if start_index != -1 and end_index != -1:
-            data = url[start_index + 1:end_index]  # Extract the content inside brackets
-            print(f"Custom protocol data: {data}")
+import json
+from urllib.parse import unquote
 
-            # Call a method to process the data
-            self.process_data(data)
-            return True  # Prevent default navigation
-        else:
-            print("Data extraction failed: No brackets found.")
-            return False  # Allow default navigation
-
-    return False  # Allow default navigation
+def process_data(self, data):
+    """
+    Process the data received from JavaScript.
+    :param data: The encoded data from the URL.
+    """
+    # Decode the URL-encoded data
+    decoded_data = unquote(data)
+    print(f"Decoded data: {decoded_data}")
+    
+    # Convert the decoded string into a Python list
+    try:
+        # If it's a JSON string, load it
+        values = json.loads(decoded_data)
+    except json.JSONDecodeError:
+        # If it's not JSON, split it into a list by commas
+        values = decoded_data.strip("[]").replace('"', '').split(", ")
+    
+    print(f"Received values as list: {values}")
+    # Perform your logic here
