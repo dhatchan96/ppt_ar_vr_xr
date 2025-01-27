@@ -1,14 +1,21 @@
-class JiraTicketsView:
-    def processSelectedValues(self, selected_values_json):
+class CustomHyperBrowser(HyperBrowser):
+    def __init__(self, src, python_object=None, **kwargs):
         """
-        Process the selected values sent from JavaScript.
-        :param selected_values_json: A JSON string of selected values.
+        Extend the HyperBrowser to include a Python-JavaScript communication bridge.
+        :param src: The HTML or URL to render.
+        :param python_object: The Python object to expose for JavaScript calls.
         """
-        import json
+        super().__init__(src=src, **kwargs)
+        self.python_object = python_object  # Store the Python object
 
-        # Parse the JSON string into a Python list
-        selected_values = json.loads(selected_values_json)
-
-        print(f"Received selected values: {selected_values}")
-        # Perform your desired processing here
-        return f"Processed {len(selected_values)} values: {selected_values}"
+    def handle_navigation(self, url):
+        """
+        Intercept navigation events to handle custom protocols for communication.
+        """
+        if url.startswith("custom-protocol:"):
+            # Extract the data after the protocol
+            data = url[len("custom-protocol:"):]
+            if self.python_object and hasattr(self.python_object, "process_data"):
+                self.python_object.process_data(data)  # Call the Python method
+            return True  # Prevent default navigation
+        return False  # Allow default navigation
