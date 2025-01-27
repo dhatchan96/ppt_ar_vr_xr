@@ -1,21 +1,16 @@
-class CustomHyperBrowser(HyperBrowser):
-    def __init__(self, src, python_object=None, **kwargs):
-        """
-        Extend the HyperBrowser to include a Python-JavaScript communication bridge.
-        :param src: The HTML or URL to render.
-        :param python_object: The Python object to expose for JavaScript calls.
-        """
-        super().__init__(src=src, **kwargs)
-        self.python_object = python_object  # Store the Python object
+<script>
+    function sendSelectedValuesToPython() {
+        const checkboxes = document.querySelectorAll('input[name="jiraSelect"]:checked');
+        const selectedValues = Array.from(checkboxes).map(cb => cb.value);
 
-    def handle_navigation(self, url):
-        """
-        Intercept navigation events to handle custom protocols for communication.
-        """
-        if url.startswith("custom-protocol:"):
-            # Extract the data after the protocol
-            data = url[len("custom-protocol:"):]
-            if self.python_object and hasattr(self.python_object, "process_data"):
-                self.python_object.process_data(data)  # Call the Python method
-            return True  # Prevent default navigation
-        return False  # Allow default navigation
+        if (selectedValues.length > 0) {
+            const data = encodeURIComponent(JSON.stringify(selectedValues));
+            // Use a custom protocol to send data to Python
+            window.location.href = `custom-protocol:${data}`;
+        } else {
+            alert("No rows selected.");
+        }
+    }
+</script>
+
+<button onclick="sendSelectedValuesToPython()">Send to Python</button>
