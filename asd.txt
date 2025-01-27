@@ -1,23 +1,14 @@
-<script>
-    function display() {
-        const checkboxes = document.querySelectorAll('input[name="jiraSelect"]:checked');
-        const selectedValues = [];
+class JiraTicketsView:
+    def processSelectedValues(self, selected_values_json):
+        """
+        Process the selected values sent from JavaScript.
+        :param selected_values_json: A JSON string of selected values.
+        """
+        import json
 
-        for (let i = 0; i < checkboxes.length; i++) {
-            selectedValues.push(checkboxes[i].value);
-        }
+        # Parse the JSON string into a Python list
+        selected_values = json.loads(selected_values_json)
 
-        if (selectedValues.length > 0) {
-            alert("Selected Rows: " + selectedValues.join(", "));
-
-            // Pass the selected values to the Python method
-            if (window.external && window.external.processSelectedValues) {
-                window.external.processSelectedValues(JSON.stringify(selectedValues));
-            } else {
-                console.error("Python bridge is not available.");
-            }
-        } else {
-            alert("No rows selected.");
-        }
-    }
-</script>
+        print(f"Received selected values: {selected_values}")
+        # Perform your desired processing here
+        return f"Processed {len(selected_values)} values: {selected_values}"
