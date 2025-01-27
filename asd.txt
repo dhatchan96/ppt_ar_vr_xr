@@ -1,15 +1,23 @@
-class CustomHyperBrowser(HyperBrowser):
-    def __init__(self, html_content, python_object, **kwargs):
-        """
-        Extend the HyperBrowser to include a scriptable Python object.
-        :param html_content: The HTML content to render.
-        :param python_object: The Python object to expose to JavaScript.
-        """
-        super().__init__(src=html_content, **kwargs)
-        self.python_object = python_object  # Store the Python object
+<script>
+    function display() {
+        const checkboxes = document.querySelectorAll('input[name="jiraSelect"]:checked');
+        const selectedValues = [];
 
-    def get_scriptable_object(self):
-        """
-        Return the Python object to expose as window.external.
-        """
-        return self.python_object
+        for (let i = 0; i < checkboxes.length; i++) {
+            selectedValues.push(checkboxes[i].value);
+        }
+
+        if (selectedValues.length > 0) {
+            alert("Selected Rows: " + selectedValues.join(", "));
+
+            // Pass the selected values to the Python method
+            if (window.external && window.external.processSelectedValues) {
+                window.external.processSelectedValues(JSON.stringify(selectedValues));
+            } else {
+                console.error("Python bridge is not available.");
+            }
+        } else {
+            alert("No rows selected.");
+        }
+    }
+</script>
