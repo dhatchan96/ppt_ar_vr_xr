@@ -4,13 +4,19 @@ def handle_navigation(self, url):
     :param url: The navigation URL as a string.
     """
     print(f"Navigation URL intercepted: {url}")
-    if url.startswith("custom-protocol:"):
-        # Extract the data after the protocol
-        data = url[len("custom-protocol:"):]
-        print(f"Custom protocol data: {data}")
+    if "about:custom-protocol" in url:
+        # Extract the data inside the brackets
+        start_index = url.find("[")
+        end_index = url.rfind("]")
+        if start_index != -1 and end_index != -1:
+            data = url[start_index + 1:end_index]  # Extract the content inside brackets
+            print(f"Custom protocol data: {data}")
 
-        # Call a method to process the data
-        self.process_data(data)
-        return True  # Prevent default navigation
+            # Call a method to process the data
+            self.process_data(data)
+            return True  # Prevent default navigation
+        else:
+            print("Data extraction failed: No brackets found.")
+            return False  # Allow default navigation
 
     return False  # Allow default navigation
