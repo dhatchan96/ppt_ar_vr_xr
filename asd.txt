@@ -1,16 +1,26 @@
-<script>
-    function sendSelectedValuesToPython() {
-        const checkboxes = document.querySelectorAll('input[name="jiraSelect"]:checked');
-        const selectedValues = Array.from(checkboxes).map(cb => cb.value);
+class JiraTicketsView:
+    def handle_navigation(self, event):
+        """
+        Handle navigation events from the HyperBrowser.
+        :param event: The navigation event object.
+        """
+        print(f"Navigation URL intercepted: {event.url}")
+        if event.url.startswith("custom-protocol:"):
+            # Extract the data after the protocol
+            data = event.url[len("custom-protocol:"):]
+            print(f"Custom protocol data: {data}")
 
-        if (selectedValues.length > 0) {
-            const data = encodeURIComponent(JSON.stringify(selectedValues));
-            // Use a custom protocol to send data to Python
-            window.location.href = `custom-protocol:${data}`;
-        } else {
-            alert("No rows selected.");
-        }
-    }
-</script>
+            # Call a method to process the data
+            self.process_data(data)
+            return True  # Prevent default navigation
 
-<button onclick="sendSelectedValuesToPython()">Send to Python</button>
+        return False  # Allow default navigation
+
+    def process_data(self, data):
+        """
+        Process the data received from JavaScript.
+        :param data: The encoded data from JavaScript.
+        """
+        import json
+        decoded_data = json.loads(data)  # Decode the JSON data
+        print(f"Data received in Python: {decoded_data}")
