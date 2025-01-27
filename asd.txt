@@ -1,7 +1,27 @@
+<style>
+    .custom-button {
+        background-color: #f0f0f0; /* Light gray background */
+        border: 1px solid #d1d1d1; /* Gray border */
+        border-radius: 3px; /* Slightly rounded corners */
+        padding: 5px 10px; /* Padding for size */
+        font-size: 14px; /* Adjust font size */
+        color: #000; /* Black text */
+        cursor: pointer; /* Pointer on hover */
+    }
+
+    .custom-button:hover {
+        background-color: #e0e0e0; /* Darker gray on hover */
+    }
+
+    .custom-button:active {
+        background-color: #d0d0d0; /* Even darker gray on click */
+    }
+</style>
+
 <section class="info">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>{{ jira_tickets | length }} Jira Tickets</h2>
-        <button onclick="linkJira()">Link Jira</button>
+    <div style="display: flex; align-items: center;">
+        <h2 style="margin-right: 20px;">{{ jira_tickets | length }} Jira Tickets</h2>
+        <button class="custom-button" onclick="linkJira()">Link Jira</button>
     </div>
     <br>
     {{ jira_table(jira_tickets.project(jira_cols), include_checkbox=True) }}
