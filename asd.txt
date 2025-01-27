@@ -1,22 +1,15 @@
-import json
-from urllib.parse import unquote
+<script>
+    function showPopup(message) {
+        if (message) {
+            alert(message); // Show a simple popup
+        }
+    }
 
-def process_data(self, data):
-    """
-    Process the data received from JavaScript.
-    :param data: The encoded data from the URL.
-    """
-    # Decode the URL-encoded data
-    decoded_data = unquote(data)
-    print(f"Decoded data: {decoded_data}")
-    
-    # Convert the decoded string into a Python list
-    try:
-        # If it's a JSON string, load it
-        values = json.loads(decoded_data)
-    except json.JSONDecodeError:
-        # If it's not JSON, split it into a list by commas
-        values = decoded_data.strip("[]").replace('"', '').split(", ")
-    
-    print(f"Received values as list: {values}")
-    # Perform your logic here
+    // Automatically trigger the popup if a message exists
+    document.addEventListener("DOMContentLoaded", function() {
+        const popupMessage = "{{ popup_message }}"; // Injected by Python
+        if (popupMessage) {
+            showPopup(popupMessage);
+        }
+    });
+</script>
