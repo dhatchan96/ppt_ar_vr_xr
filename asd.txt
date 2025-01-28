@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,8 +86,8 @@
       <img src="https://via.placeholder.com/30/007bff/ffffff?text=i" alt="Info Icon">
       <h3>Information</h3>
     </div>
-    <div class="modal-content">
-      {{ popup_message }}
+    <div class="modal-content" id="modalMessage">
+      <!-- Dynamic message will be inserted here -->
     </div>
     <div class="modal-footer">
       <button onclick="closeModal()">OK</button>
@@ -99,10 +98,13 @@
   <div id="modalOverlay" onclick="closeModal()"></div>
 
   <script>
-    function showModal() {
+    function showModal(message) {
       const modal = document.getElementById('infoModal');
       const overlay = document.getElementById('modalOverlay');
-      if (modal && overlay) {
+      const messageContainer = document.getElementById('modalMessage');
+
+      if (modal && overlay && messageContainer) {
+        messageContainer.textContent = message; // Set the dynamic message
         modal.style.display = 'block';
         overlay.style.display = 'block';
       }
@@ -111,16 +113,18 @@
     function closeModal() {
       const modal = document.getElementById('infoModal');
       const overlay = document.getElementById('modalOverlay');
+
       if (modal && overlay) {
         modal.style.display = 'none';
         overlay.style.display = 'none';
       }
     }
 
-    // Show modal if popup_message exists
+    // Show modal if message is available
     document.addEventListener("DOMContentLoaded", function () {
       {% if popup_message %}
-      showModal();
+      const message = "{{ popup_message }}"; // Pass the dynamic message from Jinja
+      showModal(message);
       {% endif %}
     });
   </script>
