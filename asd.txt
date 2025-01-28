@@ -1,50 +1,123 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Info Popup</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Popup</title>
+  <style>
+    /* Modal Container */
+    #infoModal {
+      display: none;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+      background-color: #fff;
+      padding: 20px;
+      width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+
+    /* Modal Header */
+    #infoModal .modal-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    #infoModal .modal-header img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    #infoModal .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    /* Modal Content */
+    #infoModal .modal-content {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 15px;
+    }
+
+    /* Modal Footer */
+    #infoModal .modal-footer {
+      text-align: right;
+    }
+
+    #infoModal .modal-footer button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #infoModal .modal-footer button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Overlay */
+    #modalOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+  </style>
 </head>
 <body>
-  <!-- Popup Modal -->
-  <div id="infoModal" 
-       style="display: none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); 
-              background-color: white; padding: 20px; border: 1px solid #ccc; 
-              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
-    <p>{{ popup_message }}</p>
-    <button onclick="closeModal()">Close</button>
+  <!-- Modal -->
+  <div id="infoModal">
+    <div class="modal-header">
+      <img src="https://via.placeholder.com/30/007bff/ffffff?text=i" alt="Info Icon">
+      <h3>Information</h3>
+    </div>
+    <div class="modal-content">
+      {{ popup_message }}
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()">OK</button>
+    </div>
   </div>
 
   <!-- Overlay -->
-  <div id="modalOverlay" 
-       style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-              background: rgba(0, 0, 0, 0.5); z-index: 999;" onclick="closeModal()">
-  </div>
+  <div id="modalOverlay" onclick="closeModal()"></div>
 
   <script>
     function showModal() {
-      var modal = document.getElementById("infoModal");
-      var overlay = document.getElementById("modalOverlay");
-
+      const modal = document.getElementById('infoModal');
+      const overlay = document.getElementById('modalOverlay');
       if (modal && overlay) {
-        modal.style.display = "block";
-        overlay.style.display = "block";
-      } else {
-        console.error("Modal or overlay element not found.");
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
       }
     }
 
     function closeModal() {
-      var modal = document.getElementById("infoModal");
-      var overlay = document.getElementById("modalOverlay");
-
+      const modal = document.getElementById('infoModal');
+      const overlay = document.getElementById('modalOverlay');
       if (modal && overlay) {
-        modal.style.display = "none";
-        overlay.style.display = "none";
-      } else {
-        console.error("Modal or overlay element not found.");
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
       }
     }
 
-    // Wait until the DOM is fully loaded before executing showModal
+    // Show modal if popup_message exists
     document.addEventListener("DOMContentLoaded", function () {
       {% if popup_message %}
       showModal();
