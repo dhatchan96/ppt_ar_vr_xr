@@ -1,38 +1,23 @@
-<table>
-    <thead>
-        <tr>
-            <th>Select</th>
-            <th>Ticket</th>
-            <th>Summary</th>
-            <th>Status</th>
-            <th>Test Scope</th>
-            <th>Assignee</th>
-            <th>Linked JIRAs</th> <!-- Add the new column -->
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in jira_tickets %}
-        <tr>
-            <td>
-                {% if include_checkbox %}
-                <input type="checkbox" name="jiraSelect" value="{{ row['Ticket'] }}">
-                {% endif %}
-            </td>
-            <td>{{ row['Ticket'] }}</td>
-            <td>{{ row['Summary'] }}</td>
-            <td>{{ row['Status'] }}</td>
-            <td>{{ row['Test Scope'] }}</td>
-            <td>{{ row['Assignee'] }}</td>
-            <td>
-                {% if row['linked_jiras'] %}
-                    {% for linked_jira in row['linked_jiras'] %}
-                        <a href="https://your-jira-instance.com/browse/{{ linked_jira }}" target="_blank">{{ linked_jira }}</a><br>
-                    {% endfor %}
-                {% else %}
-                    No linked JIRAs
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+@dag.cellfn
+def TemplateParams(self):
+    build = self.Build()
+    regressionJira = build.externalSystemIds.get("regressionJiraTicket", "")
+    jiraTable = self.JiraTicketsTable()
+    jira_tickets = []  # Prepare a new list to hold extended ticket data
+
+    if jiraTable is not dag.NO_VALUE:
+        for ticket in jiraTable:
+            ticket_id = ticket[0]  # Adjust based on your tuple structure
+            linked_jiras = self.FetchLinkedJiras(ticket_id)
+            jira_tickets.append({"Ticket": ticket_id, "linked_jiras": linked_jiras, "Summary": ticket[1]})  # Example structure
+
+    jira_changes = {} if jiraTable is dag.NO_VALUE else self.JiraChanges()
+    popup_message = self.Popup()
+
+    return dict(
+        build=build,
+        jira_tickets=jira_tickets,  # Use the new structure
+        jira_changes=jira_changes,
+        regressionJira=regressionJira,
+        popup_message=popup_message,
+    )
