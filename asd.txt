@@ -3,21 +3,22 @@ def TemplateParams(self):
     build = self.Build()
     regressionJira = build.externalSystemIds.get("regressionJiraTicket", "")
     jiraTable = self.JiraTicketsTable()
-    jira_tickets = []  # Prepare a new list to hold extended ticket data
-
+    
+    # Create a dictionary for linked JIRAs
+    linked_jiras = {}
     if jiraTable is not dag.NO_VALUE:
         for ticket in jiraTable:
             ticket_id = ticket[0]  # Adjust based on your tuple structure
-            linked_jiras = self.FetchLinkedJiras(ticket_id)
-            jira_tickets.append({"Ticket": ticket_id, "linked_jiras": linked_jiras, "Summary": ticket[1]})  # Example structure
+            linked_jiras[ticket_id] = self.FetchLinkedJiras(ticket_id)
 
     jira_changes = {} if jiraTable is dag.NO_VALUE else self.JiraChanges()
     popup_message = self.Popup()
 
     return dict(
         build=build,
-        jira_tickets=jira_tickets,  # Use the new structure
+        jira_tickets=jiraTable,  # Keep jiraTable as is
         jira_changes=jira_changes,
         regressionJira=regressionJira,
         popup_message=popup_message,
+        linked_jiras=linked_jiras,  # Pass linked_jiras separately
     )
