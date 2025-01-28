@@ -1,41 +1,9 @@
-<th>Linked JIRAs</th>
+{% set tooltip_text = "This button is disabled" if is_disabled else "Click to proceed" %}
 
-{% for row in table.rowiter() %}
-<tr>
-    {% if include_checkbox %}
-    <td>
-        <input type="checkbox" name="jiraSelect" value="{{ row['Ticket'] }}"
-               {% if not regressionJira or row['Test Scope'] %}
-                   disabled
-               {% endif %}
-        />
-    </td>
-    {% endif %}
-    <td>{{ row['Ticket'] }}</td>
-    <td>{{ row['Summary'] }}</td>
-    <td>{{ row['Status'] }}</td>
-    <td>{{ row['Test Scope'] }}</td>
-    <td>
-        {% set linked_jiras_for_ticket = linked_jiras.get(row['Ticket'], []) %}
-        {% if linked_jiras_for_ticket %}
-            {% for linked_jira in linked_jiras_for_ticket %}
-                <a class="linked-jira-link" target="_blank" rel="noopener noreferrer" href="{{ linked_jira }}">{{ linked_jira }}</a><br>
-            {% endfor %}
-        {% else %}
-            No linked JIRAs
-        {% endif %}
-    </td>
-    <td>
-        {% if row['Assignee'] %}
-        <a href="qzap://yap2?disp=summary&amp;mode=person&amp;user={{ row['Assignee'] }}">{{ row['Assignee'] }}</a>
-        {% else %}
-        Unassigned
-        {% endif %}
-    </td>
-    <td>{{ row['Impacted AIT'] }}</td>
-    <td>{{ row['CRQ'] }}</td>
-    <td>{{ row['FixVersion'] }}</td>
-    <td>{{ row['Epic'] }}</td>
-    <td>{{ row['Epic Status'] }}</td>
-</tr>
-{% endfor %}
+<button
+    title="{{ tooltip_text }}"
+    class="btn btn-primary"
+    {{ 'disabled' if is_disabled else '' }}
+>
+    Submit
+</button>
