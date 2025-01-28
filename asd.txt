@@ -1,24 +1,40 @@
-@dag.cellfn
-def TemplateParams(self):
-    build = self.Build()
-    regressionJira = build.externalSystemIds.get("regressionJiraTicket", "")
-    jiraTable = self.JiraTicketsTable()
-    
-    # Create a dictionary for linked JIRAs
-    linked_jiras = {}
-    if jiraTable is not dag.NO_VALUE:
-        for ticket in jiraTable:
-            ticket_id = ticket[0]  # Adjust based on your tuple structure
-            linked_jiras[ticket_id] = self.FetchLinkedJiras(ticket_id)
+<th>Linked JIRAs</th>
 
-    jira_changes = {} if jiraTable is dag.NO_VALUE else self.JiraChanges()
-    popup_message = self.Popup()
-
-    return dict(
-        build=build,
-        jira_tickets=jiraTable,  # Keep jiraTable as is
-        jira_changes=jira_changes,
-        regressionJira=regressionJira,
-        popup_message=popup_message,
-        linked_jiras=linked_jiras,  # Pass linked_jiras separately
-    )
+{% for row in table.rowiter() %}
+<tr>
+    {% if include_checkbox %}
+    <td>
+        <input type="checkbox" name="jiraSelect" value="{{ row['Ticket'] }}"
+               {% if not regressionJira or row['Test Scope'] %}
+                   disabled
+               {% endif %}
+        />
+    </td>
+    {% endif %}
+    <td>{{ row['Ticket'] }}</td>
+    <td>{{ row['Summary'] }}</td>
+    <td>{{ row['Status'] }}</td>
+    <td>{{ row['Test Scope'] }}</td>
+    <td>
+        {% if row['linked_jiras'] %}
+            {% for linked_jira in row['linked_jiras'] %}
+                <a class="linked-jira-link" target="_blank" rel="noopener noreferrer" href="{{ linked_jira }}">{{ linked_jira }}</a><br>
+            {% endfor %}
+        {% else %}
+            No linked JIRAs
+        {% endif %}
+    </td>
+    <td>
+        {% if row['Assignee'] %}
+        <a href="qzap://yap2?disp=summary&amp;mode=person&amp;user={{ row['Assignee'] }}">{{ row['Assignee'] }}</a>
+        {% else %}
+        Unassigned
+        {% endif %}
+    </td>
+    <td>{{ row['Impacted AIT'] }}</td>
+    <td>{{ row['CRQ'] }}</td>
+    <td>{{ row['FixVersion'] }}</td>
+    <td>{{ row['Epic'] }}</td>
+    <td>{{ row['Epic Status'] }}</td>
+</tr>
+{% endfor %}
