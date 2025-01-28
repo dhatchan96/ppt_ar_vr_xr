@@ -16,8 +16,9 @@
     <td>{{ row['Status'] }}</td>
     <td>{{ row['Test Scope'] }}</td>
     <td>
-        {% if row['linked_jiras'] %}
-            {% for linked_jira in row['linked_jiras'] %}
+        {% set linked_jiras_for_ticket = linked_jiras.get(row['Ticket'], []) %}
+        {% if linked_jiras_for_ticket %}
+            {% for linked_jira in linked_jiras_for_ticket %}
                 <a class="linked-jira-link" target="_blank" rel="noopener noreferrer" href="{{ linked_jira }}">{{ linked_jira }}</a><br>
             {% endfor %}
         {% else %}
