@@ -1,132 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Popup</title>
-  <style>
-    /* Modal Container */
-    #infoModal {
-      display: none;
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translate(-50%, -20%);
-      background-color: #fff;
-      padding: 20px;
-      width: 400px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-    }
+@dag.cellfn
+def TemplateParams(self):
+    build = self.Build()
+    regressionJira = build.externalSystemIds.get("regressionJiraTicket", "")
+    jiraTable = self.JiraTicketsTable()
+    jira_tickets = {} if jiraTable is dag.NO_VALUE else jiraTable
+    jira_changes = self.JiraChanges()
+    popup_message = self.Popup()
 
-    /* Modal Header */
-    #infoModal .modal-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-    }
+    # Fetch linked JIRAs for each ticket
+    linked_jiras = {}
+    if jira_tickets:
+        for ticket in jira_tickets:
+            # Assuming `fetch_linked_jiras` fetches the linked JIRAs for a given ticket ID
+            linked_jiras[ticket["Ticket"]] = self.fetch_linked_jiras(ticket["Ticket"])
 
-    #infoModal .modal-header img {
-      width: 30px;
-      height: 30px;
-      margin-right: 10px;
-    }
-
-    #infoModal .modal-header h3 {
-      margin: 0;
-      font-size: 18px;
-      color: #333;
-    }
-
-    /* Modal Content */
-    #infoModal .modal-content {
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 15px;
-    }
-
-    /* Modal Footer */
-    #infoModal .modal-footer {
-      text-align: right;
-    }
-
-    #infoModal .modal-footer button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      background-color: #007bff;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    #infoModal .modal-footer button:hover {
-      background-color: #0056b3;
-    }
-
-    /* Overlay */
-    #modalOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-  </style>
-</head>
-<body>
-  <!-- Modal -->
-  <div id="infoModal">
-    <div class="modal-header">
-      <img src="https://via.placeholder.com/30/007bff/ffffff?text=i" alt="Info Icon">
-      <h3>Information</h3>
-    </div>
-    <div class="modal-content" id="modalMessage">
-      <!-- Dynamic message will be inserted here -->
-    </div>
-    <div class="modal-footer">
-      <button onclick="closeModal()">OK</button>
-    </div>
-  </div>
-
-  <!-- Overlay -->
-  <div id="modalOverlay" onclick="closeModal()"></div>
-
-  <script>
-    function showModal(message) {
-      const modal = document.getElementById('infoModal');
-      const overlay = document.getElementById('modalOverlay');
-      const messageContainer = document.getElementById('modalMessage');
-
-      if (modal && overlay && messageContainer) {
-        messageContainer.textContent = message; // Set the dynamic message
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-      }
-    }
-
-    function closeModal() {
-      const modal = document.getElementById('infoModal');
-      const overlay = document.getElementById('modalOverlay');
-
-      if (modal && overlay) {
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-      }
-    }
-
-    // Show modal if message is available
-    document.addEventListener("DOMContentLoaded", function () {
-      {% if popup_message %}
-      const message = "{{ popup_message }}"; // Pass the dynamic message from Jinja
-      showModal(message);
-      {% endif %}
-    });
-  </script>
-</body>
-</html>
+    return dict(
+        build=build,
+        jira_tickets=jira_tickets,
+        jira_changes=jira_changes,
+        regressionJira=regressionJira,
+        popup_message=popup_message,
+        linked_jiras=linked_jiras,  # Pass linked JIRAs to the template
+    )
