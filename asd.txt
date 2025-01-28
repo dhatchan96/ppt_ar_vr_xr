@@ -1,9 +1,8 @@
-{% set tooltip_text = "This button is disabled" if is_disabled else "Click to proceed" %}
-
-<button
-    title="{{ tooltip_text }}"
-    class="btn btn-primary"
-    {{ 'disabled' if is_disabled else '' }}
->
-    Submit
-</button>
+.custom-button:disabled {
+    background-color: #d3d3d3; /* Gray background */
+    color: #a9a9a9; /* Lighter gray text */
+    cursor: not-allowed; /* Disable pointer interaction */
+    border: 1px solid #c0c0c0; /* Light border */
+    box-shadow: none; /* Remove shadows */
+    opacity: 0.6; /* Dim the button */
+}
