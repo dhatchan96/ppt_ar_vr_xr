@@ -1,33 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Info Popup</title>
+</head>
+<body>
+  <!-- Popup Modal -->
+  <div id="infoModal" 
+       style="display: none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); 
+              background-color: white; padding: 20px; border: 1px solid #ccc; 
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
+    <p>{{ popup_message }}</p>
+    <button onclick="closeModal()">Close</button>
+  </div>
 
+  <!-- Overlay -->
+  <div id="modalOverlay" 
+       style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+              background: rgba(0, 0, 0, 0.5); z-index: 999;" onclick="closeModal()">
+  </div>
 
+  <script>
+    function showModal() {
+      var modal = document.getElementById("infoModal");
+      var overlay = document.getElementById("modalOverlay");
 
-<!-- Add this in your Jinja2 template -->
-<div id="infoModal" style="display: none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
-  <p>{{ popup_message }}</p>
-  <button onclick="closeModal()">Close</button>
-</div>
-<div id="modalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;" onclick="closeModal()"></div>
+      if (modal && overlay) {
+        modal.style.display = "block";
+        overlay.style.display = "block";
+      } else {
+        console.error("Modal or overlay element not found.");
+      }
+    }
 
+    function closeModal() {
+      var modal = document.getElementById("infoModal");
+      var overlay = document.getElementById("modalOverlay");
 
-<script>
-  function showModal() {
-    document.getElementById("infoModal").style.display = "block";
-    document.getElementById("modalOverlay").style.display = "block";
-  }
+      if (modal && overlay) {
+        modal.style.display = "none";
+        overlay.style.display = "none";
+      } else {
+        console.error("Modal or overlay element not found.");
+      }
+    }
 
-  function closeModal() {
-    document.getElementById("infoModal").style.display = "none";
-    document.getElementById("modalOverlay").style.display = "none";
-  }
-
-  // Automatically show the modal if a popup_message exists
-  {% if popup_message %}
-  window.onload = function() {
-    showModal();
-  };
-  {% endif %}
-</script>
-
-
-
-
+    // Wait until the DOM is fully loaded before executing showModal
+    document.addEventListener("DOMContentLoaded", function () {
+      {% if popup_message %}
+      showModal();
+      {% endif %}
+    });
+  </script>
+</body>
+</html>
