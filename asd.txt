@@ -1,28 +1,23 @@
-from jira import JIRA
 
-def fetch_linked_jiras(self, ticket_id):
-    """
-    Fetch inward linked JIRA tickets for the given ticket ID.
+@dag.cellfn
+def TemplateParams(self):
+    build = self.Build()
+    regressionJira = build.externalSystemIds.get('regressionJiraTicket', '')
+    jiraTable = self.JiraTicketsTable()
+    jira_tickets = {} if jiraTable is dag.NO_VALUE else jiraTable
 
-    Args:
-        ticket_id (str): The JIRA ticket ID to fetch linked issues for.
+    # Fetch linked JIRAs for each ticket
+    for ticket in jira_tickets:
+        ticket_id = ticket.get("Ticket")  # Adjust based on your ticket field name
+        ticket["linked_jiras"] = self.fetch_linked_jiras(ticket_id)  # Fetch linked JIRAs
 
-    Returns:
-        list: A list of linked JIRA ticket IDs (inward links).
-    """
-    try:
-        # Get the issue object for the given ticket
-        issue = self.jira_client.issue(ticket_id)  # Assuming self.jira_client is a valid JIRA client instance
+    jira_changes = {} if jiraTable is dag.NO_VALUE else self.JiraChanges()
+    popup_message = self.Popup()
 
-        linked_jiras = []
-
-        # Iterate through the issue links
-        for link in issue.fields.issuelinks:
-            if hasattr(link, "inwardIssue"):  # Check if the link has an inward issue
-                linked_jiras.append(link.inwardIssue.key)  # Append the key of the inward linked issue
-
-        return linked_jiras
-
-    except Exception as e:
-        print(f"Error fetching linked JIRAs for ticket {ticket_id}: {e}")
-        return []
+    return dict(
+        build=build,
+        jira_tickets=jira_tickets,
+        jira_changes=jira_changes,
+        regressionJira=regressionJira,
+        popup_message=popup_message
+    )
