@@ -1,42 +1,38 @@
-<style>
-    .custom-button {
-        background-color: #f0f0f0; /* Light gray background */
-        border: 1px solid #d1d1d1; /* Gray border */
-        border-radius: 3px; /* Slightly rounded corners */
-        padding: 5px 10px; /* Padding for size */
-        font-size: 14px; /* Adjust font size */
-        color: #000; /* Black text */
-        cursor: pointer; /* Pointer on hover */
-    }
-
-    .custom-button:hover {
-        background-color: #e0e0e0; /* Darker gray on hover */
-    }
-
-    .custom-button:active {
-        background-color: #d0d0d0; /* Even darker gray on click */
-    }
-</style>
-
-<section class="info">
-    <div style="display: flex; align-items: center;">
-        <h2 style="margin-right: 20px;">{{ jira_tickets | length }} Jira Tickets</h2>
-        <button class="custom-button" onclick="linkJira()">Link Jira</button>
-    </div>
-    <br>
-    {{ jira_table(jira_tickets.project(jira_cols), include_checkbox=True) }}
-</section>
-
 <script>
-    function linkJira() {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-        const selectedTickets = Array.from(checkboxes).map(cb => cb.value);
+    // Replace the default alert function with a custom implementation
+    window.alert = function(message) {
+        // Create a modal container dynamically
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '50%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.backgroundColor = '#fff';
+        modal.style.padding = '20px';
+        modal.style.boxShadow = '0px 4px 6px rgba(0, 0, 0, 0.1)';
+        modal.style.borderRadius = '8px';
+        modal.style.zIndex = '10000';
+        modal.style.textAlign = 'center';
 
-        if (selectedTickets.length > 0) {
-            const data = encodeURIComponent(JSON.stringify(selectedTickets));
-            window.location.href = `custom-protocol:${data}`;
-        } else {
-            alert("No tickets selected.");
-        }
-    }
+        // Add the message to the modal
+        modal.innerHTML = `
+            <p style="margin-bottom: 20px; font-size: 16px; font-family: Arial, sans-serif;">
+                ${message}
+            </p>
+            <button onclick="document.body.removeChild(this.parentElement)" style="
+                padding: 8px 16px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            ">
+                OK
+            </button>
+        `;
+
+        // Append the modal to the document body
+        document.body.appendChild(modal);
+    };
 </script>
