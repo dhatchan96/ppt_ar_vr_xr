@@ -1,0 +1,33 @@
+import graphviz
+
+# Create a Graphviz Digraph with improved organization
+dot = graphviz.Digraph(format='png', engine='dot')
+
+# Define nodes with Client-Server terminology
+dot.node('User', 'Client (User)', shape='ellipse', style='filled', fillcolor='lightblue', rank='source')
+dot.node('Frontend', 'Client-Side\n(Qzinsights Frontend - React.js & Jinja)', shape='box', style='filled', fillcolor='lightgray')
+dot.node('Backend', 'Server-Side\n(Qzinsights Backend - Flask API)', shape='box', style='filled', fillcolor='lightgray')
+dot.node('SandraDB', 'Database Server\n(Sandra Database - Primary Storage)', shape='cylinder', style='filled', fillcolor='lightyellow')
+dot.node('SQLite', 'Database Server\n(SQLite - Temporary Storage)', shape='cylinder', style='filled', fillcolor='lightyellow')
+dot.node('Quartz', 'Security & Auth\n(Quartz Services - Rester & Kerberos SSL)', shape='box', style='filled', fillcolor='lightcoral')
+dot.node('Superset', 'Visualization Server\n(Apache Superset - Dashboard Generator)', shape='box', style='filled', fillcolor='lightgreen')
+dot.node('Dashboard', 'Client View\n(Embedded Dashboard)', shape='box', style='filled', fillcolor='lightblue', rank='sink')
+
+# Define edges with improved structure and client-server interactions
+dot.edge('User', 'Frontend', label='User Query (Text/Voice) - Client Request')
+dot.edge('Frontend', 'Backend', label='Client Request to Server')
+dot.edge('Backend', 'SandraDB', label='Fetch Data from Database Server')
+dot.edge('Backend', 'SQLite', label='Temporary Data Storage')
+dot.edge('SandraDB', 'Backend', label='Return Data to Server')
+dot.edge('SQLite', 'Backend', label='Retrieve Cached Data')
+dot.edge('Backend', 'Quartz', label='Authentication & Security Validation')
+dot.edge('Backend', 'Superset', label='Send Data for Visualization')
+dot.edge('Superset', 'Dashboard', label='Generate & Embed Charts')
+dot.edge('Dashboard', 'User', label='Display Charts - Client Response')
+
+# Render the diagram
+dot.render('Qzinsights_Architecture_Organized', format='png')
+
+# Display the diagram in Jupyter Notebook (optional)
+from IPython.display import Image
+Image(filename='Qzinsights_Architecture_Organized.png')
