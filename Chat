@@ -1,8 +1,3 @@
-Here’s a complete guide to playing Among Us in a Virtual Meeting for your 30-person, multi-location team:
-
-
----
-
 🕵️ Among Us Meeting Game Guide
 
 🔹 Game Objective
@@ -146,7 +141,11 @@ Impostors should pretend to complete tasks but submit incorrect answers or delay
 
 🏆 Scoring System
 
-🎖 Bonus Awards
+Individual Points
+
+Team Points
+
+Bonus Awards
 
 Best Detective Award (Most correct votes) → +10
 
@@ -173,7 +172,7 @@ Tracking: Use Google Sheets/Excel to update scores in real-time.
 
 ---
 
-📅 Game Flow Example
+🔄 Game Flow Example
 
 Round 1 (10-15 min)
 
@@ -214,5 +213,3 @@ Game ends when either impostors win or crewmates eliminate all impostors.
 ---
 
 This structured meeting game keeps everyone engaged, promotes teamwork, and adds fun to virtual calls! 🚀
-
-Would you like a Google Sheets template for score tracking?
