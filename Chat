@@ -1,215 +1,45 @@
-🕵️ Among Us Meeting Game Guide
+The format – Round 1
 
-🔹 Game Objective
+The Problem Statement (Developer Pain Point or Inefficiency)
 
-Crewmates complete tasks and identify impostors before being eliminated.
+Please enter the problem statement in detail for your use case for Erica-Horizon Use Case Contest
 
-Impostors deceive and eliminate crewmates without getting caught.
+Developers face inconsistencies and inefficiencies in estimating story points for JIRA tickets. Manual estimation is often subjective, time-consuming, and prone to bias, leading to unpredictable sprint planning and resource allocation. Additionally, developers spend time navigating past JIRA issues to find similar tasks, further delaying the estimation process.
 
-The game continues until either:
+Enter a clear description of the problem statement for your use case. State the current problem, the target state, and how this use case will enhance the user experience.
 
-All impostors are eliminated → Crewmates win.
+Current Problem:
 
-Impostors outnumber crewmates → Impostors win.
+Manual story point assignment leads to inconsistent estimates across teams.
 
+Developers have to search past similar tickets manually, which is inefficient.
 
+The lack of structured questioning results in subjective estimations.
 
+Estimation meetings consume significant time, reducing productivity.
 
----
 
-👥 Team Setup (For 30 Players)
+Target State:
 
-1. Divide into 3 teams of 10 players each.
+A chatbot-automated process that asks a structured set of predefined questions to determine complexity, dependencies, and effort.
 
-Teams can be location-based or cross-location.
+The chatbot retrieves historical JIRA issues to ensure data-driven consistency in story point assignment.
 
-Each team plays separately to keep games engaging.
+The system provides a suggested story point estimate based on past issues and user responses, reducing estimation bias.
 
+Users can confirm or adjust the estimate before it is automatically updated in JIRA.
 
 
-2. Assign Roles (Secretly)
-Use Random.org, Google Sheets, or a private chat to distribute:
+Enhanced User Experience:
 
-8 Crewmates (80%)
+Developers receive a guided estimation process, eliminating uncertainty.
 
-2 Impostors (20%)
+Past similar tasks are automatically analyzed, saving manual search time.
 
-1 Moderator (Not a player, manages discussions & voting)
+The chatbot ensures a standardized and efficient estimation process.
 
+Sprint planning becomes more predictable and data-driven.
 
 
+Based on the problem statement, the teams will be evaluated to move to round 2 where document submission in the specified format is required.
 
-
----
-
-🎮 How to Play (Meeting Format)
-
-1️⃣ Game Rounds
-
-Each round consists of:
-
-1. Task Phase (3-5 minutes)
-
-Crewmates perform mini-tasks (trivia, riddles, finding objects, etc.).
-
-Impostors pretend to do tasks.
-
-
-
-2. Sabotage (Optional)
-
-Impostors can create distractions (fake tech issues, ask confusing questions, etc.).
-
-
-
-3. Discussion Phase (3-5 minutes)
-
-The moderator announces a "player was eliminated" (secretly chosen by the impostor).
-
-Players discuss who they suspect.
-
-Each player votes anonymously (Google Forms, chat poll).
-
-
-
-4. Elimination & Reveal
-
-The most-voted player is eliminated.
-
-If they were an impostor, the game continues until all impostors are found.
-
-
-
-
-
----
-
-2️⃣ Tasks for Crewmates
-
-Crewmates must complete 3-5 quick tasks per round. Examples:
-
-💡 Simple Trivia
-
-Example: "What is the capital of Canada?"
-
-(Answer: Ottawa)
-
-
-
-🔢 Math Puzzle
-
-Example: "Solve (8 × 5) + 10."
-
-
-🔠 Word Challenge
-
-Example: "Find a word using the letters: A, M, O, N, G."
-
-
-🎭 Object Hunt (Scavenger)
-
-Example: "Find something red near you."
-
-
-📸 Fun Photo Task
-
-Example: "Take a picture of your workspace and upload it."
-
-
-Impostors should pretend to complete tasks but submit incorrect answers or delay.
-
-
----
-
-🗳️ Voting System (Who is the Impostor?)
-
-1. After discussion, players vote in a private poll (Google Forms or chat).
-
-
-2. The player with the most votes is eliminated and reveals their role.
-
-
-3. If they were an impostor, crewmates get bonus points.
-
-
-4. The game continues until impostors are found or they win.
-
-
-
-
----
-
-🏆 Scoring System
-
-Individual Points
-
-Team Points
-
-Bonus Awards
-
-Best Detective Award (Most correct votes) → +10
-
-Best Liar Award (Longest surviving impostor) → +10
-
-Most Completed Tasks (Crewmate) → +5
-
-MVP of the Game (Voted by players) → +10
-
-
-Tracking: Use Google Sheets/Excel to update scores in real-time.
-
-
----
-
-🛠 Tools & Setup
-
-🔹 Google Sheets – Role assignment & scoring
-🔹 Google Forms/Polling – Voting system
-🔹 Breakout Rooms (Zoom/Teams) – For separate discussions
-🔹 Timer (Online Stopwatch) – Task & discussion time tracking
-🔹 Random.org – Role assignments
-
-
----
-
-🔄 Game Flow Example
-
-Round 1 (10-15 min)
-
-1. Assign Roles (Secretly via private chat/Google Sheets)
-
-
-2. Task Phase (Crewmates complete, impostors fake it)
-
-
-3. Discussion & Voting (Who is the impostor?)
-
-
-4. Elimination (Reveal and update scores)
-
-
-
-Round 2 (Repeat the process)
-
-Game ends when either impostors win or crewmates eliminate all impostors.
-
-
-
----
-
-🏁 Winning & Final Standings
-
-1. Team with highest total points wins.
-
-
-2. Top 3 Individual Players (Based on score) are recognized.
-
-
-3. MVP (Most Engaging Player) is voted by participants.
-
-
-
-
----
-
-This structured meeting game keeps everyone engaged, promotes teamwork, and adds fun to virtual calls! 🚀
