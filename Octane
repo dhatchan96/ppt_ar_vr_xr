@@ -1,0 +1,130 @@
+import logging
+import datetime
+from qz.config.octane import OCTANE_CONFIG
+from qz.sdlc.octane.client import OctaneClient
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+class OctaneAPI:
+    """
+    This class interacts with the Octane API to manage test suites, 
+    application modules, and evidence tracking.
+    """
+
+    def __init__(self, config):
+        """ Initialize the Octane API client with the given configuration. """
+        self.octaneClient = OctaneClient(config)
+        self.config = config
+
+    def _calculateEvidencePath(self, build):
+        """
+        Generate an evidence path based on the build timestamp.
+
+        Args:
+        - build: Object containing trainVersion information.
+
+        Returns:
+        - A formatted evidence path string.
+        """
+        versionTimestamp = datetime.datetime.fromtimestamp(build.trainVersion.version)
+        return f"/build.releaseTrain.uniqueName/{versionTimestamp.year}/{int(versionTimestamp.month * 4)}"
+
+    def upload(self, rootApplicationModuleID, testSuitePath, suiteRunName, results, jiras):
+        """
+        Upload test results and associated JIRA issues to Octane.
+
+        Args:
+        - rootApplicationModuleID: Root application module ID.
+        - testSuitePath: Path for test suite.
+        - suiteRunName: Name of the test suite run.
+        - results: Test execution results.
+        - jiras: List of related JIRA tickets.
+        """
+        testSuiteID = None
+        for item in self.octaneClient.getOctaneItems("id", rootApplicationModuleID):
+            if "id" in item:
+                testSuiteID = self.createTestSuite(testSuitePath, rootApplicationModuleID)
+                break
+
+        if testSuiteID:
+            self.octaneClient.upload(rootApplicationModuleID, testSuiteID, suiteRunName, results, jiras)
+
+    def uploadORE(self, build, regressionJiras=None, featureJiras=None):
+        """
+        Upload Open Source Risk Engine (ORE) results to Octane.
+
+        Args:
+        - build: Build object containing train version details.
+        - regressionJiras: JIRA issues related to regression.
+        - featureJiras: JIRA issues related to new features.
+        """
+        evidencePath = self._calculateEvidencePath(build)
+        rootAppModuleID = self.octaneClient.getOctaneConfigs("rootApplicationModuleID")
+
+        self.upload(
+            rootAppModuleID,
+            evidencePath,
+            "ORE_Test_Suite",
+            build.uniqueName,
+            results=set(regressionJiras or []) | set(featureJiras or [])
+        )
+
+    def createApplicationModule(self, child, parentID):
+        """
+        Create or retrieve an application module in Octane.
+
+        Args:
+        - child: Application module name.
+        - parentID: Parent module ID.
+
+        Returns:
+        - Application module ID.
+        """
+        # Query existing application module
+        resp = self.octaneClient.getApplicationModule(child, parentID)
+        if resp.get("response") == "Success":
+            if resp["data"]["total_count"] == 1:
+                return resp["data"][0]["id"]
+            elif resp["data"]["total_count"] == 0:
+                # Create new application module
+                new_resp = self.octaneClient.createApplicationModule(child, parentID)
+                if new_resp.get("response") == "Success":
+                    return new_resp["data"][0]["id"]
+                else:
+                    raise Exception(f"Failed to create Application Module: {child}, parentID: {parentID}, {new_resp}")
+            else:
+                raise Exception(f"Multiple modules found for {child}, parentID: {parentID}, {resp}")
+        else:
+            raise Exception(f"No response querying Application Module: {child}, parentID: {parentID}, {resp}")
+
+    def createTestSuite(self, path, parentID):
+        """
+        Create or retrieve a test suite in Octane.
+
+        Args:
+        - path: Path of the test suite.
+        - parentID: Parent module ID.
+
+        Returns:
+        - Test suite ID.
+        """
+        suiteName = path.split("/")[-1]  # Extract test suite name
+        applicationModuleID = self.createApplicationModule(path, parentID)
+
+        # Query existing test suite
+        resp = self.octaneClient.getTestSuite(suiteName, applicationModuleID)
+        if resp.get("response") == "Success":
+            if resp["data"]["total_count"] == 1:
+                return resp["data"][0]["id"]
+            elif resp["data"]["total_count"] == 0:
+                # Create new test suite
+                new_resp = self.octaneClient.createTestSuite(suiteName, applicationModuleID)
+                if new_resp.get("response") == "Success":
+                    return new_resp["data"][0]["id"]
+                else:
+                    raise Exception(f"Failed to create Test Suite: {suiteName}, applicationModuleID: {applicationModuleID}, {new_resp}")
+            else:
+                raise Exception(f"Multiple test suites found: {suiteName}, applicationModuleID: {applicationModuleID}, {resp}")
+        else:
+            raise Exception(f"No response querying Test Suite: {suiteName}, applicationModuleID: {applicationModuleID}, {resp}")
