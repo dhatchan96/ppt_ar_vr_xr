@@ -6,7 +6,7 @@ from gz.sdlc.octane.client import OctaneClient
 # Set up logging
 logger = logging.getLogger(__name__)
 
-class OctaneApi:
+class OctaneApi(object):
     """
     API wrapper for interacting with Octane for test execution tracking.
     """
@@ -20,108 +20,103 @@ class OctaneApi:
         self.octaneClient = OctaneClient(config)
         self.octaneConfig = config
 
-    def _calculate_evidence_path(self, build):
+    def _calculateEvidencePath(self, build):
         """
         Generate a path for storing test evidence based on release and version timestamp.
 
         :param build: Build object containing version information.
         :return: Formatted evidence path as a string.
         """
-        version_timestamp = datetime.datetime.fromtimestamp(build.trainVersion.version)
-        return f"{build.releaseTrain.uniqueName}/{version_timestamp.year}{(int(version_timestamp.month/4)+1)}"
+        versionTimestamp = datetime.datetime.fromtimestamp(build.trainVersion.version)
+        return f"{build.releaseTrain.uniqueName}/{versionTimestamp.year}{(int(versionTimestamp.month/4)+1)}"
 
-    def upload(self, root_module_id, test_suite_path, suite_run_name, results, jiras):
+    def upload(self, rootApplicationModuleID, testSuitePath, suiteRunName, results, jiras):
         """
         Upload test results to Octane.
 
-        :param root_module_id: ID of the root application module.
-        :param test_suite_path: Path of the test suite.
-        :param suite_run_name: Name of the test suite run.
+        :param rootApplicationModuleID: ID of the root application module.
+        :param testSuitePath: Path of the test suite.
+        :param suiteRunName: Name of the test suite run.
         :param results: Test execution results.
         :param jiras: List of Jira IDs linked to the test cases.
         """
-        jira_octane_map = {d['jira_key_id']: d['id'] for d in self.octaneClient.getOctaneIds(jiras)}
+        jiraOctaneMap = {d['jira_key_id']: d['id'] for d in self.octaneClient.getOctaneIds(jiras)}
         
         # Create or fetch the test suite
-        app_module_id, test_suite_id = self.create_test_suite(test_suite_path, root_module_id)
+        applicationModuleID, testSuiteID = self.createTestSuite(testSuitePath, rootApplicationModuleID)
 
         # Upload results for each Jira issue
-        for jira, octane_id in jira_octane_map.items():
-            resp = self.octaneClient.upload(results, suite_run_name, app_module_id, test_suite_id)
+        for jira, octaneID in jiraOctaneMap.items():
+            resp = self.octaneClient.upload(results, suiteRunName, applicationModuleID, testSuiteID)
             logger.info(f"Upload response for Jira {jira}: {resp}")
 
         # Retrieve suite run details
-        suite_run = self.octaneClient.getSuiteRun(suite_run_name, test_suite_id)
-        suite_run_id = suite_run[0]['id'] if suite_run else None
+        suiteRun = self.octaneClient.getSuiteRun(suiteRunName, testSuiteID)
+        suiteRunID = suiteRun[0]['id'] if suiteRun else None
 
-        if suite_run_id:
-            self.octaneClient.updateAutoRuns(octane_id, suite_run_name, suite_run_id)
+        if suiteRunID:
+            self.octaneClient.updateAutoRuns(octaneID, suiteRunName, suiteRunID)
 
-    def upload_qr_evidence(self, build, regression_jiras=None, feature_jiras=None):
+    def uploadQREvidence(self, build, regressionJiras=[], featureJiras=[]):
         """
         Upload test execution evidence for a given build.
 
         :param build: Build object.
-        :param regression_jiras: List of regression Jira IDs.
-        :param feature_jiras: List of feature Jira IDs.
+        :param regressionJiras: List of regression Jira IDs.
+        :param featureJiras: List of feature Jira IDs.
         """
-        if regression_jiras is None:
-            regression_jiras = []
-        if feature_jiras is None:
-            feature_jiras = []
-
-        root_module_id = self.octaneConfig.get("rootApplicationModuleID")
+        rootApplicationModuleID = self.octaneConfig.get("rootApplicationModuleID")
 
         # Upload test evidence
         return self.upload(
-            root_module_id, 
+            rootApplicationModuleID, 
             build.uniqueName, 
             results=[],  # Assuming results are obtained elsewhere
-            jiras=set(regression_jiras + feature_jiras)
+            jiras=set(regressionJiras + featureJiras)
         )
 
-    def create_application_module(self, module_name, parent_id):
+    def createApplicationModule(self, child, parentID):
         """
         Create or fetch an application module in Octane.
 
-        :param module_name: Name of the application module.
-        :param parent_id: Parent module ID.
+        :param child: Name of the application module.
+        :param parentID: Parent module ID.
         :return: ID of the created or fetched module.
         """
         # Check if module exists
-        resp = self.octaneClient.getApplicationModule(module_name, parent_id)
+        resp = self.octaneClient.getApplicationModule(child, parentID)
         if resp and resp["response"] == "Success" and resp["total_count"] == 1:
             return resp["data"][0]["id"]
 
         # Create new module if it doesn't exist
-        resp = self.octaneClient.createApplicationModule(module_name, parent_id)
+        resp = self.octaneClient.createApplicationModule(child, parentID)
         if resp and resp["response"] == "Success" and resp["total_count"] == 1:
             return resp["data"][0]["id"]
 
-        raise Exception(f"Failed to create or fetch Application Module: {module_name}, Parent ID: {parent_id}")
+        raise Exception(f"Failed to create or fetch Application Module: {child}, Parent ID: {parentID}")
 
-    def create_test_suite(self, path, parent_id):
+    def createTestSuite(self, path, parentID):
         """
         Create or fetch a test suite in Octane.
 
         :param path: Full path of the test suite.
-        :param parent_id: Parent module ID.
-        :return: Tuple of (application module ID, test suite ID).
+        :param parentID: Parent module ID.
+        :return: Tuple of (applicationModuleID, testSuiteID).
         """
-        app_module_path, suite_name = path.rsplit("/", 1)
-        app_module_id = self.create_application_module(app_module_path, parent_id)
+        applicationModulePath, suiteName = path.rsplit("/", 1)
+        applicationModuleID = self.createApplicationModule(applicationModulePath, parentID)
 
         # Check if test suite exists
-        resp = self.octaneClient.getTestSuite(suite_name, app_module_id)
+        resp = self.octaneClient.getTestSuite(suiteName, applicationModuleID)
         if resp and resp["response"] == "Success" and resp["total_count"] == 1:
-            return app_module_id, resp["data"][0]["id"]
+            return applicationModuleID, resp["data"][0]["id"]
 
         # Create new test suite if it doesn't exist
-        resp = self.octaneClient.createTestSuite(suite_name, app_module_id)
+        resp = self.octaneClient.createTestSuite(suiteName, applicationModuleID)
         if resp and resp["response"] == "Success" and resp["total_count"] == 1:
-            return app_module_id, resp["data"][0]["id"]
+            return applicationModuleID, resp["data"][0]["id"]
 
-        raise Exception(f"Failed to create or fetch Test Suite: {suite_name}, Application Module ID: {app_module_id}")
+        raise Exception(f"Failed to create or fetch Test Suite: {suiteName}, Application Module ID: {applicationModuleID}")
 
 def main():
     """
@@ -131,10 +126,10 @@ def main():
 
     # Load configuration and initialize Octane client
     ReleaseTrain.config.set("prod")
-    build = ReleaseTrain("core.registries").stages["prod.new"].stages["int"].builds[0]
+    b = ReleaseTrain("core.registries").stages["prod.new"].stages["int"].builds[0]
 
     # Initialize Octane API client
     client = OctaneApi(OCTANE_CONFIG["DEV"])
 
     # Upload test execution evidence
-    client.upload_qr_evidence(build, regression_jiras=["RPRICHS-290"])
+    client.uploadQREvidence(b, ["RPRICHS-290"])
