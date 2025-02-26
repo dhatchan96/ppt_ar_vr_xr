@@ -1,56 +1,62 @@
-def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
+def getSuiteRun(self, name, suiteID):
     """
-    Upload test results to Octane.
+    Retrieve a suite run based on name and suite ID.
 
-    :param results: The test results data.
-    :param externalRunID: External run identifier.
-    :param applicationModuleID: Application module ID.
-    :param testSuiteID: Test suite ID.
+    :param name: Name of the suite run.
+    :param suiteID: ID of the test suite.
+    :return: Response containing suite run details.
     """
-    sliceSize = self.octaneConfig.get("uploadSliceSize")  # Fetch batch upload size
-    retry = 0
+    response = self.endpoint.get(
+        f"suite_run?fields=id,name&query=\"name EQ '{name}' and test EQ {suiteID}\""
+    )
+    return response[1]["data"]
+
+def getAutoRuns(self, name, suiteRunID):
+    """
+    Retrieve automated runs for a given suite run.
+
+    :param name: Name of the automated run.
+    :param suiteRunID: ID of the suite run.
+    :return: Response containing automated run details.
+    """
+    response = self.endpoint.get(
+        f"automated_runs?fields=id,name,parent_suite&query=\"name EQ '{name}' and parent_suite EQ {suiteRunID}\""
+    )
+    return response[1]["data"]
+
+def updateAutoRuns(self, octaneID, name, suiteRunID):
+    """
+    Update automated runs for a given suite run.
+
+    :param octaneID: ID of the Octane entity to link runs.
+    :param name: Name of the automated run.
+    :param suiteRunID: ID of the suite run.
+    """
+    runs = self.getAutoRuns(name, suiteRunID)  # Fetch all automated runs
+    sliceSize = self.octaneConfig.get("AutoRunsSliceSize")  # Fetch batch size
     slice = 0
 
     while True:
-        resultsSlice = results[slice * sliceSize: (slice + 1) * sliceSize]
-        if not resultsSlice:
-            break  # Exit loop when there are no more results
+        # Process batch-wise updates
+        batch = ",".join([f"'{r['id']}'" for r in runs[slice * sliceSize: (slice + 1) * sliceSize]])
+        if not batch:
+            break  # Exit loop if no more runs
 
-        testRuns = [
-            TEST_RUN.format(
-                testname=testname.split(".")[-1].rsplit(".", 3)[1] + "-" + testclass + "-" + testname.rsplit(".", 1)[-1],
-                testclass=testclass,
-                status=status,
-                started=started,
-                duration=int(duration),
-                package=testname.rsplit(".", 3)[0],
-                module=testname.split("-")[-1].rsplit(".", 3)[1]
-            )
-            for _, testname, testclass, status, started, duration in resultsSlice
-        ]
-
-        data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
-            test_results="\n".join(testRuns),
-            testSuiteID=testSuiteID,
-            externalRunID=externalRunID,
-            applicationModuleID=applicationModuleID
+        response = self.endpoint.put(
+            f"automated_runs?fields=id,name,parent_suite&query=\"id IN {batch} and name EQ '{name}' and parent_suite EQ {suiteRunID}\"",
+            data={
+                "data": [
+                    {
+                        "covered_content": {
+                            "data": [
+                                {
+                                    "type": "story",
+                                    "id": octaneID
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
         )
-
-        # Make the API call to upload test results
-        response = self.endpoint.post(
-            "test-results",
-            dataType="xml",
-            data=data
-        )
-
-        # Retry mechanism if the request fails
-        import time
-        if response[0] == "Failed":
-            time.sleep(5)
-            if retry > 5:
-                break  # Stop retrying after 5 attempts
-            retry += 1
-            continue  # Retry the same batch
-
-        retry = 0
         slice += 1  # Move to the next batch
