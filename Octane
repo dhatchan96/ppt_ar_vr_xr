@@ -1,37 +1,38 @@
-def createApplicationModule(self, path, parentID):
+def createTestSuite(self, path, parentID):
     """
-    Create or fetch an application module in Octane.
+    Create or fetch a test suite in Octane.
 
-    :param path: Path of the application module.
+    :param path: Full path of the test suite.
     :param parentID: Parent module ID.
-    :return: ID of the created or fetched module.
+    :return: Tuple of (applicationModuleID, testSuiteID).
     """
-    for child in path.split("/"):
-        resp = self.octaneClient.getApplicationModule(child, parentID)
+    applicationModulePath, suiteName = path.rsplit("/", 1)
+    applicationModuleID = parentID
 
-        # Check if the application module exists
-        if resp and resp[0] == "Success" and resp[1]["total_count"] == 1:
-            parentID = resp[1]["data"][0]["id"]
-            continue
-        elif not resp:
-            raise Exception(
-                "No response querying Application Module, name: %s, parentID: %s" % (child, parentID)
-            )
+    if applicationModulePath:
+        applicationModuleID = self.createApplicationModule(applicationModulePath, parentID)
 
-        # Create the application module if not found
-        resp = self.octaneClient.createApplicationModule(child, parentID)
+    # Check if test suite already exists
+    resp = self.octaneClient.getTestSuite(suiteName, applicationModuleID)
+    if resp and resp[0] == "Success" and resp[1]["total_count"] == 1:
+        return applicationModuleID, resp[1]["data"][0]["id"]
+    elif not resp:
+        raise Exception(
+            "No response querying Test Suite suiteName: %s, applicationModuleID: %s" 
+            % (suiteName, applicationModuleID)
+        )
 
-        # Validate the creation response
-        if resp and resp[0] == "Success" and resp[1]["total_count"] == 1:
-            parentID = resp[1]["data"][0]["id"]
-        elif not resp:
-            raise Exception(
-                "No response creating Application Module, name: %s, parentID: %s" % (child, parentID)
-            )
-        else:
-            raise Exception(
-                "Failed to create Application Module, name: %s, parentID: %s" % (child, parentID),
-                (resp),
-            )
-
-    return parentID
+    # Create a new test suite if not found
+    resp = self.octaneClient.createTestSuite(suiteName, applicationModuleID)
+    if resp and resp[0] == "Success" and resp[1]["total_count"] == 1:
+        return applicationModuleID, resp[1]["data"][0]["id"]
+    elif not resp:
+        raise Exception(
+            "No response creating Test Suite suiteName: %s, applicationModuleID: %s" 
+            % (suiteName, applicationModuleID)
+        )
+    else:
+        raise Exception(
+            "Failed to create Test Suite suiteName: %s, applicationModuleID: %s" 
+            % (suiteName, applicationModuleID), (resp)
+        )
