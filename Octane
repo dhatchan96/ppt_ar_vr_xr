@@ -1,230 +1,56 @@
-import json
-import simplejson
-import logging
-import requests
-import qzsix
-import qzsix.moves.http_client as http_client
-from cachetools import TTLCache
-from qz.core.passwords import SandraPasswordCrypted
-
-# Initialize logger
-logger = logging.getLogger(__name__)
-
-# Constants for XML templates
-TEST_RUN = """<test_run package="{package}" module="{module}" class="{testclass}" 
-name="{testname}" status="{status}" started="{started}" duration="{duration}"> 
-</test_run>"""
-
-EVIDENCE_TEMPLATE_TEST_SUITE = """<?xml version="1.0" encoding="UTF-8"?>
-<test_results>
-    <suite_ref id="{testSuiteID}" external_run_id="{externalRunID}"/>
-    <release name="Default_Release">
-        <test_runs>
-            {test_results}
-        </test_runs>
-    </release>
-</test_results>
-<test_fields>
-    <test_field type="Testing_Tool_Type" value="Quartz"/>
-</test_fields>
-"""
-
-class OctaneEndPoint(object):
+def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
     """
-    Octane API Endpoint class to handle authentication and test result processing.
+    Upload test results to Octane.
+
+    :param results: The test results data.
+    :param externalRunID: External run identifier.
+    :param applicationModuleID: Application module ID.
+    :param testSuiteID: Test suite ID.
     """
+    sliceSize = self.octaneConfig.get("uploadSliceSize")  # Fetch batch upload size
+    retry = 0
+    slice = 0
 
-    def __init__(self, config, responseQueue=None, clientThreadPool=None):
-        """
-        Initialize API endpoint with authentication details.
-        """
-        self.signInURL = config["signInURL"]
-        self.credentialPath = config["credentialsPath"]
-        self.tokenCache = TTLCache(maxsize=10, ttl=5 * 60)  # Cache tokens for 5 minutes
-        self.config = config
+    while True:
+        resultsSlice = results[slice * sliceSize: (slice + 1) * sliceSize]
+        if not resultsSlice:
+            break  # Exit loop when there are no more results
 
-        import urllib3
-        self.root = config["rootURL"]
-        self.proto, _ = urllib3.util.parse_url(self.root).scheme, None
-        self.host, self.root_path = urllib3.util.parse_url(self.root).host, urllib3.util.parse_url(self.root).path
-        self.connectClass = http_client.HTTPSConnection
-
-    def _getCookie(self, system):
-        """
-        Retrieve authentication token from cache or make a request if not found.
-        """
-        cookie = self.tokenCache.get(system)
-        if not cookie:
-            try:
-                resp = requests.post(
-                    self.signInURL,
-                    headers={"Content-Type": "application/json"},
-                    data=json.dumps({
-                        "client_id": self.username,
-                        "client_secret": self.password
-                    }),
-                    verify=False
-                )
-                cookie = resp.cookies.get_dict()
-
-                if not cookie:
-                    logger.error(f"Failed to sign in to {self.signInURL}: {resp.json()}")
-                    raise RuntimeError(f"Failed to sign in to {self.signInURL}: {resp.json()}")
-
-            except Exception as e:
-                logger.error(f"Error while signing in to {self.signInURL}: {e}")
-                raise RuntimeError(f"Error while signing in to {self.signInURL}: {e}")
-
-            self.tokenCache[self.config.get("system")] = cookie
-        return cookie
-
-    def _restCall(self, method, api, dataType='json', data=None):
-        """
-        Make a REST API call.
-        """
-        cookies = self._getCookie("system")
-
-        try:
-            url = f"{self.root}/{api}"
-            caller = getattr(requests, method.lower())  # Dynamically call requests method (get, post, put)
-
-            resp = caller(
-                url,
-                cookies=cookies,
-                verify=False,
-                headers={"Content-Type": f"application/{dataType}"},
-                data=json.dumps(data) if dataType == "json" else data
+        testRuns = [
+            TEST_RUN.format(
+                testname=testname.split(".")[-1].rsplit(".", 3)[1] + "-" + testclass + "-" + testname.rsplit(".", 1)[-1],
+                testclass=testclass,
+                status=status,
+                started=started,
+                duration=int(duration),
+                package=testname.rsplit(".", 3)[0],
+                module=testname.split("-")[-1].rsplit(".", 3)[1]
             )
+            for _, testname, testclass, status, started, duration in resultsSlice
+        ]
 
-            status = "Success" if resp.ok else "Failed"
-            rsp_data = simplejson.loads(qzsix.b2s(resp.content))
-
-        except Exception as e:
-            logger.exception(e)
-            status = "Error"
-            rsp_data = {"details": "FailedDescription": " ".join(map(str, e.args))}
-            logger.info(rsp_data)
-
-        return status, rsp_data
-
-    def post(self, endpoint, data, dataType='json'):
-        return self._restCall("POST", endpoint, dataType=dataType, data=data)
-
-    def put(self, endpoint, data):
-        return self._restCall("PUT", endpoint, data=data)
-
-    @property
-    def username(self):
-        return SandraPasswordCrypted.lookupThreadSafe(self.credentialPath).user
-
-    @property
-    def password(self):
-        return SandraPasswordCrypted.lookupThreadSafe(self.credentialPath).password
-
-
-def getTestResults(build):
-    """
-    Retrieve and filter test results.
-    """
-    testResults = build.checkResult("UnitTests")
-    if testResults:
-        testResults = testResults.restrict(lambda skip, ignored: not (skip or ignored), ['skip', 'ignored'])
-        testResults.renameCol("script", "testscript")
-    return testResults
-
-
-class OctaneClient(object):
-    """
-    Octane API client for handling test execution data.
-    """
-
-    def __init__(self, config):
-        self.endpoint = OctaneEndPoint(config)
-        self.octaneConfig = config
-
-    def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
-        """
-        Upload test results to Octane.
-        """
-        sliceSize = self.octaneConfig.get("uploadSliceSize", 10)
-        slice = 0
-
-        while True:
-            resultsSlice = results[slice * sliceSize : (slice + 1) * sliceSize]
-            if not resultsSlice:
-                break
-
-            testRuns = [
-                TEST_RUN.format(
-                    testname=testname.split(".")[-1].rsplit("_", 3)[0],
-                    testclass=testname.rsplit(".", 1)[-1],
-                    status=status,
-                    started=started,
-                    duration=duration
-                )
-                for testname, testclass, status, started, duration in resultsSlice
-            ]
-
-            data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
-                test_results="\n".join(testRuns),
-                testSuiteID=testSuiteID,
-                externalRunID=externalRunID,
-                applicationModuleID=applicationModuleID
-            )
-
-            slice += 1
-
-    def getApplicationModule(self, name, parentID=None, parentName=""):
-        """
-        Retrieve an application module by name, parent ID, or parent name.
-        """
-        query = f"name EQ '{name}'"
-        if parentID:
-            query += f" and id EQ {parentID}"
-        if parentName:
-            query += f" and parent EQ '{parentName}'"
-
-        return self.endpoint.get(f"application_modules?fields=id,name,parent&query=\"{query}\"")
-
-    def createApplicationModule(self, name, parentID):
-        """
-        Create an application module with a given name and parent ID.
-        """
-        return self.endpoint.post(
-            "application_modules",
-            data={"data": [{"name": name, "parent": {"type": "application_module", "id": parentID}}]}
+        data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
+            test_results="\n".join(testRuns),
+            testSuiteID=testSuiteID,
+            externalRunID=externalRunID,
+            applicationModuleID=applicationModuleID
         )
 
-    def getOctaneIds(self, jiras):
-        """
-        Retrieve Octane IDs for Jira issues.
-        """
-        if not jiras:
-            return self.endpoint.get("stories?fields=id,jira_key_udf,name")
-
-        stories = jiras if isinstance(jiras, str) else jiras
-        response = self.endpoint.get(
-            f"stories?fields=id,jira_key_udf,name&query=\"jira_key_udf IN [{', '.join(f'\"{s}\"' for s in stories)}]\""
-        )
-        return response[1]["data"]
-
-    def createTestSuite(self, name, applicationModuleID):
-        """
-        Create a new test suite under an application module.
-        """
-        return self.endpoint.post(
-            "test_suites",
-            data={
-                "data": [{"name": name, "application_modules": {"type": "application_module", "id": applicationModuleID}}]
-            }
+        # Make the API call to upload test results
+        response = self.endpoint.post(
+            "test-results",
+            dataType="xml",
+            data=data
         )
 
-    def getTestSuite(self, name, applicationModuleID):
-        """
-        Retrieve a test suite by name and application module ID.
-        """
-        query = f"name EQ '{name}'"
-        if applicationModuleID:
-            query += f" and application_module EQ {applicationModuleID}"
+        # Retry mechanism if the request fails
+        import time
+        if response[0] == "Failed":
+            time.sleep(5)
+            if retry > 5:
+                break  # Stop retrying after 5 attempts
+            retry += 1
+            continue  # Retry the same batch
 
-        return self.endpoint.get(f"test_suites?fields=id,name,application_modules&query=\"{query}\"")
+        retry = 0
+        slice += 1  # Move to the next batch
