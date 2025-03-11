@@ -1,26 +1,42 @@
-qimport requests
+import requests
 import json
 
 # ALM Octane API Details
 base_url = "https://<server>:<port>"  # Replace with your Octane URL
 shared_space_id = "<shared_space_id>"
 workspace_id = "<workspace_id>"
-suiterun_id = "<your_suiterun_id>"  # Replace with the actual SuiteRun ID
 
-# Authentication (Assuming you already have `cookies` from login)
 headers = {"Content-Type": "application/json"}
+cookies = {}  # Ensure you have valid authentication cookies
 
-# Query for test runs linked to the given SuiteRun ID
-query_params = f'?query="suite_run EQ {suiterun_id}"'
-test_results_url = f"{base_url}/api/shared_spaces/{shared_space_id}/workspaces/{workspace_id}/test-runs{query_params}"
+def fetch_all_automated_tests(base_url, shared_space_id, workspace_id, cookies):
+    limit = 1000  # Fetch 1000 at a time
+    offset = 0
+    all_test_runs = []
 
-# Fetch test runs
-response = requests.get(test_results_url, headers=headers, cookies=cookies)
+    while True:
+        # Fetch only automated test runs
+        test_runs_url = (
+            f"{base_url}/api/shared_spaces/{shared_space_id}/workspaces/{workspace_id}/test-runs"
+            f"?query=\"test.type EQ 'AUTOMATED'\"&offset={offset}&limit={limit}"
+        )
+        
+        response = requests.get(test_runs_url, headers=headers, cookies=cookies)
 
-# Check response and display results
-if response.status_code == 200:
-    test_runs = response.json()
-    print("Fetched Test Runs for SuiteRun ID:", suiterun_id)
-    print(json.dumps(test_runs, indent=4))
-else:
-    print(f"Failed to fetch test runs: {response.status_code} - {response.text}")
+        if response.status_code == 200:
+            data = response.json().get("data", [])
+            if not data:
+                break  # Stop when no more records are returned
+
+            all_test_runs.extend(data)
+            offset += limit  # Move to the next batch
+        else:
+            print(f"Error fetching automated test runs: {response.status_code} - {response.text}")
+            break
+
+    return all_test_runs
+
+# Fetch all automated test runs
+all_tests = fetch_all_automated_tests(base_url, shared_space_id, workspace_id, cookies)
+
+print(f"Total automated test runs retrieved: {len(all_tests)}")
