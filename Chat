@@ -1,45 +1,26 @@
-The format – Round 1
+qimport requests
+import json
 
-The Problem Statement (Developer Pain Point or Inefficiency)
+# ALM Octane API Details
+base_url = "https://<server>:<port>"  # Replace with your Octane URL
+shared_space_id = "<shared_space_id>"
+workspace_id = "<workspace_id>"
+suiterun_id = "<your_suiterun_id>"  # Replace with the actual SuiteRun ID
 
-Please enter the problem statement in detail for your use case for Erica-Horizon Use Case Contest
+# Authentication (Assuming you already have `cookies` from login)
+headers = {"Content-Type": "application/json"}
 
-Developers face inconsistencies and inefficiencies in estimating story points for JIRA tickets. Manual estimation is often subjective, time-consuming, and prone to bias, leading to unpredictable sprint planning and resource allocation. Additionally, developers spend time navigating past JIRA issues to find similar tasks, further delaying the estimation process.
+# Query for test runs linked to the given SuiteRun ID
+query_params = f'?query="suite_run EQ {suiterun_id}"'
+test_results_url = f"{base_url}/api/shared_spaces/{shared_space_id}/workspaces/{workspace_id}/test-runs{query_params}"
 
-Enter a clear description of the problem statement for your use case. State the current problem, the target state, and how this use case will enhance the user experience.
+# Fetch test runs
+response = requests.get(test_results_url, headers=headers, cookies=cookies)
 
-Current Problem:
-
-Manual story point assignment leads to inconsistent estimates across teams.
-
-Developers have to search past similar tickets manually, which is inefficient.
-
-The lack of structured questioning results in subjective estimations.
-
-Estimation meetings consume significant time, reducing productivity.
-
-
-Target State:
-
-A chatbot-automated process that asks a structured set of predefined questions to determine complexity, dependencies, and effort.
-
-The chatbot retrieves historical JIRA issues to ensure data-driven consistency in story point assignment.
-
-The system provides a suggested story point estimate based on past issues and user responses, reducing estimation bias.
-
-Users can confirm or adjust the estimate before it is automatically updated in JIRA.
-
-
-Enhanced User Experience:
-
-Developers receive a guided estimation process, eliminating uncertainty.
-
-Past similar tasks are automatically analyzed, saving manual search time.
-
-The chatbot ensures a standardized and efficient estimation process.
-
-Sprint planning becomes more predictable and data-driven.
-
-
-Based on the problem statement, the teams will be evaluated to move to round 2 where document submission in the specified format is required.
-
+# Check response and display results
+if response.status_code == 200:
+    test_runs = response.json()
+    print("Fetched Test Runs for SuiteRun ID:", suiterun_id)
+    print(json.dumps(test_runs, indent=4))
+else:
+    print(f"Failed to fetch test runs: {response.status_code} - {response.text}")
