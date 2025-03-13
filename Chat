@@ -1,42 +1,21 @@
-import requests
-import json
+hSubject: Team Lunch Planning – Utilizing Q1 Remaining Budget
 
-# ALM Octane API Details
-base_url = "https://<server>:<port>"  # Replace with your Octane URL
-shared_space_id = "<shared_space_id>"
-workspace_id = "<workspace_id>"
+Dear [Team],
 
-headers = {"Content-Type": "application/json"}
-cookies = {}  # Ensure you have valid authentication cookies
+As we approach the end of Q1, we have some remaining budget allocated for team engagement activities. To make the most of it, we’d like to plan a team lunch to celebrate our achievements and enjoy some time together.
 
-def fetch_all_automated_tests(base_url, shared_space_id, workspace_id, cookies):
-    limit = 1000  # Fetch 1000 at a time
-    offset = 0
-    all_test_runs = []
+Here are a few details to consider:
 
-    while True:
-        # Fetch only automated test runs
-        test_runs_url = (
-            f"{base_url}/api/shared_spaces/{shared_space_id}/workspaces/{workspace_id}/test-runs"
-            f"?query=\"test.type EQ 'AUTOMATED'\"&offset={offset}&limit={limit}"
-        )
-        
-        response = requests.get(test_runs_url, headers=headers, cookies=cookies)
+Date & Time: [Propose a few options]
 
-        if response.status_code == 200:
-            data = response.json().get("data", [])
-            if not data:
-                break  # Stop when no more records are returned
+Venue: [Suggest a few places or ask for suggestions]
 
-            all_test_runs.extend(data)
-            offset += limit  # Move to the next batch
-        else:
-            print(f"Error fetching automated test runs: {response.status_code} - {response.text}")
-            break
+Budget Allocation: [Mention approximate per-person budget if applicable]
 
-    return all_test_runs
 
-# Fetch all automated test runs
-all_tests = fetch_all_automated_tests(base_url, shared_space_id, workspace_id, cookies)
+Please share your availability and venue preferences by [deadline] so we can finalize the arrangements. Looking forward to catching up over a great meal!
 
-print(f"Total automated test runs retrieved: {len(all_tests)}")
+Best,
+[Your Name]
+[Your Designation]
+
