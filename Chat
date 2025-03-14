@@ -1,20 +1,12 @@
-hhSubject: Team Lunch Planning – Utilizing Q1 Remaining Budget
+jfrom config import OCTANE_CONFIG
 
-Dear [Team],
+def get_octane_url(space_key, workspace_key):
+    base_url = OCTANE_CONFIG["base_url"]
+    space_id = OCTANE_CONFIG["spaces"][space_key]["id"]
+    workspace_id = OCTANE_CONFIG["spaces"][space_key]["workspaces"][workspace_key]
+    
+    return base_url.format(space_id=space_id, workspace_id=workspace_id)
 
-As we approach the end of Q1, we have some remaining budget allocated for team engagement activities. To make the most of it, we’d like to plan a team lunch to celebrate our achievements and enjoy some time together.
-
-Here are a few details to consider:
-
-Date & Time: [Propose a few options]
-
-Venue: [Suggest a few places or ask for suggestions]
-
-Budget Allocation: [Mention approximate per-person budget if applicable]
-
-
-Please share your availability and venue preferences by [deadline] so we can finalize the arrangements. Looking forward to catching up over a great meal!
-
-Best,
-[Your Name]
-[Your Designation]
+# Example Usage
+url = get_octane_url("space_2", "ws_4")
+print(url)  # Output: https://octane.example.com/api/spaces/1002/workspaces/3002/
