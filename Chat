@@ -1,12 +1,39 @@
-jfrom config import OCTANE_CONFIG
+import requests
+from config import OCTANE_CONFIG
 
-def get_octane_url(space_key, workspace_key):
-    base_url = OCTANE_CONFIG["base_url"]
-    space_id = OCTANE_CONFIG["spaces"][space_key]["id"]
-    workspace_id = OCTANE_CONFIG["spaces"][space_key]["workspaces"][workspace_key]
-    
-    return base_url.format(space_id=space_id, workspace_id=workspace_id)
+def find_valid_space_workspace():
+    """Find the space_id and workspace_id by hitting the /stories endpoint"""
+    for space_id, workspaces in OCTANE_CONFIG["workspaces"].items():
+        for workspace_id in workspaces.keys():
+            # Construct the API URL
+            url = OCTANE_CONFIG["base_url"].format(space_id=space_id, workspace_id=workspace_id) + "stories"
+
+            try:
+                # Make the API request
+                response = requests.get(url, timeout=10)  # 10 seconds timeout
+                
+                # Check if the response contains an 'id'
+                if response.status_code == 200 and "id" in response.json():
+                    credentials_path = f"/dev/core/qzrelease/octane/S{space_id}-WS{workspace_id}"
+                    return {
+                        "space_id": space_id,
+                        "workspace_id": workspace_id,
+                        "url": url,
+                        "credentials_path": credentials_path,
+                        "application_module_id": OCTANE_CONFIG["workspaces"][space_id][workspace_id]["application_module_id"]
+                    }
+            except requests.exceptions.RequestException as e:
+                print(f"Error checking {url}: {e}")
+
+    return None  # If no valid space/workspace is found
 
 # Example Usage
-url = get_octane_url("space_2", "ws_4")
-print(url)  # Output: https://octane.example.com/api/spaces/1002/workspaces/3002/
+result = find_valid_space_workspace()
+
+if result:
+    print(f"Valid Space ID: {result['space_id']}, Workspace ID: {result['workspace_id']}")
+    print(f"URL: {result['url']}")
+    print(f"Credentials Path: {result['credentials_path']}")
+    print(f"Application Module ID: {result['application_module_id']}")
+else:
+    print("No valid space and workspace found.")
