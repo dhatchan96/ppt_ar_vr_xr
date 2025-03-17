@@ -1,39 +1,20 @@
-import requests
-from config import OCTANE_CONFIG
+Subject: Team Lunch Rescheduled to Wednesday – Confirm Your Availability
 
-def find_valid_space_workspace():
-    """Find the space_id and workspace_id by hitting the /stories endpoint"""
-    for space_id, workspaces in OCTANE_CONFIG["workspaces"].items():
-        for workspace_id in workspaces.keys():
-            # Construct the API URL
-            url = OCTANE_CONFIG["base_url"].format(space_id=space_id, workspace_id=workspace_id) + "stories"
+Dear [Team],
 
-            try:
-                # Make the API request
-                response = requests.get(url, timeout=10)  # 10 seconds timeout
-                
-                # Check if the response contains an 'id'
-                if response.status_code == 200 and "id" in response.json():
-                    credentials_path = f"/dev/core/qzrelease/octane/S{space_id}-WS{workspace_id}"
-                    return {
-                        "space_id": space_id,
-                        "workspace_id": workspace_id,
-                        "url": url,
-                        "credentials_path": credentials_path,
-                        "application_module_id": OCTANE_CONFIG["workspaces"][space_id][workspace_id]["application_module_id"]
-                    }
-            except requests.exceptions.RequestException as e:
-                print(f"Error checking {url}: {e}")
+Based on the responses, many of you are unavailable on Tuesday, so we are rescheduling the team lunch to Wednesday to ensure maximum participation.
 
-    return None  # If no valid space/workspace is found
+Updated Details:
 
-# Example Usage
-result = find_valid_space_workspace()
+New Date: Wednesday, [Updated Date]
 
-if result:
-    print(f"Valid Space ID: {result['space_id']}, Workspace ID: {result['workspace_id']}")
-    print(f"URL: {result['url']}")
-    print(f"Credentials Path: {result['credentials_path']}")
-    print(f"Application Module ID: {result['application_module_id']}")
-else:
-    print("No valid space and workspace found.")
+Time: [Updated Time]
+
+Venue: [Confirmed Venue or Options]
+
+
+We hope this works for everyone! Please let me know if you have any objections or if Wednesday doesn’t work for you. Looking forward to catching up with the whole team!
+
+Best,
+[Your Name]
+
