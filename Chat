@@ -1,20 +1,37 @@
-Subject: Team Lunch Rescheduled to Wednesday – Confirm Your Availability
+import unittest
+from unittest.mock import MagicMock, patch
 
-Dear [Team],
+class TestUploadQzR2Evidence(unittest.TestCase):
 
-Based on the responses, many of you are unavailable on Tuesday, so we are rescheduling the team lunch to Wednesday to ensure maximum participation.
+    @patch("qz.core.qzrelease.lib.generate_test_evidence.generate")
+    def test_uploadQzR2Evidence(self, mock_generate):
+        # Mock dependencies
+        mock_self = MagicMock()
+        mock_self.spkSpaceConfig.get.return_value = "mock_rootApplicationModuleID"
+        mock_generate.return_value = ["mock_result"]
 
-Updated Details:
+        # Sample inputs
+        build = MagicMock()
+        build.uniqueName = "test_build"
+        regressionJiras = ["JIRA-123", "JIRA-456"]
+        featureJiras = ["JIRA-789"]
 
-New Date: Wednesday, [Updated Date]
+        # Expected output
+        expected_result = mock_self.upload.return_value
 
-Time: [Updated Time]
+        # Call the method
+        result = uploadQzR2Evidence(mock_self, build, regressionJiras, featureJiras)
 
-Venue: [Confirmed Venue or Options]
+        # Assertions
+        mock_generate.assert_called_once_with(build, regressionJiras, True, featureJiras)
+        mock_self.upload.assert_called_once_with(
+            "mock_rootApplicationModuleID",
+            mock_self._calculateEvidencePath(build),
+            "test_build",
+            ["mock_result"],
+            {"JIRA-123", "JIRA-456", "JIRA-789"},
+        )
+        self.assertEqual(result, expected_result)
 
-
-We hope this works for everyone! Please let me know if you have any objections or if Wednesday doesn’t work for you. Looking forward to catching up with the whole team!
-
-Best,
-[Your Name]
-
+if __name__ == "__main__":
+    unittest.main()
