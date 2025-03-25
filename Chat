@@ -1,30 +1,5 @@
-def findValidSpaceWorkspace(self, jira):
-    """
-    Find the space_id and workspace_id by querying /stories endpoint via OctaneClient.
-    """
-    for space_id, workspaces in self.octaneConfig["workspaces"].items():
-        for workspace_id in workspaces:
-            # Temporarily switch endpoint config for this workspace
-            original_root = self.endpoint.root
-            self.endpoint.root = self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id)
-
-            query = f"jira_key_udf IN '{jira}'"
-            try:
-                status, resp = self.endpoint.get(f"stories?fields=id,jira_key_udf,name&query=\"{query}\"")
-
-                if status == "Success" and resp.get("data"):
-                    credentials_path = f"/dev/core/qzrelease/octane/S/{space_id}-WS/{workspace_id}"
-                    return {
-                        "space_id": space_id,
-                        "workspace_id": workspace_id,
-                        "rootUrl": self.endpoint.root,
-                        "credentialsPath": credentials_path,
-                        "rootApplicationModuleID": self.octaneConfig["workspaces"][space_id][workspace_id]["rootApplicationModuleID"]
-                    }
-            except Exception as e:
-                logger.error(f"Error checking workspace {space_id}-{workspace_id}: {e}")
-            finally:
-                # Restore original root to avoid side effects
-                self.endpoint.root = original_root
-
-    return None
+backlog_data = backlog_data if backlog_data else []
+backlog_data.append({
+    "type": "story",
+    "id": octaneID
+})
