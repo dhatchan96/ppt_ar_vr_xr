@@ -1,37 +1,29 @@
-import unittest
-from unittest.mock import MagicMock, patch
-
-class TestUploadQzR2Evidence(unittest.TestCase):
-
-    @patch("qz.core.qzrelease.lib.generate_test_evidence.generate")
-    def test_uploadQzR2Evidence(self, mock_generate):
-        # Mock dependencies
-        mock_self = MagicMock()
-        mock_self.spkSpaceConfig.get.return_value = "mock_rootApplicationModuleID"
-        mock_generate.return_value = ["mock_result"]
-
-        # Sample inputs
-        build = MagicMock()
-        build.uniqueName = "test_build"
-        regressionJiras = ["JIRA-123", "JIRA-456"]
-        featureJiras = ["JIRA-789"]
-
-        # Expected output
-        expected_result = mock_self.upload.return_value
-
-        # Call the method
-        result = uploadQzR2Evidence(mock_self, build, regressionJiras, featureJiras)
-
-        # Assertions
-        mock_generate.assert_called_once_with(build, regressionJiras, True, featureJiras)
-        mock_self.upload.assert_called_once_with(
-            "mock_rootApplicationModuleID",
-            mock_self._calculateEvidencePath(build),
-            "test_build",
-            ["mock_result"],
-            {"JIRA-123", "JIRA-456", "JIRA-789"},
-        )
-        self.assertEqual(result, expected_result)
-
-if __name__ == "__main__":
-    unittest.main()
+ def findValidSpaceWorkspace(self, jira):
+    """
+    Find the space_id and workspace_id by hitting the /stories endpoint.
+    """
+    for space_id, workspaces in self.octaneConfig["workspaces"].items():
+        for workspace_id in workspaces.keys():
+            url = self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id) + \
+                  "/stories?fields=id,jira_key_udf,name&query=\"jira_key_udf IN '%s'\"" % jira
+            try:
+                response = requests.get(
+                    url,
+                    cookies=self.endpoint._getCookie(),
+                    verify=False,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                respData = response.json()
+                if response.status_code == 200 and respData.get("data"):
+                    credentials_path = f"/dev/core/qzrelease/octane/S/{space_id}-WS/{workspace_id}"
+                    return {
+                        "space_id": space_id,
+                        "workspace_id": workspace_id,
+                        "rootUrl": self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id),
+                        "credentialsPath": credentials_path,
+                        "rootApplicationModuleID": self.octaneConfig["workspaces"][space_id][workspace_id]["rootApplicationModuleID"]
+                    }
+            except requests.exceptions.RequestException as e:
+                print(f"Error checking {url}: {e}")
+    return None
