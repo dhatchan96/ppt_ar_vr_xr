@@ -1,38 +1,155 @@
-def findValidSpaceWorkspace(self, jira):
-    """
-    Finds a valid space_id and workspace_id for a given Jira by calling OctaneClient.queryStoriesForJira
-    """
-    for space_id, workspaces in self.config["workspaces"].items():
-        for workspace_id in workspaces:
-            data = self.octaneClient.queryStoriesForJira(space_id, workspace_id, jira)
-            if data:
-                credentials_path = f"/dev/core/qzrelease/octane/S/{space_id}-WS/{workspace_id}"
-                return {
-                    "space_id": space_id,
-                    "workspace_id": workspace_id,
-                    "rootUrl": self.config["rootUrl"].format(space_id=space_id, workspace_id=workspace_id),
-                    "credentialsPath": credentials_path,
-                    "rootApplicationModuleID": self.config["workspaces"][space_id][workspace_id]["rootApplicationModuleID"]
+import unittest
+from unittest.mock import patch, MagicMock
+from client import OctaneClient, OctaneEndPoint
+from cachetools import TTLCache
+
+
+class TestOctaneEndPoint(unittest.TestCase):
+
+    def setUp(self):
+        self.config = {"signInURL": "https://fake-auth.com", "system": "dev"}
+        self.spkConfig = {"credentialsPath": "/fake/creds", "rootUrl": "https://fake-root.com"}
+        self.endpoint = OctaneEndPoint(self.config, self.spkConfig)
+
+    @patch("client.requests.post")
+    @patch("client.SandboxPasswordCrypted.lookupThreadSafe")
+    def test_getCookie_success(self, mock_lookup, mock_post):
+        mock_lookup.return_value.user = "abc"
+        mock_lookup.return_value.password = "xyz"
+        mock_resp = MagicMock()
+        mock_resp.cookies.get_dict.return_value = {"auth": "cookie"}
+        mock_post.return_value = mock_resp
+
+        cookie = self.endpoint._getCookie()
+        self.assertEqual(cookie["auth"], "cookie")
+
+    @patch("client.requests.post")
+    @patch("client.SandboxPasswordCrypted.lookupThreadSafe")
+    def test_getCookie_failure(self, mock_lookup, mock_post):
+        mock_lookup.return_value.user = "abc"
+        mock_lookup.return_value.password = "xyz"
+        mock_post.side_effect = Exception("fail")
+        with self.assertRaises(RuntimeError):
+            self.endpoint._getCookie()
+
+    @patch("client.OctaneEndPoint._getCookie")
+    @patch("client.requests.post")
+    def test_restCall_post_success(self, mock_post, mock_cookie):
+        mock_cookie.return_value = {"auth": "cookie"}
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.content = b"x\x9cK\xCA\xC9\xCF\x07\x00\x02\x82\x01E"  # valid bz2 encoded empty json
+        mock_post.return_value = mock_resp
+
+        status, data = self.endpoint._restCall("POST", "test", data={"key": "value"})
+        self.assertEqual(status, "Success")
+
+    def test_username_and_password(self):
+        with patch("client.SandboxPasswordCrypted.lookupThreadSafe") as mock_lookup:
+            mock_lookup.return_value.user = "abc"
+            mock_lookup.return_value.password = "xyz"
+            self.assertEqual(self.endpoint.username, "abc")
+            self.assertEqual(self.endpoint.password, "xyz")
+
+
+class TestOctaneClient(unittest.TestCase):
+
+    def setUp(self):
+        self.config = {
+            "signInURL": "https://fake-auth.com",
+            "system": "dev",
+            "rootUrl": "https://fake.com/{space_id}/{workspace_id}",
+            "workspaces": {
+                "S1": {
+                    "WS1": {"rootApplicationModuleID": "APP1"}
                 }
+            },
+            "uploadSliceSize": 2,
+            "autoRunsSliceSize": 2,
+            "autoRunsPaginationLimit": 100,
+            "autoRunsPaginationOffset": 0
+        }
+        self.spkConfig = {
+            "credentialsPath": "/fake/path",
+            "rootUrl": "https://fake.com/{space_id}/{workspace_id}"
+        }
+        self.client = OctaneClient(self.config, self.spkConfig)
 
-    return None
+    @patch("client.OctaneEndPoint.get")
+    def test_queryStoriesForJira_success(self, mock_get):
+        mock_get.return_value = ("Success", {"data": [{"id": 1}]})
+        result = self.client.queryStoriesForJira("S1", "WS1", "JIRA-1")
+        self.assertTrue(result)
+
+    @patch("client.OctaneEndPoint.get")
+    def test_queryStoriesForJira_failure(self, mock_get):
+        mock_get.return_value = ("Failed", {})
+        result = self.client.queryStoriesForJira("S1", "WS1", "JIRA-404")
+        self.assertIsNone(result)
+
+    @patch("client.OctaneEndPoint.get")
+    def test_getSuiteRun(self, mock_get):
+        mock_get.return_value = ("Success", {"data": ["suite1"]})
+        result = self.client.getSuiteRun("suite1", 101)
+        self.assertEqual(result, ["suite1"])
+
+    @patch("client.OctaneEndPoint.get")
+    def test_getOctaneIds(self, mock_get):
+        mock_get.return_value = ("Success", {"data": [{"id": "O1"}]})
+        result = self.client.getOctaneIds(["JIRA-1"])
+        self.assertEqual(result, [{"id": "O1"}])
+
+    @patch("client.OctaneEndPoint.get")
+    def test_getApplicationModule(self, mock_get):
+        mock_get.return_value = ("Success", {"data": [{"id": "A1"}]})
+        result = self.client.getApplicationModule("mod1")
+        self.assertEqual(result[1]["data"][0]["id"], "A1")
+
+    @patch("client.OctaneEndPoint.post")
+    def test_createApplicationModule(self, mock_post):
+        mock_post.return_value = ("Success", {"data": [{"id": "modX"}]})
+        result = self.client.createApplicationModule("modX", "parent1")
+        self.assertEqual(result[1]["data"][0]["id"], "modX")
+
+    @patch("client.OctaneEndPoint.post")
+    def test_createTestSuite(self, mock_post):
+        mock_post.return_value = ("Success", {"data": [{"id": "TS1"}]})
+        result = self.client.createTestSuite("TS1", "AM1")
+        self.assertEqual(result[1]["data"][0]["id"], "TS1")
+
+    @patch("client.OctaneEndPoint.get")
+    def test_getTestSuite(self, mock_get):
+        mock_get.return_value = ("Success", {"data": [{"id": "TS1"}]})
+        result = self.client.getTestSuite("TS1", "AM1")
+        self.assertEqual(result[1]["data"][0]["id"], "TS1")
+
+    @patch("client.OctaneEndPoint.post")
+    def test_upload(self, mock_post):
+        mock_post.return_value = ("Success", {"msg": "ok"})
+        sample_results = [
+            ("test.name", "TestClass", "Passed", "2023-01-01T10:00:00", 120),
+            ("test.name2", "TestClass", "Failed", "2023-01-01T10:01:00", 80)
+        ]
+        self.client.upload(sample_results, "runID", "moduleID", "suiteID")
+
+    @patch("client.OctaneEndPoint.get")
+    def test_getAutoRuns(self, mock_get):
+        mock_get.side_effect = [
+            ("Success", {"data": [{"id": 1}]}),
+            ("Success", {"data": []})  # pagination stop
+        ]
+        runs = self.client.getAutoRuns("suite", "SRID")
+        self.assertEqual(len(runs), 1)
+
+    @patch("client.OctaneEndPoint.put")
+    def test_updateAutoRuns(self, mock_put):
+        self.client.getAutoRuns = MagicMock(return_value=[
+            {"id": 1, "covered_content": {"data": []}},
+            {"id": 2}
+        ])
+        mock_put.return_value = ("Success", {"data": []})
+        self.client.updateAutoRuns("OCT1", "suite", "SRID")
 
 
-def queryStoriesForJira(self, space_id, workspace_id, jira):
-    """
-    Makes a call to /stories endpoint using given space_id and workspace_id for the given JIRA.
-    """
-    original_root = self.endpoint.root
-    self.endpoint.root = self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id)
-
-    query = f"jira_key_udf IN '{jira}'"
-    try:
-        status, resp = self.endpoint.get(f"stories?fields=id,jira_key_udf,name&query=\"{query}\"")
-        if status == "Success" and resp.get("data"):
-            return resp["data"]
-    except Exception as e:
-        logger.error(f"Error in queryStoriesForJira for {space_id}-{workspace_id}: {e}")
-    finally:
-        self.endpoint.root = original_root
-
-    return None
+if __name__ == "__main__":
+    unittest.main()
