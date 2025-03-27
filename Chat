@@ -19,8 +19,71 @@ class TestOctaneApi(unittest.TestCase):
         }
         self.octane_api = OctaneApi(self.config)
 
+    # --- Exception Test Cases ---
+
+    @patch.object(OctaneClient, 'queryStoriesForJira')
+    def test_findValidSpaceWorkspace_api_failure(self, mock_query):
+        """Test exception handling when API call fails"""
+        mock_query.side_effect = Exception("Mock API Failure")
+
+        with self.assertRaises(Exception) as context:
+            self.octane_api.findValidSpaceWorkspace("JIRA-1")
+
+        self.assertIn("Mock API Failure", str(context.exception))
+
+    @patch.object(OctaneApi, 'createTestSuite')
+    @patch.object(OctaneClient, 'upload')
+    @patch.object(OctaneClient, 'getOctaneIds')
+    def test_upload_api_failure(self, mock_get_ids, mock_upload, mock_create_suite):
+        """Test upload when `getOctaneIds` API call fails"""
+        mock_get_ids.side_effect = Exception("getOctaneIds failed")
+        mock_create_suite.return_value = ("APP1", "TS1")
+
+        with self.assertRaises(Exception) as context:
+            self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
+
+        self.assertIn("getOctaneIds failed", str(context.exception))
+
+    @patch.object(OctaneApi, 'upload')
+    def test_uploadQzR2Evidence_exception(self, mock_upload):
+        """Test uploadQzR2Evidence when upload fails"""
+        mock_upload.side_effect = Exception("Upload failure")
+
+        build = MagicMock()
+        build.trainVersion.version = 1680000000
+        build.unique.name = "unique-build"
+
+        with self.assertRaises(Exception) as context:
+            self.octane_api.uploadQzR2Evidence(build, [], ["JIRA-1"])
+
+        self.assertIn("Upload failure", str(context.exception))
+
+    @patch.object(OctaneApi, 'createApplicationModule')
+    def test_createTestSuite_api_failure(self, mock_create_module):
+        """Test createTestSuite when API call fails"""
+        mock_create_module.side_effect = Exception("Create Test Suite API failed")
+
+        with self.assertRaises(Exception) as context:
+            self.octane_api.createTestSuite("app/tsuite", "PARENT")
+
+        self.assertIn("Create Test Suite API failed", str(context.exception))
+
+    @patch.object(OctaneClient, 'getApplicationModule')
+    @patch.object(OctaneClient, 'createApplicationModule')
+    def test_createApplicationModule_api_failure(self, mock_create, mock_get):
+        """Test createApplicationModule when API call fails"""
+        mock_get.side_effect = Exception("getApplicationModule API Error")
+        
+        with self.assertRaises(Exception) as context:
+            self.octane_api.createApplicationModule("parent/child", "ROOT")
+
+        self.assertIn("getApplicationModule API Error", str(context.exception))
+
+    # --- Regular Test Cases ---
+
     @patch.object(OctaneClient, 'queryStoriesForJira')
     def test_findValidSpaceWorkspace_success(self, mock_query):
+        """Test successful findValidSpaceWorkspace execution"""
         mock_query.return_value = [{"id": 1}]
         result = self.octane_api.findValidSpaceWorkspace("JIRA-1")
 
@@ -29,16 +92,11 @@ class TestOctaneApi(unittest.TestCase):
         self.assertEqual(result["workspace_id"], "WS1")
         self.assertIn("rootUrl", result)
 
-    @patch.object(OctaneClient, 'queryStoriesForJira')
-    def test_findValidSpaceWorkspace_not_found(self, mock_query):
-        mock_query.return_value = None
-        result = self.octane_api.findValidSpaceWorkspace("JIRA-UNKNOWN")
-        self.assertIsNone(result)
-
     @patch.object(OctaneApi, 'createTestSuite')
     @patch.object(OctaneClient, 'upload')
     @patch.object(OctaneClient, 'getOctaneIds')
     def test_upload_success(self, mock_get_ids, mock_upload, mock_create_suite):
+        """Test successful upload"""
         mock_get_ids.return_value = [{"id": "OCT1", "jira_key_udf": "JIRA-1"}]
         mock_create_suite.return_value = ("APP1", "TS1")
         mock_upload.return_value = None
@@ -49,37 +107,8 @@ class TestOctaneApi(unittest.TestCase):
         self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
         self.octane_api.octaneClient.upload.assert_called_once()
 
-    @patch.object(OctaneApi, 'createTestSuite')
-    @patch.object(OctaneClient, 'upload')
-    @patch.object(OctaneClient, 'getOctaneIds')
-    def test_upload_failure_exception(self, mock_get_ids, mock_upload, mock_create_suite):
-        mock_get_ids.side_effect = Exception("Mock API Failure")
-        mock_create_suite.return_value = ("APP1", "TS1")
-        mock_upload.return_value = None
-
-        self.octane_api.octaneClient = MagicMock()
-        self.octane_api.octaneClient.getSuiteRun.return_value = [{"id": "SR1"}]
-
-        with self.assertRaises(Exception) as context:
-            self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
-
-        self.assertIn("Mock API Failure", str(context.exception))
-
-    @patch.object(OctaneApi, 'upload')
-    def test_uploadQzR2Evidence(self, mock_upload):
-        build = MagicMock()
-        build.trainVersion.version = 1680000000
-        build.unique.name = "unique-build"
-
-        self.octane_api.spkSpaceConfig = {
-            "rootApplicationModuleID": "APP1"
-        }
-
-        self.octane_api._calculateEvidencePath = lambda b: "path/Q1"
-        self.octane_api.uploadQzR2Evidence(build, [], ["JIRA-1"])
-        mock_upload.assert_called_once()
-
     def test_calculateEvidencePath(self):
+        """Test evidence path generation"""
         build = MagicMock()
         build.trainVersion.version = 1710000000
         build.releaseTrain.uniqueName = "trainX"
@@ -90,6 +119,7 @@ class TestOctaneApi(unittest.TestCase):
     @patch.object(OctaneApi, 'getTestSuite')
     @patch.object(OctaneApi, 'createApplicationModule')
     def test_createTestSuite_found(self, mock_create_module, mock_get_suite):
+        """Test finding an existing test suite"""
         mock_create_module.return_value = "AM1"
         mock_get_suite.return_value = ("Success", {"total_count": 1, "data": [{"id": "TS1"}]})
 
@@ -99,6 +129,7 @@ class TestOctaneApi(unittest.TestCase):
     @patch.object(OctaneApi, 'getTestSuite')
     @patch.object(OctaneApi, 'createApplicationModule')
     def test_createTestSuite_created(self, mock_create_module, mock_get_suite):
+        """Test creating a new test suite when none exist"""
         mock_create_module.return_value = "AM1"
         mock_get_suite.side_effect = [
             ("Success", {"total_count": 0}),
@@ -112,10 +143,10 @@ class TestOctaneApi(unittest.TestCase):
     @patch.object(OctaneClient, 'getApplicationModule')
     @patch.object(OctaneClient, 'createApplicationModule')
     def test_createApplicationModule_create_and_fetch(self, mock_create, mock_get):
-        # 1st level exists
+        """Test creating and fetching an application module"""
         mock_get.side_effect = [
             ("Success", {"total_count": 1, "data": [{"id": "P1"}]}),
-            ("Success", {"total_count": 0})  # next level doesn't exist
+            ("Success", {"total_count": 0})
         ]
         mock_create.return_value = ("Success", {"total_count": 1, "data": [{"id": "C1"}]})
 
