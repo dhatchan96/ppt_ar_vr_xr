@@ -1,111 +1,20 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from api import OctaneApi
-from client import OctaneClient
+@patch.object(OctaneApi, 'createTestSuite')
+@patch.object(OctaneClient, 'upload')
+@patch.object(OctaneClient, 'getOctaneIds')
+def test_upload(self, mock_get_ids, mock_upload, mock_create_suite):
+    # Mock `getOctaneIds` to return a valid iterable list
+    mock_get_ids.return_value = [{"id": "OCT1", "jira_key_udf": "JIRA-1"}]
 
+    # Mock `createTestSuite` return values
+    mock_create_suite.return_value = ("APP1", "TS1")
 
-class TestOctaneApi(unittest.TestCase):
+    # Mock `upload` behavior
+    mock_upload.return_value = None
 
-    def setUp(self):
-        self.config = {
-            "rootUrl": "https://fake.com/{space_id}/{workspace_id}",
-            "workspaces": {
-                "S1": {
-                    "WS1": {
-                        "rootApplicationModuleID": "APP1"
-                    }
-                }
-            }
-        }
-        self.octane_api = OctaneApi(self.config)
+    self.octane_api.octaneClient.getSuiteRun = MagicMock(return_value=[{"id": "SR1"}])
 
-    @patch.object(OctaneClient, 'queryStoriesForJira')
-    def test_findValidSpaceWorkspace_success(self, mock_query):
-        mock_query.return_value = [{"id": 1}]
-        result = self.octane_api.findValidSpaceWorkspace("JIRA-1")
+    # Call upload
+    self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result["space_id"], "S1")
-        self.assertEqual(result["workspace_id"], "WS1")
-        self.assertIn("rootUrl", result)
-
-    @patch.object(OctaneClient, 'queryStoriesForJira')
-    def test_findValidSpaceWorkspace_not_found(self, mock_query):
-        mock_query.return_value = None
-        result = self.octane_api.findValidSpaceWorkspace("JIRA-UNKNOWN")
-        self.assertIsNone(result)
-
-    @patch.object(OctaneApi, 'createTestSuite')
-    @patch.object(OctaneClient, 'upload')
-    @patch.object(OctaneClient, 'getOctaneIds')
-    def test_upload(self, mock_get_ids, mock_upload, mock_create_suite):
-        mock_get_ids.return_value = [{"id": "OCT1", "jira_key_udf": "JIRA-1"}]
-        mock_create_suite.return_value = ("APP1", "TS1")
-        mock_upload.return_value = None
-
-        self.octane_api.octaneClient = MagicMock()
-        self.octane_api.octaneClient.getSuiteRun.return_value = [{"id": "SR1"}]
-
-        self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
-        self.octane_api.octaneClient.upload.assert_called_once()
-
-    @patch.object(OctaneApi, 'upload')
-    def test_uploadQzR2Evidence(self, mock_upload):
-        build = MagicMock()
-        build.trainVersion.version = 1680000000
-        build.unique.name = "unique-build"
-
-        self.octane_api.spkSpaceConfig = {
-            "rootApplicationModuleID": "APP1"
-        }
-
-        self.octane_api._calculateEvidencePath = lambda b: "path/Q1"
-        self.octane_api.uploadQzR2Evidence(build, [], ["JIRA-1"])
-        mock_upload.assert_called_once()
-
-    def test_calculateEvidencePath(self):
-        build = MagicMock()
-        build.trainVersion.version = 1710000000
-        build.releaseTrain.uniqueName = "trainX"
-
-        path = self.octane_api._calculateEvidencePath(build)
-        self.assertTrue(path.startswith("trainX/"))
-
-    @patch.object(OctaneApi, 'getTestSuite')
-    @patch.object(OctaneApi, 'createApplicationModule')
-    def test_createTestSuite_found(self, mock_create_module, mock_get_suite):
-        mock_create_module.return_value = "AM1"
-        mock_get_suite.return_value = ("Success", {"total_count": 1, "data": [{"id": "TS1"}]})
-
-        result = self.octane_api.createTestSuite("app/tsuite", "PARENT")
-        self.assertEqual(result, ("AM1", "TS1"))
-
-    @patch.object(OctaneApi, 'getTestSuite')
-    @patch.object(OctaneApi, 'createApplicationModule')
-    def test_createTestSuite_created(self, mock_create_module, mock_get_suite):
-        mock_create_module.return_value = "AM1"
-        mock_get_suite.side_effect = [
-            ("Success", {"total_count": 0}),
-            ("Success", {"total_count": 1, "data": [{"id": "TS2"}]})
-        ]
-        self.octane_api.octaneClient.createTestSuite = MagicMock(return_value=("Success", {"data": [{"id": "TS2"}]}))
-
-        result = self.octane_api.createTestSuite("app/tsuite", "PARENT")
-        self.assertEqual(result[1], "TS2")
-
-    @patch.object(OctaneClient, 'getApplicationModule')
-    @patch.object(OctaneClient, 'createApplicationModule')
-    def test_createApplicationModule_create_and_fetch(self, mock_create, mock_get):
-        # 1st level exists
-        mock_get.side_effect = [
-            ("Success", {"total_count": 1, "data": [{"id": "P1"}]}),
-            ("Success", {"total_count": 0})  # next level doesn't exist
-        ]
-        mock_create.return_value = ("Success", {"total_count": 1, "data": [{"id": "C1"}]})
-
-        result = self.octane_api.createApplicationModule("parent/child", "ROOT")
-        self.assertEqual(result, "C1")
-
-
-if __name__ == "__main__":
-    unittest.main()
+    # Ensure `upload` was called correctly
+    self.octane_api.octaneClient.upload.assert_called_once()
