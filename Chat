@@ -1,158 +1,63 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from api import OctaneApi
-from client import OctaneClient
+Here’s a professional, crisp, and polite email draft you can send to the Octane team regarding your queries:
 
 
-class TestOctaneApi(unittest.TestCase):
+---
 
-    def setUp(self):
-        self.config = {
-            "rootUrl": "https://fake.com/{space_id}/{workspace_id}",
-            "workspaces": {
-                "S1": {
-                    "WS1": {
-                        "rootApplicationModuleID": "APP1"
-                    }
-                }
-            }
-        }
-        self.octane_api = OctaneApi(self.config)
+Subject: Queries on Octane API Functionality and Background Task Tracking
 
-    # --- Exception Test Cases ---
+Dear Octane Support Team,
 
-    @patch.object(OctaneClient, 'queryStoriesForJira')
-    def test_findValidSpaceWorkspace_api_failure(self, mock_query):
-        """Test exception handling when API call fails"""
-        mock_query.side_effect = Exception("Mock API Failure")
+I hope you are doing well.
 
-        with self.assertRaises(Exception) as context:
-            self.octane_api.findValidSpaceWorkspace("JIRA-1")
+I have a few queries related to Octane API behavior and background processing that I would like your assistance with:
 
-        self.assertIn("Mock API Failure", str(context.exception))
+1. Workspace Lookup by JIRA SPK
 
-    @patch.object(OctaneApi, 'createTestSuite')
-    @patch.object(OctaneClient, 'upload')
-    @patch.object(OctaneClient, 'getOctaneIds')
-    def test_upload_api_failure(self, mock_get_ids, mock_upload, mock_create_suite):
-        """Test upload when `getOctaneIds` API call fails"""
-        mock_get_ids.side_effect = Exception("getOctaneIds failed")
-        mock_create_suite.return_value = ("APP1", "TS1")
+Is there any Octane API available to fetch the workspace information if we pass a JIRA SPK (Story Primary Key)?
 
-        with self.assertRaises(Exception) as context:
-            self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
-
-        self.assertIn("getOctaneIds failed", str(context.exception))
-
-    @patch.object(OctaneApi, 'upload')
-    def test_uploadQzR2Evidence_exception(self, mock_upload):
-        """Test uploadQzR2Evidence when upload fails"""
-        mock_upload.side_effect = Exception("Upload failure")
-
-        build = MagicMock()
-        build.trainVersion.version = 1680000000
-        build.unique.name = "unique-build"
-
-        with self.assertRaises(Exception) as context:
-            self.octane_api.uploadQzR2Evidence(build, [], ["JIRA-1"])
-
-        self.assertIn("Upload failure", str(context.exception))
-
-    @patch.object(OctaneApi, 'createApplicationModule')
-    def test_createTestSuite_api_failure(self, mock_create_module):
-        """Test createTestSuite when API call fails"""
-        mock_create_module.side_effect = Exception("Create Test Suite API failed")
-
-        with self.assertRaises(Exception) as context:
-            self.octane_api.createTestSuite("app/tsuite", "PARENT")
-
-        self.assertIn("Create Test Suite API failed", str(context.exception))
-
-    @patch.object(OctaneClient, 'getApplicationModule')
-    @patch.object(OctaneClient, 'createApplicationModule')
-    def test_createApplicationModule_api_failure(self, mock_create, mock_get):
-        """Test createApplicationModule when API call fails"""
-        mock_get.side_effect = Exception("getApplicationModule API Error")
-        
-        with self.assertRaises(Exception) as context:
-            self.octane_api.createApplicationModule("parent/child", "ROOT")
-
-        self.assertIn("getApplicationModule API Error", str(context.exception))
-
-    # --- Regular Test Cases ---
-
-    @patch.object(OctaneClient, 'queryStoriesForJira')
-    def test_findValidSpaceWorkspace_success(self, mock_query):
-        """Test successful findValidSpaceWorkspace execution"""
-        mock_query.return_value = [{"id": 1}]
-        result = self.octane_api.findValidSpaceWorkspace("JIRA-1")
-
-        self.assertIsNotNone(result)
-        self.assertEqual(result["space_id"], "S1")
-        self.assertEqual(result["workspace_id"], "WS1")
-        self.assertIn("rootUrl", result)
-
-    @patch.object(OctaneApi, 'createTestSuite')
-    @patch.object(OctaneClient, 'upload')
-    @patch.object(OctaneClient, 'getOctaneIds')
-    def test_upload_success(self, mock_get_ids, mock_upload, mock_create_suite):
-        """Test successful upload"""
-        mock_get_ids.return_value = [{"id": "OCT1", "jira_key_udf": "JIRA-1"}]
-        mock_create_suite.return_value = ("APP1", "TS1")
-        mock_upload.return_value = None
-
-        self.octane_api.octaneClient = MagicMock()
-        self.octane_api.octaneClient.getSuiteRun.return_value = [{"id": "SR1"}]
-
-        self.octane_api.upload("APP1", "suitePath", "suiteRun", [], ["JIRA-1"])
-        self.octane_api.octaneClient.upload.assert_called_once()
-
-    def test_calculateEvidencePath(self):
-        """Test evidence path generation"""
-        build = MagicMock()
-        build.trainVersion.version = 1710000000
-        build.releaseTrain.uniqueName = "trainX"
-
-        path = self.octane_api._calculateEvidencePath(build)
-        self.assertTrue(path.startswith("trainX/"))
-
-    @patch.object(OctaneApi, 'getTestSuite')
-    @patch.object(OctaneApi, 'createApplicationModule')
-    def test_createTestSuite_found(self, mock_create_module, mock_get_suite):
-        """Test finding an existing test suite"""
-        mock_create_module.return_value = "AM1"
-        mock_get_suite.return_value = ("Success", {"total_count": 1, "data": [{"id": "TS1"}]})
-
-        result = self.octane_api.createTestSuite("app/tsuite", "PARENT")
-        self.assertEqual(result, ("AM1", "TS1"))
-
-    @patch.object(OctaneApi, 'getTestSuite')
-    @patch.object(OctaneApi, 'createApplicationModule')
-    def test_createTestSuite_created(self, mock_create_module, mock_get_suite):
-        """Test creating a new test suite when none exist"""
-        mock_create_module.return_value = "AM1"
-        mock_get_suite.side_effect = [
-            ("Success", {"total_count": 0}),
-            ("Success", {"total_count": 1, "data": [{"id": "TS2"}]})
-        ]
-        self.octane_api.octaneClient.createTestSuite = MagicMock(return_value=("Success", {"data": [{"id": "TS2"}]}))
-
-        result = self.octane_api.createTestSuite("app/tsuite", "PARENT")
-        self.assertEqual(result[1], "TS2")
-
-    @patch.object(OctaneClient, 'getApplicationModule')
-    @patch.object(OctaneClient, 'createApplicationModule')
-    def test_createApplicationModule_create_and_fetch(self, mock_create, mock_get):
-        """Test creating and fetching an application module"""
-        mock_get.side_effect = [
-            ("Success", {"total_count": 1, "data": [{"id": "P1"}]}),
-            ("Success", {"total_count": 0})
-        ]
-        mock_create.return_value = ("Success", {"total_count": 1, "data": [{"id": "C1"}]})
-
-        result = self.octane_api.createApplicationModule("parent/child", "ROOT")
-        self.assertEqual(result, "C1")
+Additionally, can a single SPK belong to more than one workspace within Octane?
 
 
-if __name__ == "__main__":
-    unittest.main()
+
+2. Tracking Test Result Upload Tasks
+
+After uploading test results to Octane, we receive a task ID as part of the response.
+
+However, when we attempt to query the task status using the provided Task API, we are receiving a “Task not found” error. Could you please guide us on the correct method to track the status of the test result upload task?
+
+
+
+3. Mismatch in Uploaded Task Counts
+
+We have observed that the total number of tasks uploaded differs from what we retrieve when querying Octane.
+
+Could you clarify if there are any known factors that may cause this discrepancy?
+
+
+
+4. Tracking Backlog Coverage Updates
+
+When we update backlog coverage (linking JIRA stories to test runs), the update appears to take some time to reflect in Octane and JIRA.
+
+Is there any background job or task associated with this linkage update that can be monitored?
+
+If so, could you please provide guidance on how to track its status?
+
+
+
+
+I would appreciate your inputs on these points to help us optimize our integration with Octane.
+
+Looking forward to your support.
+
+Best regards,
+[Your Name]
+[Your Team / Department]
+[Your Contact Information]
+
+
+---
+
+Would you like me to also prepare a shorter version (in case you prefer a very brief one)?
+Or I can also prepare this as a draft Word file if you need to attach it formally!
+
