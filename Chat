@@ -1,63 +1,87 @@
-Here’s a professional, crisp, and polite email draft you can send to the Octane team regarding your queries:
+def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
+    """
+    Upload test results to Octane.
+    """
+    sliceSize = self.octaneConfig.get("uploadSliceSize")
+    slice = 0
+    max_retries = 5
+    running_tasks = []  # To store running tasks temporarily
 
+    while True:
+        resultsSlice = results[slice*sliceSize: (slice+1)*sliceSize]
+        if resultsSlice:
+            # Prepare XML test results
+            testRuns = "\n".join(
+                TEST_RUN.format(
+                    testname=testname.split('.')[-1].rsplit('.', 3)[1] + '.' + testname.rsplit('.', 1)[-1],
+                    testclass=testclass,
+                    status=status,
+                    started=started,
+                    duration=int(duration),
+                    package=testname.split('.')[-1].rsplit('.', 3)[0],
+                    module=testname.split('.')[-1].rsplit('.', 3)[0]
+                ) for (testname, testclass, status, started, duration) in resultsSlice
+            )
 
----
+            data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
+                test_results=testRuns,
+                testSuiteID=testSuiteID,
+                externalRunID=externalRunID,
+                applicationModuleID=applicationModuleID
+            )
 
-Subject: Queries on Octane API Functionality and Background Task Tracking
+            # Upload results
+            response = self.endpoint.post("test-results", data=data, dataType="xml")
+            status, task_response = response
+            task_id = task_response.get("id")
 
-Dear Octane Support Team,
+            if status != "Success":
+                logger.error(f"Upload failed for results slice: {response}")
+                raise RuntimeError(f"Failed to upload test results slice: {response}")
 
-I hope you are doing well.
+            # Retry mechanism to check task status
+            retry_count = 0
+            while retry_count <= max_retries:
+                _, task_status_resp = self.endpoint.get(f"test-results/{task_id}")
+                task_status = task_status_resp.get("status")
 
-I have a few queries related to Octane API behavior and background processing that I would like your assistance with:
+                if task_status == "SUCCESS":
+                    logger.info(f"Upload task {task_id} completed successfully.")
+                    break
+                elif task_status in ["FAILED", "ERROR"]:
+                    logger.error(f"Upload task {task_id} failed: {task_status_resp.get('errorDetails')}")
+                    raise RuntimeError(f"Upload task {task_id} failed.")
+                elif task_status == "RUNNING":
+                    if retry_count == max_retries:
+                        logger.warning(f"Task {task_id} still RUNNING after {max_retries} retries. Storing for later tracking.")
+                        running_tasks.append(task_id)
+                        break
 
-1. Workspace Lookup by JIRA SPK
+                    else:
+                        logger.info(f"Task {task_id} still RUNNING. Retrying {retry_count + 1}/{max_retries}...")
+                        retry_count += 1
+                        time.sleep(5)
+                else:
+                    logger.warning(f"Unexpected task status {task_status} for task {task_id}. Moving on.")
+                    break
 
-Is there any Octane API available to fetch the workspace information if we pass a JIRA SPK (Story Primary Key)?
+            slice += 1
+        else:
+            break
 
-Additionally, can a single SPK belong to more than one workspace within Octane?
+    return running_tasks  # Important: Return the list of running task
 
+def track_pending_tasks(self, running_tasks):
+    """
+    Track all pending tasks and ensure they are completed successfully.
+    """
+    for task_id in running_tasks:
+        logger.info(f"Checking final status of pending task {task_id}")
+        _, task_status_resp = self.octaneClient.endpoint.get(f"test-results/{task_id}")
+        task_status = task_status_resp.get("status")
 
-
-2. Tracking Test Result Upload Tasks
-
-After uploading test results to Octane, we receive a task ID as part of the response.
-
-However, when we attempt to query the task status using the provided Task API, we are receiving a “Task not found” error. Could you please guide us on the correct method to track the status of the test result upload task?
-
-
-
-3. Mismatch in Uploaded Task Counts
-
-We have observed that the total number of tasks uploaded differs from what we retrieve when querying Octane.
-
-Could you clarify if there are any known factors that may cause this discrepancy?
-
-
-
-4. Tracking Backlog Coverage Updates
-
-When we update backlog coverage (linking JIRA stories to test runs), the update appears to take some time to reflect in Octane and JIRA.
-
-Is there any background job or task associated with this linkage update that can be monitored?
-
-If so, could you please provide guidance on how to track its status?
-
-
-
-
-I would appreciate your inputs on these points to help us optimize our integration with Octane.
-
-Looking forward to your support.
-
-Best regards,
-[Your Name]
-[Your Team / Department]
-[Your Contact Information]
-
-
----
-
-Would you like me to also prepare a shorter version (in case you prefer a very brief one)?
-Or I can also prepare this as a draft Word file if you need to attach it formally!
-
+        if task_status != "SUCCESS":
+            logger.error(f"Pending task {task_id} not completed successfully: {task_status}")
+            raise RuntimeError(f"Pending task {task_id} failed or incomplete, cannot proceed with backlog coverage update.")
+        else:
+            logger.info(f"Pending task {task_id} completed successfully.")
