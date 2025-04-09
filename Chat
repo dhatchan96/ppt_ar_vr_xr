@@ -1,109 +1,39 @@
-def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
-    """
-    Upload test results to Octane and return list of running task IDs.
-    """
-    sliceSize = self.octaneConfig.get("uploadSliceSize")
-    slice = 0
-    max_retries = 5
-    running_tasks = []
+Start
+  ↓
+Upload Test Results Slice
+  ↓
+Receive Task ID
+  ↓
+Check Task Status Immediately
+  ↓
+ ┌─────────────────────────────────────┐
+ │ Task Status = SUCCESS?               │
+ └─────────────────────────────────────┘
+          ↓ Yes                         ↓ No
+       Proceed                       Check Status Again
+                                      (Retry 5 times)
 
-    while True:
-        resultsSlice = results[slice*sliceSize: (slice+1)*sliceSize]
-        if resultsSlice:
-            # Prepare XML
-            testRuns = "\n".join(
-                TEST_RUN.format(
-                    testname=testname.split('.')[-1].rsplit('.', 3)[1] + '.' + testname.rsplit('.', 1)[-1],
-                    testclass=testclass,
-                    status=status,
-                    started=started,
-                    duration=int(duration),
-                    package=testname.split('.')[-1].rsplit('.', 3)[0],
-                    module=testname.split('.')[-1].rsplit('.', 3)[0]
-                ) for (testname, testclass, status, started, duration) in resultsSlice
-            )
+          ↓ After 5 Retries
+ ┌─────────────────────────────────────┐
+ │ Task Status = RUNNING?               │
+ └─────────────────────────────────────┘
+          ↓ Yes                         ↓ No (FAILED / ERROR)
+  Save Task ID for Later Tracking      Raise Error Immediately
 
-            data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
-                test_results=testRuns,
-                testSuiteID=testSuiteID,
-                externalRunID=externalRunID,
-                applicationModuleID=applicationModuleID
-            )
+          ↓
+Proceed with Next Upload Slice
+          ↓
+Once All Slices Uploaded
+          ↓
+Check All Saved Running Tasks
+          ↓
+ ┌─────────────────────────────────────┐
+ │ Task Completes in 10 Minutes?         │
+ └─────────────────────────────────────┘
+          ↓ Yes                         ↓ No
+       Proceed                      Raise Timeout Error
 
-            # Upload results
-            response = self.endpoint.post("test-results", data=data, dataType="xml")
-            status, task_response = response
-            task_id = task_response.get("id")
-
-            if status != "Success":
-                logger.error(f"Upload failed for results slice: {response}")
-                raise RuntimeError(f"Failed to upload test results slice: {response}")
-
-            # Retry task status check
-            retry_count = 0
-            while retry_count <= max_retries:
-                _, task_status_resp = self.endpoint.get(f"test-results/{task_id}")
-                task_status = task_status_resp.get("status")
-
-                if task_status == "SUCCESS":
-                    logger.info(f"Upload task {task_id} completed successfully.")
-                    break
-                elif task_status in ["FAILED", "ERROR"]:
-                    logger.error(f"Upload task {task_id} failed: {task_status_resp.get('errorDetails')}")
-                    raise RuntimeError(f"Upload task {task_id} failed.")
-                elif task_status == "RUNNING":
-                    if retry_count == max_retries:
-                        logger.warning(f"Task {task_id} still RUNNING after {max_retries} retries. Storing for later tracking.")
-                        running_tasks.append(task_id)
-                        break
-                    else:
-                        logger.info(f"Task {task_id} still RUNNING. Retrying {retry_count + 1}/{max_retries}...")
-                        retry_count += 1
-                        time.sleep(5)
-                else:
-                    logger.warning(f"Unexpected task status {task_status} for task {task_id}. Moving on.")
-                    break
-
-            slice += 1
-        else:
-            break
-
-    return running_tasks  # Return running task IDs
-
-
-
-import time
-
-def track_pending_tasks(self, running_tasks):
-    """
-    Track all pending tasks and ensure they complete successfully.
-    If task still running for more than 10 minutes, raise an error.
-    """
-    timeout_seconds = 600  # 10 minutes
-    poll_interval = 5      # every 5 seconds
-
-    for task_id in running_tasks:
-        logger.info(f"Checking final status of pending task {task_id}")
-        start_time = time.time()
-
-        while True:
-            _, task_status_resp = self.octaneClient.endpoint.get(f"test-results/{task_id}")
-            task_status = task_status_resp.get("status")
-
-            elapsed_time = int(time.time() - start_time)
-
-            if task_status == "SUCCESS":
-                logger.info(f"Pending task {task_id} completed successfully in {elapsed_time} seconds.")
-                break
-            elif task_status in ["FAILED", "ERROR"]:
-                logger.error(f"Pending task {task_id} failed after {elapsed_time} seconds: {task_status_resp.get('errorDetails')}")
-                raise RuntimeError(f"Pending task {task_id} failed, cannot proceed with backlog coverage update.")
-            elif elapsed_time > timeout_seconds:
-                logger.error(f"Pending task {task_id} still RUNNING after {elapsed_time} seconds. Timing out.")
-                raise RuntimeError(f"Pending task {task_id} did not complete within 10 minutes.")
-            else:
-                logger.info(f"Task {task_id} is still {task_status} after {elapsed_time} seconds. Waiting...")
-                time.sleep(poll_interval)
-
-
-
+          ↓
+Update Backlog Coverage (Link JIRA)
+          ↓
+Finish
