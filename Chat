@@ -1,16 +1,16 @@
 def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
     """
-    Upload test results to Octane.
+    Upload test results to Octane and return list of running task IDs.
     """
     sliceSize = self.octaneConfig.get("uploadSliceSize")
     slice = 0
     max_retries = 5
-    running_tasks = []  # To store running tasks temporarily
+    running_tasks = []
 
     while True:
         resultsSlice = results[slice*sliceSize: (slice+1)*sliceSize]
         if resultsSlice:
-            # Prepare XML test results
+            # Prepare XML
             testRuns = "\n".join(
                 TEST_RUN.format(
                     testname=testname.split('.')[-1].rsplit('.', 3)[1] + '.' + testname.rsplit('.', 1)[-1],
@@ -39,7 +39,7 @@ def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
                 logger.error(f"Upload failed for results slice: {response}")
                 raise RuntimeError(f"Failed to upload test results slice: {response}")
 
-            # Retry mechanism to check task status
+            # Retry task status check
             retry_count = 0
             while retry_count <= max_retries:
                 _, task_status_resp = self.endpoint.get(f"test-results/{task_id}")
@@ -56,7 +56,6 @@ def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
                         logger.warning(f"Task {task_id} still RUNNING after {max_retries} retries. Storing for later tracking.")
                         running_tasks.append(task_id)
                         break
-
                     else:
                         logger.info(f"Task {task_id} still RUNNING. Retrying {retry_count + 1}/{max_retries}...")
                         retry_count += 1
@@ -69,19 +68,42 @@ def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
         else:
             break
 
-    return running_tasks  # Important: Return the list of running task
+    return running_tasks  # Return running task IDs
+
+
+
+import time
 
 def track_pending_tasks(self, running_tasks):
     """
-    Track all pending tasks and ensure they are completed successfully.
+    Track all pending tasks and ensure they complete successfully.
+    If task still running for more than 10 minutes, raise an error.
     """
+    timeout_seconds = 600  # 10 minutes
+    poll_interval = 5      # every 5 seconds
+
     for task_id in running_tasks:
         logger.info(f"Checking final status of pending task {task_id}")
-        _, task_status_resp = self.octaneClient.endpoint.get(f"test-results/{task_id}")
-        task_status = task_status_resp.get("status")
+        start_time = time.time()
 
-        if task_status != "SUCCESS":
-            logger.error(f"Pending task {task_id} not completed successfully: {task_status}")
-            raise RuntimeError(f"Pending task {task_id} failed or incomplete, cannot proceed with backlog coverage update.")
-        else:
-            logger.info(f"Pending task {task_id} completed successfully.")
+        while True:
+            _, task_status_resp = self.octaneClient.endpoint.get(f"test-results/{task_id}")
+            task_status = task_status_resp.get("status")
+
+            elapsed_time = int(time.time() - start_time)
+
+            if task_status == "SUCCESS":
+                logger.info(f"Pending task {task_id} completed successfully in {elapsed_time} seconds.")
+                break
+            elif task_status in ["FAILED", "ERROR"]:
+                logger.error(f"Pending task {task_id} failed after {elapsed_time} seconds: {task_status_resp.get('errorDetails')}")
+                raise RuntimeError(f"Pending task {task_id} failed, cannot proceed with backlog coverage update.")
+            elif elapsed_time > timeout_seconds:
+                logger.error(f"Pending task {task_id} still RUNNING after {elapsed_time} seconds. Timing out.")
+                raise RuntimeError(f"Pending task {task_id} did not complete within 10 minutes.")
+            else:
+                logger.info(f"Task {task_id} is still {task_status} after {elapsed_time} seconds. Waiting...")
+                time.sleep(poll_interval)
+
+
+
