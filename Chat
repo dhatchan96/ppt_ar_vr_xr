@@ -1,17 +1,26 @@
 from graphviz import Digraph
 
 # Create a new directed graph
-dot = Digraph(comment="Organized Octane Upload and Task Tracking Flow (High-Res)", format='png')
+dot = Digraph(comment="Full QZRelease2 to Octane Upload Flow with XML Conversion", format='png')
 
-# Graph attributes
+# Graph settings
 dot.attr(rankdir='TB', size='10,15')  # Top to Bottom, bigger size
-dot.attr('node', shape='box', fontsize='14')  # Bigger fonts for clarity
+dot.attr('node', shape='box', fontsize='14')  # Default node style: box and bigger font
 
-# Nodes
-dot.node('Start', 'Start')
-dot.node('Prepare', 'Prepare Test Results')
-dot.node('Upload', 'Upload Test Results Slice')
+# Frontend (User Interaction)
+dot.node('Start', 'User enters Regression JIRA\n(Request Promotion Dialog or Test Evidence Page)')
+dot.node('ClickUpload', 'User clicks "Upload" Button')
+
+# Backend (Test Evidence Generation)
+dot.node('GenerateEvidence', 'Backend: Generate Test Results\n(Table Format)')
+
+# Conversion Step
+dot.node('ConvertXML', 'Convert Test Results\ninto Octane XML Format')
+
+# Backend (Octane Upload Start)
+dot.node('UploadSlice', 'Upload Test Results Slice')
 dot.node('TaskID', 'Receive Task ID')
+
 dot.node('CheckStatus', 'Check Immediate Task Status')
 
 # Decision nodes (diamond shape)
@@ -31,21 +40,25 @@ dot.node('SaveTask', 'Save Task ID for Later Tracking')
 dot.node('RaiseImmediateError', 'Raise Error (FAILED / ERROR)')
 
 dot.node('AllUploaded', 'All Slices Uploaded')
-dot.node('TrackPending', 'Track Pending Tasks')
 
+# Track pending tasks
+dot.node('TrackPending', 'Track Pending Tasks')
 dot.attr('node', shape='diamond', fontsize='14')
 dot.node('PendingSuccess', 'Pending Task SUCCESS?')
 
 dot.attr('node', shape='box', fontsize='14')
 dot.node('ProceedJira', 'Proceed to JIRA Linking')
 dot.node('RaisePendingError', 'Raise Error (Timeout / Failed)')
-dot.node('LinkJira', 'Link JIRA Stories')
+dot.node('LinkJira', 'Link JIRA Stories to Uploaded Runs')
+
 dot.node('Finish', 'Finish')
 
 # Connect the nodes (edges)
-dot.edge('Start', 'Prepare')
-dot.edge('Prepare', 'Upload')
-dot.edge('Upload', 'TaskID')
+dot.edge('Start', 'ClickUpload')
+dot.edge('ClickUpload', 'GenerateEvidence')
+dot.edge('GenerateEvidence', 'ConvertXML')
+dot.edge('ConvertXML', 'UploadSlice')
+dot.edge('UploadSlice', 'TaskID')
 dot.edge('TaskID', 'CheckStatus')
 dot.edge('CheckStatus', 'IsSuccess')
 
@@ -61,12 +74,13 @@ dot.edge('SaveTask', 'AllUploaded')
 
 dot.edge('AllUploaded', 'TrackPending')
 dot.edge('TrackPending', 'PendingSuccess')
+
 dot.edge('PendingSuccess', 'ProceedJira', label='Yes')
 dot.edge('PendingSuccess', 'RaisePendingError', label='No')
 
 dot.edge('ProceedJira', 'LinkJira')
 dot.edge('LinkJira', 'Finish')
 
-# Save the chart to a PNG
-output_path = '/mnt/data/octane_upload_flowchart_organized_highres'
+# Save the flowchart
+output_path = '/mnt/data/full_qzrelease2_octane_upload_flow_with_xml_conversion'
 dot.render(output_path, format='png', cleanup=True)
