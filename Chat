@@ -1,86 +1,10 @@
-from graphviz import Digraph
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Create a new directed graph
-dot = Digraph(comment="Full QZRelease2 to Octane Upload Flow with XML Conversion", format='png')
+response = requests.get(
+    "https://your-octane-server-url/api/...",
+    headers=headers,
+    verify="/path/to/your_fullchain.crt"
+)
 
-# Graph settings
-dot.attr(rankdir='TB', size='10,15')  # Top to Bottom, bigger size
-dot.attr('node', shape='box', fontsize='14')  # Default node style: box and bigger font
-
-# Frontend (User Interaction)
-dot.node('Start', 'User enters Regression JIRA\n(Request Promotion Dialog or Test Evidence Page)')
-dot.node('ClickUpload', 'User clicks "Upload" Button')
-
-# Backend (Test Evidence Generation)
-dot.node('GenerateEvidence', 'Backend: Generate Test Results\n(Table Format)')
-
-# Conversion Step
-dot.node('ConvertXML', 'Convert Test Results\ninto Octane XML Format')
-
-# Backend (Octane Upload Start)
-dot.node('UploadSlice', 'Upload Test Results Slice')
-dot.node('TaskID', 'Receive Task ID')
-
-dot.node('CheckStatus', 'Check Immediate Task Status')
-
-# Decision nodes (diamond shape)
-dot.attr('node', shape='diamond', fontsize='14')
-dot.node('IsSuccess', 'Task Status SUCCESS?')
-
-# Success and failure paths
-dot.attr('node', shape='box', fontsize='14')
-dot.node('NextSlice', 'Move to Next Slice')
-dot.node('Retry5', 'Retry 5 Times')
-
-dot.attr('node', shape='diamond', fontsize='14')
-dot.node('AfterRetry', 'Task still RUNNING after 5 Retries?')
-
-dot.attr('node', shape='box', fontsize='14')
-dot.node('SaveTask', 'Save Task ID for Later Tracking')
-dot.node('RaiseImmediateError', 'Raise Error (FAILED / ERROR)')
-
-dot.node('AllUploaded', 'All Slices Uploaded')
-
-# Track pending tasks
-dot.node('TrackPending', 'Track Pending Tasks')
-dot.attr('node', shape='diamond', fontsize='14')
-dot.node('PendingSuccess', 'Pending Task SUCCESS?')
-
-dot.attr('node', shape='box', fontsize='14')
-dot.node('ProceedJira', 'Proceed to JIRA Linking')
-dot.node('RaisePendingError', 'Raise Error (Timeout / Failed)')
-dot.node('LinkJira', 'Link JIRA Stories to Uploaded Runs')
-
-dot.node('Finish', 'Finish')
-
-# Connect the nodes (edges)
-dot.edge('Start', 'ClickUpload')
-dot.edge('ClickUpload', 'GenerateEvidence')
-dot.edge('GenerateEvidence', 'ConvertXML')
-dot.edge('ConvertXML', 'UploadSlice')
-dot.edge('UploadSlice', 'TaskID')
-dot.edge('TaskID', 'CheckStatus')
-dot.edge('CheckStatus', 'IsSuccess')
-
-dot.edge('IsSuccess', 'NextSlice', label='Yes')
-dot.edge('IsSuccess', 'Retry5', label='No')
-
-dot.edge('NextSlice', 'AllUploaded')
-dot.edge('Retry5', 'AfterRetry')
-dot.edge('AfterRetry', 'SaveTask', label='Yes')
-dot.edge('AfterRetry', 'RaiseImmediateError', label='No')
-
-dot.edge('SaveTask', 'AllUploaded')
-
-dot.edge('AllUploaded', 'TrackPending')
-dot.edge('TrackPending', 'PendingSuccess')
-
-dot.edge('PendingSuccess', 'ProceedJira', label='Yes')
-dot.edge('PendingSuccess', 'RaisePendingError', label='No')
-
-dot.edge('ProceedJira', 'LinkJira')
-dot.edge('LinkJira', 'Finish')
-
-# Save the flowchart
-output_path = '/mnt/data/full_qzrelease2_octane_upload_flow_with_xml_conversion'
-dot.render(output_path, format='png', cleanup=True)
+print(response.status_code)
