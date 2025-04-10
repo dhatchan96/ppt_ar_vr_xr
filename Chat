@@ -1,39 +1,72 @@
-Start
-  ↓
-Upload Test Results Slice
-  ↓
-Receive Task ID
-  ↓
-Check Task Status Immediately
-  ↓
- ┌─────────────────────────────────────┐
- │ Task Status = SUCCESS?               │
- └─────────────────────────────────────┘
-          ↓ Yes                         ↓ No
-       Proceed                       Check Status Again
-                                      (Retry 5 times)
+from graphviz import Digraph
 
-          ↓ After 5 Retries
- ┌─────────────────────────────────────┐
- │ Task Status = RUNNING?               │
- └─────────────────────────────────────┘
-          ↓ Yes                         ↓ No (FAILED / ERROR)
-  Save Task ID for Later Tracking      Raise Error Immediately
+# Create a new directed graph
+dot = Digraph(comment="Organized Octane Upload and Task Tracking Flow (High-Res)", format='png')
 
-          ↓
-Proceed with Next Upload Slice
-          ↓
-Once All Slices Uploaded
-          ↓
-Check All Saved Running Tasks
-          ↓
- ┌─────────────────────────────────────┐
- │ Task Completes in 10 Minutes?         │
- └─────────────────────────────────────┘
-          ↓ Yes                         ↓ No
-       Proceed                      Raise Timeout Error
+# Graph attributes
+dot.attr(rankdir='TB', size='10,15')  # Top to Bottom, bigger size
+dot.attr('node', shape='box', fontsize='14')  # Bigger fonts for clarity
 
-          ↓
-Update Backlog Coverage (Link JIRA)
-          ↓
-Finish
+# Nodes
+dot.node('Start', 'Start')
+dot.node('Prepare', 'Prepare Test Results')
+dot.node('Upload', 'Upload Test Results Slice')
+dot.node('TaskID', 'Receive Task ID')
+dot.node('CheckStatus', 'Check Immediate Task Status')
+
+# Decision nodes (diamond shape)
+dot.attr('node', shape='diamond', fontsize='14')
+dot.node('IsSuccess', 'Task Status SUCCESS?')
+
+# Success and failure paths
+dot.attr('node', shape='box', fontsize='14')
+dot.node('NextSlice', 'Move to Next Slice')
+dot.node('Retry5', 'Retry 5 Times')
+
+dot.attr('node', shape='diamond', fontsize='14')
+dot.node('AfterRetry', 'Task still RUNNING after 5 Retries?')
+
+dot.attr('node', shape='box', fontsize='14')
+dot.node('SaveTask', 'Save Task ID for Later Tracking')
+dot.node('RaiseImmediateError', 'Raise Error (FAILED / ERROR)')
+
+dot.node('AllUploaded', 'All Slices Uploaded')
+dot.node('TrackPending', 'Track Pending Tasks')
+
+dot.attr('node', shape='diamond', fontsize='14')
+dot.node('PendingSuccess', 'Pending Task SUCCESS?')
+
+dot.attr('node', shape='box', fontsize='14')
+dot.node('ProceedJira', 'Proceed to JIRA Linking')
+dot.node('RaisePendingError', 'Raise Error (Timeout / Failed)')
+dot.node('LinkJira', 'Link JIRA Stories')
+dot.node('Finish', 'Finish')
+
+# Connect the nodes (edges)
+dot.edge('Start', 'Prepare')
+dot.edge('Prepare', 'Upload')
+dot.edge('Upload', 'TaskID')
+dot.edge('TaskID', 'CheckStatus')
+dot.edge('CheckStatus', 'IsSuccess')
+
+dot.edge('IsSuccess', 'NextSlice', label='Yes')
+dot.edge('IsSuccess', 'Retry5', label='No')
+
+dot.edge('NextSlice', 'AllUploaded')
+dot.edge('Retry5', 'AfterRetry')
+dot.edge('AfterRetry', 'SaveTask', label='Yes')
+dot.edge('AfterRetry', 'RaiseImmediateError', label='No')
+
+dot.edge('SaveTask', 'AllUploaded')
+
+dot.edge('AllUploaded', 'TrackPending')
+dot.edge('TrackPending', 'PendingSuccess')
+dot.edge('PendingSuccess', 'ProceedJira', label='Yes')
+dot.edge('PendingSuccess', 'RaisePendingError', label='No')
+
+dot.edge('ProceedJira', 'LinkJira')
+dot.edge('LinkJira', 'Finish')
+
+# Save the chart to a PNG
+output_path = '/mnt/data/octane_upload_flowchart_organized_highres'
+dot.render(output_path, format='png', cleanup=True)
