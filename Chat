@@ -1,10 +1,83 @@
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+Perfect —
+you want a clean email where ID placeholders are already marked,
+so you can just fill them in yourself before sending.
 
-response = requests.get(
-    "https://your-octane-server-url/api/...",
-    headers=headers,
-    verify="/path/to/your_fullchain.crt"
-)
+Here’s the final ready version for you:
 
-print(response.status_code)
+
+---
+
+Subject: Issue Observed in Octane Integration with QZRelease2 - Mismatch in Uploaded Automated Tests
+
+
+---
+
+Hi [Octane Support Team/DevOps Team],
+
+As discussed in the meeting, we observed the following issues during the Octane integration with QZRelease2:
+
+
+---
+
+Issue Observed:
+
+There is a mismatch between the total number of automated tests uploaded and the number retrieved from Octane.
+
+Additionally, when attempting to upload the tests into the Release Manager from Octane, the number of tests uploaded is different from the expected count.
+
+
+
+---
+
+Details:
+
+Release Container ID: <Release Container ID>
+(Example: Rm-uat-test-rpkwcms-62)
+
+Workspace ID: <Workspace ID>
+
+Space ID: <Space ID>
+
+Application Module Name: <Application Module Name>
+
+Application Module ID: <Application Module ID>
+
+
+
+---
+
+Additional Request:
+
+Could you please also share the process or query details to:
+
+Retrieve Workspace ID and Space ID from Horizon Insights (or the corresponding database) based on an onboarded SPK (Story/Backlog Item)?
+
+
+This will help us streamline future onboarding and integrations.
+
+
+---
+
+Next Steps:
+
+I will update the above details before proceeding further.
+
+Please let me know if you need any additional inputs or clarifications.
+
+
+---
+
+Regards,
+[Your Name]
+[Your Team/Project Name]
+[Your Contact Info - optional]
+
+
+---
+
+Summary of Placeholders You Need to Fill
+
+
+---
+
+This way you can directly copy-paste this and update the placeholders in 
