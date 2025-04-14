@@ -1,42 +1,92 @@
-Got it! Here’s the updated email content with your extra point added:
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
+    sliceSize = self.octaneConfig.get("uploadedSliceSize")
+    max_retries = 5
+    running_tasks = []
+    num_threads = 5   # Number of parallel threads
 
----
+    logger.info(f"Starting Upload of {len(results)} automated runs in batches of {sliceSize}...")
 
-Subject: Suggestion for Fun Activity: Customized Bingo Game
+    # Split results into slices
+    slices = [results[i:i+sliceSize] for i in range(0, len(results), sliceSize)]
 
-Body:
+    def upload_single_slice(resultsSlice, slice_index):
+        testRuns = [
+            TEST_RUN.format(
+                testname=testname.split('.')[-1],
+                testclass=testname.split('.')[-2],
+                status=status,
+                started=started,
+                duration=duration,
+                package=testname.split('.')[-3],
+                module=testname.split('.')[-4]
+            )
+            for (testname, testclass, status, started, duration) in resultsSlice
+        ]
 
-Hi [Recipient's Name/Team],
+        data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
+            test_results='\n'.join(testRuns),
+            testSuiteID=testSuiteID,
+            externalRunID=externalRunID,
+            applicationModuleID=applicationModuleID
+        )
 
-I would like to suggest a fun and engaging activity for our upcoming [team event / gathering / engagement session] — a Bingo game!
+        response = self.endpoint.post("test-results", data=data, dataType="xml")
+        task_response = response
+        task_id = task_response.get("id")
 
-The Bingo board will be a 5x5 grid, and we can customize the words in each box to make it more relatable and exciting for our team.
+        if response == "Success":
+            logger.info(f"Slice {slice_index}: Upload successful. Task ID: {task_id}")
+        else:
+            logger.error(f"Slice {slice_index}: Upload failed: {response}")
+            raise RuntimeError(f"Failed to upload test results slice: {response}")
 
-For in-person participants, we will provide physical Bingo cards.
+        # Check task status with retries
+        retry_count = 0
+        while retry_count < max_retries:
+            task_status_resp = self.endpoint.get(f"test-results/{task_id}")
+            task_status = task_status_resp.get("status")
 
-For remote participants connected via Webex, we will share an online Bingo link.
+            if task_status.upper() == "SUCCESS":
+                logger.info(f"Slice {slice_index}: Upload task {task_id} completed successfully.")
+                break
+            elif task_status.upper() in ("FAILED", "ERROR"):
+                logger.error(f"Slice {slice_index}: Upload task {task_id} failed: {task_status_resp.get('errorDetails')}")
+                raise RuntimeError(f"Upload task {task_id} failed.")
+            elif task_status.upper() in ("RUNNING", "QUEUED"):
+                if retry_count == max_retries - 1:
+                    logger.warning(f"Slice {slice_index}: Task {task_id} still {task_status.upper()} after {max_retries} retries. Storing for later tracking.")
+                    running_tasks.append(task_id)
+                    break
+                else:
+                    logger.info(f"Slice {slice_index}: Task {task_id} still {task_status.upper()}. Retrying ({retry_count + 1}/{max_retries})...")
+                    retry_count += 1
+                    time.sleep(5)
+            else:
+                logger.warning(f"Slice {slice_index}: Unexpected task status {task_status.upper()} for task {task_id}. Moving on.")
+                break
 
-During the game:
+        return task_id
 
-A question will be asked, and participants need to find the correct answer in their Bingo grid and strike it out.
+    # Step 1: Upload the FIRST slice normally (no threading)
+    logger.info("Uploading the first slice serially...")
+    upload_single_slice(slices[0], 0)
 
-The first person to complete all 5 letters (BINGO) will be declared the winner.
+    # Step 2: Upload remaining slices using threads
+    logger.info("Uploading remaining slices using multithreading...")
 
-Additionally, titles will be awarded to those who strike each letter first (B, I, N, G, and O).
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [
+            executor.submit(upload_single_slice, slice_results, idx)
+            for idx, slice_results in enumerate(slices[1:], start=1)  # start=1 for second slice onwards
+        ]
 
+        for future in as_completed(futures):
+            try:
+                task_id = future.result()
+                logger.info(f"Parallel upload completed for task_id: {task_id}")
+            except Exception as e:
+                logger.error(f"Parallel upload failed for a slice: {e}")
 
-
-This will add an interactive twist and make the game even more exciting for both onsite and online participants!
-
-Let me know your thoughts or if I should go ahead and plan the setup.
-
-Thanks,
-[Your Name]
-
-
----
-
-Would you also want a quick one-liner tagline like “Get Ready to Think, Find, and Win!” in case you announce it later?
-I can suggest that too if you want!
-
+    return running_tasks
