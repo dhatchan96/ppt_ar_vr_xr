@@ -1,61 +1,84 @@
-Got it — you want just the "Idea" and its "Summary", like how your Excel columns are.
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-Here’s the clean content you can directly copy:
+def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
+    sliceSize = self.octaneConfig.get("uploadedSliceSize")
+    slice = 0
+    max_retries = 5
+    running_tasks = []
+    num_threads = 5   # Number of parallel uploads
 
+    logger.info(f"Starting to Upload {len(results)} automated runs to Octane in batches with {sliceSize} runs per task.")
 
----
+    slices = [results[i:i+sliceSize] for i in range(0, len(results), sliceSize)]  # Pre-split all slices
 
-1. Idea:
+    def upload_single_slice(resultsSlice):
+        testRuns = [
+            TEST_RUN.format(
+                testname=testname.split('.')[-1],
+                testclass=testname.split('.')[-2],
+                status=status,
+                started=started,
+                duration=duration,
+                package=testname.split('.')[-3],
+                module=testname.split('.')[-4]
+            )
+            for (testname, testclass, status, started, duration) in resultsSlice
+        ]
 
-Virtual Reality Banking Branch
+        data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
+            test_results='\n'.join(testRuns),
+            testSuiteID=testSuiteID,
+            externalRunID=externalRunID,
+            applicationModuleID=applicationModuleID
+        )
 
-Summary:
-This idea enables customers to experience a fully immersive virtual banking branch using VR headsets. Customers can enter a virtual lobby, interact with AI-powered virtual bankers, open accounts, apply for loans, or resolve queries from their homes. It reduces the need for physical branch visits and enhances customer engagement by simulating real-world banking in a virtual space.
+        response = self.endpoint.post("test-results", data=data, dataType="xml")
+        status = response
+        task_response = response
+        task_id = task_response.get("id")
 
+        if status == "Success":
+            logger.info(f"Upload successful for a batch. Task ID: {task_id}")
+        else:
+            logger.error(f"Upload failed for a batch: {response}")
+            raise RuntimeError(f"Failed to upload test results slice: {response}")
 
----
+        # Retry task status check
+        retry_count = 0
+        while retry_count < max_retries:
+            task_status_resp = self.endpoint.get(f"test-results/{task_id}")
+            task_status = task_status_resp.get("status")
 
-2. Idea:
+            if task_status.upper() == "SUCCESS":
+                logger.info(f"Upload task {task_id} completed successfully.")
+                break
+            elif task_status.upper() in ("FAILED", "ERROR"):
+                logger.error(f"Upload task {task_id} failed: {task_status_resp.get('errorDetails')}")
+                raise RuntimeError(f"Upload task {task_id} failed.")
+            elif task_status.upper() in ("RUNNING", "QUEUED"):
+                if retry_count == max_retries - 1:
+                    logger.warning(f"Task {task_id} still {task_status.upper()} after {max_retries} retries. Storing for later tracking.")
+                    running_tasks.append(task_id)
+                    break
+                else:
+                    logger.info(f"Task {task_id} still {task_status.upper()}. Retrying ({retry_count + 1}/{max_retries})...")
+                    retry_count += 1
+                    time.sleep(5)
+            else:
+                logger.warning(f"Unexpected task status {task_status.upper()} for task {task_id}. Moving on.")
+                break
 
-Augmented Reality KYC Assistance
+        return task_id
 
-Summary:
-This solution uses Augmented Reality (AR) overlays to guide customers through the KYC (Know Your Customer) verification process on mobile devices. By showing real-time visual prompts (e.g., positioning ID cards correctly or facial alignment), it ensures better document capture, reduces manual errors, and speeds up the onboarding process.
+    # Launch multiple threads to upload slices in parallel
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [executor.submit(upload_single_slice, resultsSlice) for resultsSlice in slices]
 
+        for future in as_completed(futures):
+            try:
+                task_id = future.result()
+                logger.info(f"Upload completed for task_id: {task_id}")
+            except Exception as e:
+                logger.error(f"Upload failed for a slice: {e}")
 
----
-
-3. Idea:
-
-Mixed Reality Risk Management Simulator
-
-Summary:
-A Mixed Reality (MR) platform where financial analysts can interact with live market data, risk events, and predictive financial models in a holographic environment. Analysts can simulate market crashes, credit defaults, or liquidity crises in a mixed reality setup, helping them anticipate and manage risks more effectively.
-
-
----
-
-4. Idea:
-
-AR Office Navigation for Employees and Visitors
-
-Summary:
-An Augmented Reality (AR) system that provides indoor navigation for large office spaces. Using a mobile phone or smart glasses, employees and visitors can view AR-guided arrows, labels, and directions in real-time to locate meeting rooms, cafeterias, or service desks, enhancing office accessibility and experience.
-
-
----
-
-5. Idea:
-
-Virtual Reality Compliance and Cybersecurity Training
-
-Summary:
-A VR-based training platform where employees undergo compliance, fraud prevention, and cybersecurity drills in a fully immersive virtual environment. The system generates dynamic training scenarios, making mandatory training programs interactive, improving knowledge retention, and ensuring higher compliance rates.
-
-
----
-
-Would you like me to also suggest a status to add (like "Yet to Discuss")?
-Or would you like a Word file ready to upload to your patent tracker?
-Let me know!
-
+    return running_tasks
