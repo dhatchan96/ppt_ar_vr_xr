@@ -1,92 +1,29 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+def setUp(self):
+    self.config = {
+        "signInURL": "https://fake-url.com",
+        "system": "dev"
+    }
+    self.spkConfig = {
+        "credentialsPath": "/fake/path",
+        "rootUrl": "https://fake-root.com"
+    }
+    self.endpoint = OctaneEndPoint(self.config, self.spkConfig)
 
-def upload(self, results, externalRunID, applicationModuleID, testSuiteID):
-    sliceSize = self.octaneConfig.get("uploadedSliceSize")
-    max_retries = 5
-    running_tasks = []
-    num_threads = 5   # Number of parallel threads
+    # Patch environment variable for SSL_CERT_DIR
+    self.env_patcher = patch.dict(os.environ, {"SSL_CERT_DIR": "/mock/cert.pem"})
+    self.env_patcher.start()
 
-    logger.info(f"Starting Upload of {len(results)} automated runs in batches of {sliceSize}...")
+    # Patch _restCall globally
+    self.rest_patcher = patch("qz.sdlc.octane.client.OctaneEndPoint._restCall")
+    self.mock_rest = self.rest_patcher.start()
+    self.mock_rest.return_value = ("Success", {"status": "ok"})
 
-    # Split results into slices
-    slices = [results[i:i+sliceSize] for i in range(0, len(results), sliceSize)]
-
-    def upload_single_slice(resultsSlice, slice_index):
-        testRuns = [
-            TEST_RUN.format(
-                testname=testname.split('.')[-1],
-                testclass=testname.split('.')[-2],
-                status=status,
-                started=started,
-                duration=duration,
-                package=testname.split('.')[-3],
-                module=testname.split('.')[-4]
-            )
-            for (testname, testclass, status, started, duration) in resultsSlice
-        ]
-
-        data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
-            test_results='\n'.join(testRuns),
-            testSuiteID=testSuiteID,
-            externalRunID=externalRunID,
-            applicationModuleID=applicationModuleID
-        )
-
-        response = self.endpoint.post("test-results", data=data, dataType="xml")
-        task_response = response
-        task_id = task_response.get("id")
-
-        if response == "Success":
-            logger.info(f"Slice {slice_index}: Upload successful. Task ID: {task_id}")
-        else:
-            logger.error(f"Slice {slice_index}: Upload failed: {response}")
-            raise RuntimeError(f"Failed to upload test results slice: {response}")
-
-        # Check task status with retries
-        retry_count = 0
-        while retry_count < max_retries:
-            task_status_resp = self.endpoint.get(f"test-results/{task_id}")
-            task_status = task_status_resp.get("status")
-
-            if task_status.upper() == "SUCCESS":
-                logger.info(f"Slice {slice_index}: Upload task {task_id} completed successfully.")
-                break
-            elif task_status.upper() in ("FAILED", "ERROR"):
-                logger.error(f"Slice {slice_index}: Upload task {task_id} failed: {task_status_resp.get('errorDetails')}")
-                raise RuntimeError(f"Upload task {task_id} failed.")
-            elif task_status.upper() in ("RUNNING", "QUEUED"):
-                if retry_count == max_retries - 1:
-                    logger.warning(f"Slice {slice_index}: Task {task_id} still {task_status.upper()} after {max_retries} retries. Storing for later tracking.")
-                    running_tasks.append(task_id)
-                    break
-                else:
-                    logger.info(f"Slice {slice_index}: Task {task_id} still {task_status.upper()}. Retrying ({retry_count + 1}/{max_retries})...")
-                    retry_count += 1
-                    time.sleep(5)
-            else:
-                logger.warning(f"Slice {slice_index}: Unexpected task status {task_status.upper()} for task {task_id}. Moving on.")
-                break
-
-        return task_id
-
-    # Step 1: Upload the FIRST slice normally (no threading)
-    logger.info("Uploading the first slice serially...")
-    upload_single_slice(slices[0], 0)
-
-    # Step 2: Upload remaining slices using threads
-    logger.info("Uploading remaining slices using multithreading...")
-
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = [
-            executor.submit(upload_single_slice, slice_results, idx)
-            for idx, slice_results in enumerate(slices[1:], start=1)  # start=1 for second slice onwards
-        ]
-
-        for future in as_completed(futures):
-            try:
-                task_id = future.result()
-                logger.info(f"Parallel upload completed for task_id: {task_id}")
-            except Exception as e:
-                logger.error(f"Parallel upload failed for a slice: {e}")
-
-    return running_tasks
+    # Patch getCookie request.post response
+    self.requests_patcher = patch("qz.sdlc.octane.client.requests.post")
+    self.mock_post = self.requests_patcher.start()
+    
+    mock_resp = MagicMock()
+    mock_resp.cookies.get_dict.return_value = {"auth": "cookie123"}
+    mock_resp.json.return_value = {"ok": True}
+    mock_resp.ok = True
+    self.mock_post.return_value = mock_resp
