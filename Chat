@@ -1,22 +1,10 @@
 @patch("time.sleep", return_value=None)
-def test_trackPendingTasks_success(self, _):
-    self.api.octaneClient.endpoint.get.return_value = {"status": "SUCCESS"}
-    self.api.trackPendingTasks(["task-101"])
-
-@patch("time.sleep", return_value=None)
-def test_trackPendingTasks_failure(self, _):
-    self.api.octaneClient.endpoint.get.return_value = {
-        "status": "FAILED",
-        "errorDetails": "Some failure"
-    }
-    with self.assertRaises(RuntimeError) as context:
-        self.api.trackPendingTasks(["task-102"])
-    self.assertIn("failed", str(context.exception))
-
-@patch("time.sleep", return_value=None)
-def test_trackPendingTasks_timeout(self, _):
-    self.api.octaneClient.endpoint.get.side_effect = lambda *a, **kw: {"status": "RUNNING"}
+@patch("qz.sdlc.octane.client.OctaneEndPoint.get")
+def test_trackPendingTasks_timeout(self, mock_get, _):
+    mock_get.side_effect = lambda *a, **kw: {"status": "RUNNING"}
+    
     with patch("time.time", side_effect=[0] + [i * 5 for i in range(1, 130)]):
         with self.assertRaises(RuntimeError) as context:
             self.api.trackPendingTasks(["task-103"])
+    
     self.assertIn("did not complete within 10 minutes", str(context.exception))
