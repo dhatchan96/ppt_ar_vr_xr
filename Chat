@@ -1,29 +1,4 @@
-def setUp(self):
-    self.config = {
-        "signInURL": "https://fake-url.com",
-        "system": "dev"
-    }
-    self.spkConfig = {
-        "credentialsPath": "/fake/path",
-        "rootUrl": "https://fake-root.com"
-    }
-    self.endpoint = OctaneEndPoint(self.config, self.spkConfig)
-
-    # Patch environment variable for SSL_CERT_DIR
-    self.env_patcher = patch.dict(os.environ, {"SSL_CERT_DIR": "/mock/cert.pem"})
-    self.env_patcher.start()
-
-    # Patch _restCall globally
-    self.rest_patcher = patch("qz.sdlc.octane.client.OctaneEndPoint._restCall")
-    self.mock_rest = self.rest_patcher.start()
-    self.mock_rest.return_value = ("Success", {"status": "ok"})
-
-    # Patch getCookie request.post response
-    self.requests_patcher = patch("qz.sdlc.octane.client.requests.post")
-    self.mock_post = self.requests_patcher.start()
-    
-    mock_resp = MagicMock()
-    mock_resp.cookies.get_dict.return_value = {"auth": "cookie123"}
-    mock_resp.json.return_value = {"ok": True}
-    mock_resp.ok = True
-    self.mock_post.return_value = mock_resp
+def tearDown(self):
+    self.env_patcher.stop()
+    self.rest_patcher.stop()
+    self.requests_patcher.stop()
