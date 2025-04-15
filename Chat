@@ -1,4 +1,47 @@
-def tearDown(self):
-    self.env_patcher.stop()
-    self.rest_patcher.stop()
-    self.requests_patcher.stop()
+import unittest
+from unittest.mock import patch, MagicMock
+import time
+from your_module.api import OctaneApi  # update path
+from your_module.client import OctaneClient  # update path
+
+class TestTrackPendingTasks(unittest.TestCase):
+
+    def setUp(self):
+        self.api = OctaneApi(config={}, spkConfig={})
+        self.api.octaneClient = MagicMock()
+
+    @patch("time.sleep", return_value=None)  # To speed up tests
+    def test_task_success(self, _):
+        self.api.octaneClient.endpoint.get.return_value = {"status": "SUCCESS"}
+        self.api.trackPendingTasks(["123"])  # Should not raise
+
+    @patch("time.sleep", return_value=None)
+    def test_task_failed(self, _):
+        self.api.octaneClient.endpoint.get.return_value = {
+            "status": "FAILED",
+            "errorDetails": "Failure reason"
+        }
+        with self.assertRaises(RuntimeError) as context:
+            self.api.trackPendingTasks(["456"])
+        self.assertIn("failed", str(context.exception))
+
+    @patch("time.sleep", return_value=None)
+    def test_task_error(self, _):
+        self.api.octaneClient.endpoint.get.return_value = {
+            "status": "ERROR",
+            "errorDetails": "Some error"
+        }
+        with self.assertRaises(RuntimeError):
+            self.api.trackPendingTasks(["789"])
+
+    @patch("time.sleep", return_value=None)
+    def test_task_timeout(self, _):
+        # Simulate 10+ minutes of RUNTIME status
+        self.api.octaneClient.endpoint.get.side_effect = lambda *a, **kw: {"status": "RUNNING"}
+        with patch("time.time", side_effect=[0] + [i * 5 for i in range(1, 130)]):  # simulate > 600s
+            with self.assertRaises(RuntimeError) as context:
+                self.api.trackPendingTasks(["999"])
+        self.assertIn("did not complete within 10 minutes", str(context.exception))
+
+if __name__ == "__main__":
+    unittest.main()
