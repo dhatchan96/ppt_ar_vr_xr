@@ -1,10 +1,5 @@
-@patch("time.sleep", return_value=None)
-@patch("qz.sdlc.octane.client.OctaneEndPoint.get")
-def test_trackPendingTasks_timeout(self, mock_get, _):
-    mock_get.side_effect = lambda *a, **kw: {"status": "RUNNING"}
-    
-    with patch("time.time", side_effect=[0] + [i * 5 for i in range(1, 130)]):
-        with self.assertRaises(RuntimeError) as context:
-            self.api.trackPendingTasks(["task-103"])
-    
-    self.assertIn("did not complete within 10 minutes", str(context.exception))
+from datetime import datetime
+
+epoch = 1744798019
+iso_time = datetime.utcfromtimestamp(epoch).isoformat() + "Z"
+print(iso_time)  # Example: 2025-06-15T12:46:59Z
