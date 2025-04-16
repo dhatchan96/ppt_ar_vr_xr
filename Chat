@@ -1,5 +1,7 @@
-from datetime import datetime
+from collections import Counter
 
-epoch = 1744798019
-iso_time = datetime.utcfromtimestamp(epoch).isoformat() + "Z"
-print(iso_time)  # Example: 2025-06-15T12:46:59Z
+lst = [1, 2, 3, 2, 4, 1, 5, 2]
+counter = Counter(lst)
+
+duplicates_with_count = {item: count for item, count in counter.items() if count > 1}
+print(duplicates_with_count)
