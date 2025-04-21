@@ -1,13 +1,71 @@
-def fetchRootApplicationModuleID(self, space_id, workspace_id, module_name):
-    """
-    Fetch the ID of the application module by name.
-    """
-    query = f"name EQ '{module_name}'"
-    endpoint = f"shared_spaces/{space_id}/workspaces/{workspace_id}/application_modules?query={query}"
-    status, response = self.endpoint.get(endpoint)
+import wx
+import os
+import pandas as pd
 
-    if status == "Success" and response.get("total_count", 0) == 1:
-        return response["data"][0]["id"]
-    else:
-        logger.error(f"Failed to fetch application module ID for '{module_name}'")
-        return None
+class FileExtractor(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="PDF/Excel Extractor", size=(600, 400))
+        notebook = wx.Notebook(self)
+
+        self.selected_files = []
+
+        # Tab 1: File selection
+        tab1 = wx.Panel(notebook)
+        browse_btn = wx.Button(tab1, label="Browse Files", pos=(20, 20))
+        browse_btn.Bind(wx.EVT_BUTTON, self.on_browse)
+        self.output_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 70), size=(400, 25))
+        out_btn = wx.Button(tab1, label="Choose Output File", pos=(430, 70))
+        out_btn.Bind(wx.EVT_BUTTON, self.on_choose_output)
+        process_btn = wx.Button(tab1, label="Process and Save", pos=(20, 120))
+        process_btn.Bind(wx.EVT_BUTTON, self.process_files)
+
+        # Tab 2: Display selected files
+        tab2 = wx.Panel(notebook)
+        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(540, 300))
+
+        notebook.AddPage(tab1, "Select & Process")
+        notebook.AddPage(tab2, "Selected Files")
+
+        self.output_path = ""
+
+        self.Show()
+
+    def on_browse(self, event):
+        with wx.FileDialog(self, "Choose PDF or Excel files", wildcard="PDF or Excel files (*.pdf;*.xls;*.xlsx)|*.pdf;*.xls;*.xlsx",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.selected_files = dialog.GetPaths()
+                self.file_listbox.Clear()
+                self.file_listbox.InsertItems(self.selected_files, 0)
+
+    def on_choose_output(self, event):
+        with wx.FileDialog(self, "Save output as", wildcard="Excel files (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.output_path = dialog.GetPath()
+                self.output_path_ctrl.SetValue(self.output_path)
+
+    def process_files(self, event):
+        if not self.selected_files:
+            wx.MessageBox("No files selected!", "Error", wx.ICON_ERROR)
+            return
+
+        combined_df = pd.DataFrame()
+        for file in self.selected_files:
+            ext = os.path.splitext(file)[1].lower()
+            if ext == ".pdf":
+                wx.MessageBox(f"PDF reading not implemented for: {file}", "Info")
+            elif ext in [".xls", ".xlsx"]:
+                df = pd.read_excel(file)
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
+
+        if self.output_path:
+            combined_df.to_excel(self.output_path, index=False)
+            wx.MessageBox("File saved successfully!", "Success")
+        else:
+            wx.MessageBox("Output path not set!", "Error", wx.ICON_ERROR)
+
+if __name__ == '__main__':
+    app = wx.App(False)
+    frame = FileExtractor()
+    app.MainLoop()
