@@ -1,42 +1,12 @@
-def main():
-    # Entry point for running the Octane API operations.
-    from qz.core.qzrelease.train import ReleaseTrain
-    from qz.core.qzrelease.lib.generate_test_evidence import generate
+def initConfigWithAuthOnly(self, octane_id_str):
+    space_id, workspace_id, *_ = octane_id_str.split('-')
+    credential_path_template = self.octaneConfig.get("credentialRoot", '')
+    credentials_path = f"{credential_path_template}/S{space_id}-WS{workspace_id}"
 
-    # Load configuration and Initialize Octane client
-    b = ReleaseTrain.configure('prod')
-    b = ReleaseTrain("equity.release").aliases['prod.new'].stages['int'].builds[4]
-
-    regressionJiras = ['RPKWCMS-479']
-    octaneIds = {
-        'RPKWCMS-479': '2007-3001-2001-74091',
-        'ABC-123': '1111-2222-3333-4444'
+    # Build initial config only for authentication
+    return {
+        "space_id": space_id,
+        "workspace_id": workspace_id,
+        "credentialsPath": credentials_path,
+        "rootUrl": self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id)
     }
-
-    results = generate(b, regressionJiras, False, [], True)
-    print(len(results))
-
-    for jira in regressionJiras:
-        octane_id_str = octaneIds.get(jira)
-        if not octane_id_str:
-            logger.warning(f"No Octane ID found for Jira {jira}")
-            continue
-
-        # Step 1: Build partial config (credentials path)
-        clientApi = OctaneApi(OCTANE_CONFIG["DEV"])
-        auth_config = clientApi.initConfigWithAuthOnly(octane_id_str)
-
-        # Step 2: Temp client to authenticate and get module ID
-        temp_client = OctaneClient(auth_config)
-        module_id = temp_client.fetchRootApplicationModuleID(
-            auth_config["space_id"],
-            auth_config["workspace_id"],
-            "QzRelease-3"  # <-- Replace with your desired module name
-        )
-
-        if module_id:
-            auth_config["rootApplicationModuleID"] = module_id
-            full_client_api = OctaneApi(OCTANE_CONFIG["DEV"], auth_config)
-            full_client_api.uploadQzR2Evidence(b, results, jira)
-        else:
-            logger.info(f"No application module found for Jira: {jira}")
