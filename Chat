@@ -1,12 +1,13 @@
-def initConfigWithAuthOnly(self, octane_id_str):
-    space_id, workspace_id, *_ = octane_id_str.split('-')
-    credential_path_template = self.octaneConfig.get("credentialRoot", '')
-    credentials_path = f"{credential_path_template}/S{space_id}-WS{workspace_id}"
+def fetchRootApplicationModuleID(self, space_id, workspace_id, module_name):
+    """
+    Fetch the ID of the application module by name.
+    """
+    query = f"name EQ '{module_name}'"
+    endpoint = f"shared_spaces/{space_id}/workspaces/{workspace_id}/application_modules?query={query}"
+    status, response = self.endpoint.get(endpoint)
 
-    # Build initial config only for authentication
-    return {
-        "space_id": space_id,
-        "workspace_id": workspace_id,
-        "credentialsPath": credentials_path,
-        "rootUrl": self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id)
-    }
+    if status == "Success" and response.get("total_count", 0) == 1:
+        return response["data"][0]["id"]
+    else:
+        logger.error(f"Failed to fetch application module ID for '{module_name}'")
+        return None
