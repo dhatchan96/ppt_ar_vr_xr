@@ -1,7 +1,31 @@
-a = "{RPKWCMS-479: 2007-3001-2001-74091, ABC-123: 1111-2222-3333-4444}"
+Sure! Here's the refined version with "I already have a team" removed:
 
-# Remove braces and split into items
-items = a.strip("{}").split(", ")
-octaneIds = {k.strip(): v.strip() for k, v in (item.split(": ") for item in items)}
 
-print(octaneIds)
+---
+
+Hi Team,
+
+The Get Active Challenge kicks off on May 5th — and it’s time to get moving!
+Registration opens tomorrow (April 22nd) on [My Wellness], so start thinking about how you’d like to participate.
+
+You’re welcome to discuss with colleagues and form a team. Once your team is finalized, please share the details with us.
+
+Whether you plan to create a new team or prefer not to participate this time, please use the voting option to share your preference by tomorrow.
+
+Options:
+
+I want to create a team
+
+I’m not interested in participating
+
+
+Note:
+If you don’t consent to share your data, you won’t be able to join the challenge. Please let us know if you need any assistance.
+
+Let’s stay active and engaged — looking forward to your responses!
+
+
+---
+
+Let me know if you'd like a short version or a clickable Teams post version.
+
