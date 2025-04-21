@@ -1,31 +1,23 @@
-Sure! Here's the refined version with "I already have a team" removed:
+def findValidSpaceWorkspace(self, octane_id_str):
+    """
+    Forms a valid config dictionary from the provided octane ID format.
 
+    :param octane_id_str: A string in the format "spaceId-workspaceId-*-octaneId"
+    :return: A dictionary with space_id, workspace_id, rootUrl, credentialsPath, rootApplicationModuleID
+    """
+    try:
+        space_id, workspace_id, _, _ = octane_id_str.split('-')
 
----
+        credential_path_template = self.octaneConfig.get("credentialRoot", '')
+        credentials_path = f"{credential_path_template}/S{space_id}-WS{workspace_id}"
 
-Hi Team,
-
-The Get Active Challenge kicks off on May 5th — and it’s time to get moving!
-Registration opens tomorrow (April 22nd) on [My Wellness], so start thinking about how you’d like to participate.
-
-You’re welcome to discuss with colleagues and form a team. Once your team is finalized, please share the details with us.
-
-Whether you plan to create a new team or prefer not to participate this time, please use the voting option to share your preference by tomorrow.
-
-Options:
-
-I want to create a team
-
-I’m not interested in participating
-
-
-Note:
-If you don’t consent to share your data, you won’t be able to join the challenge. Please let us know if you need any assistance.
-
-Let’s stay active and engaged — looking forward to your responses!
-
-
----
-
-Let me know if you'd like a short version or a clickable Teams post version.
-
+        return {
+            "space_id": space_id,
+            "workspace_id": workspace_id,
+            "rootUrl": self.octaneConfig["rootUrl"].format(space_id=space_id, workspace_id=workspace_id),
+            "credentialsPath": credentials_path,
+            "rootApplicationModuleID": self.octaneConfig["workspaces"][space_id][workspace_id]["rootApplicationModuleID"]
+        }
+    except Exception as e:
+        logger.error(f"Error forming config from octane ID string '{octane_id_str}': {e}")
+        return None
