@@ -1,4 +1,7 @@
-raw_str = "RPKWCMS-479: 2007-3001-2001-74091, ABC-123: 1234-5678-9101-1121"
+a = "{RPKWCMS-479: 2007-3001-2001-74091, ABC-123: 1111-2222-3333-4444}"
 
-result = dict(item.strip().split(": ") for item in raw_str.split(","))
-print(result)
+# Remove braces and split into items
+items = a.strip("{}").split(", ")
+octaneIds = {k.strip(): v.strip() for k, v in (item.split(": ") for item in items)}
+
+print(octaneIds)
