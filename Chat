@@ -1,102 +1,26 @@
-import wx
-import os
-import pandas as pd
+Got it! Here's your revised response with the explanation about the common test class:
 
-class FileExtractor(wx.Frame):
-    def __init__(self):
-        super().__init__(parent=None, title="PDF/Excel Extractor", size=(650, 500))
-        notebook = wx.Notebook(self)
 
-        self.pdf_dir_path = ""
-        self.excel_files = []
+---
 
-        # === Tab 1 ===
-        tab1 = wx.Panel(notebook)
+Subject: RE: Release Manager Octane integration | Unable to pull more than 4000 automated runs linked to story
 
-        # PDF Directory Selection
-        pdf_label = wx.StaticText(tab1, label="Select PDF Directory:", pos=(20, 20))
-        self.pdf_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 45), size=(450, 25))
-        pdf_btn = wx.Button(tab1, label="Browse PDF Folder", pos=(480, 45))
-        pdf_btn.Bind(wx.EVT_BUTTON, self.browse_pdf_directory)
+Hi Ramesh,
 
-        # Excel File Selection
-        excel_label = wx.StaticText(tab1, label="Select Excel Files:", pos=(20, 90))
-        self.excel_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
-        excel_btn = wx.Button(tab1, label="Browse Excel Files", pos=(480, 115))
-        excel_btn.Bind(wx.EVT_BUTTON, self.browse_excel_files)
+Thanks for the detailed explanation.
 
-        # Output Path
-        output_label = wx.StaticText(tab1, label="Output File Path:", pos=(20, 160))
-        self.output_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 185), size=(450, 25))
-        output_btn = wx.Button(tab1, label="Choose Output File", pos=(480, 185))
-        output_btn.Bind(wx.EVT_BUTTON, self.choose_output_file)
+1. We tried passing the module IDs using the product_areas tag, and it’s working fine now. Please find the attached screenshot for reference.
 
-        # Process Button
-        process_btn = wx.Button(tab1, label="Process and Save", pos=(20, 240))
-        process_btn.Bind(wx.EVT_BUTTON, self.process_files)
 
-        # === Tab 2 ===
-        tab2 = wx.Panel(notebook)
-        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(580, 350))
+2. Regarding the mismatch in test run count, we found that a common test class is shared between two different projects. As a result, the same class name is reused, which causes Octane to overwrite one run with another due to lack of uniqueness, as you rightly pointed out. We’ll be addressing this by isolating or renaming the classes to ensure uniqueness.
 
-        notebook.AddPage(tab1, "Select & Process")
-        notebook.AddPage(tab2, "Selected Excel Files")
 
-        self.output_path = ""
-        self.Show()
 
-    def browse_pdf_directory(self, event):
-        with wx.DirDialog(self, "Select PDF Directory") as dialog:
-            if dialog.ShowModal() == wx.ID_OK:
-                self.pdf_dir_path = dialog.GetPath()
-                self.pdf_path_ctrl.SetValue(self.pdf_dir_path)
+Thanks & Regards,
+Dhatchanamoorthy S
 
-    def browse_excel_files(self, event):
-        with wx.FileDialog(self, "Select Excel Files", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
-                           style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST) as dialog:
-            if dialog.ShowModal() == wx.ID_OK:
-                self.excel_files = dialog.GetPaths()
-                self.excel_path_ctrl.SetValue("; ".join(self.excel_files))
-                self.file_listbox.Clear()
-                self.file_listbox.InsertItems(self.excel_files, 0)
 
-    def choose_output_file(self, event):
-        with wx.FileDialog(self, "Save Output File", wildcard="Excel files (*.xlsx)|*.xlsx",
-                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
-            if dialog.ShowModal() == wx.ID_OK:
-                self.output_path = dialog.GetPath()
-                self.output_path_ctrl.SetValue(self.output_path)
+---
 
-    def process_files(self, event):
-        if not self.pdf_dir_path and not self.excel_files:
-            wx.MessageBox("Please select PDF directory or Excel files!", "Error", wx.ICON_ERROR)
-            return
+Let me know if you'd like it in a downloadable Word format.
 
-        combined_df = pd.DataFrame()
-
-        # Process Excel Files
-        for file in self.excel_files:
-            try:
-                df = pd.read_excel(file)
-                combined_df = pd.concat([combined_df, df], ignore_index=True)
-            except Exception as e:
-                wx.MessageBox(f"Error reading Excel file:\n{file}\n{str(e)}", "Error", wx.ICON_ERROR)
-
-        # Just list PDF files - you can implement PDF parsing if needed
-        if self.pdf_dir_path:
-            pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
-                         if f.lower().endswith(".pdf")]
-            for pdf in pdf_files:
-                print(f"Found PDF: {pdf}")
-                # Placeholder for PDF parsing logic
-
-        if self.output_path:
-            combined_df.to_excel(self.output_path, index=False)
-            wx.MessageBox("File saved successfully!", "Success")
-        else:
-            wx.MessageBox("Please choose an output file path!", "Error", wx.ICON_ERROR)
-
-if __name__ == '__main__':
-    app = wx.App(False)
-    frame = FileExtractor()
-    app.MainLoop()
