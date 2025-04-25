@@ -1,26 +1,37 @@
-Got it! Here's your revised response with the explanation about the common test class:
+Here’s a professional email draft you can use to discuss the scenario with your internal Octane team:
 
 
 ---
 
-Subject: RE: Release Manager Octane integration | Unable to pull more than 4000 automated runs linked to story
+Subject: Clarification on Octane Queue Limit Behavior for Parallel Uploads Across IPs
 
-Hi Ramesh,
+Hi [Team/Name],
 
-Thanks for the detailed explanation.
+I’m looking to clarify the queue limit behavior in ALM Octane during automated test result uploads.
 
-1. We tried passing the module IDs using the product_areas tag, and it’s working fine now. Please find the attached screenshot for reference.
+We are currently planning to run 300 parallel upload threads using the same Octane credentials, but from different IP addresses (across distributed agents). I understand that Octane enforces a queue limit—typically 50 concurrent uploads per shared space or workspace—to maintain system stability.
+
+Before proceeding, I’d like to confirm the following:
+
+1. Will Octane enforce the queue limit globally per shared space, regardless of how many IPs or client systems initiate the upload?
 
 
-2. Regarding the mismatch in test run count, we found that a common test class is shared between two different projects. As a result, the same class name is reused, which causes Octane to overwrite one run with another due to lack of uniqueness, as you rightly pointed out. We’ll be addressing this by isolating or renaming the classes to ensure uniqueness.
+2. Is there any advantage in distributing uploads across multiple IPs (e.g., bypassing queue restrictions), or is the limit strictly applied at the shared space level?
+
+
+3. Is the “429 Too Many Requests” response expected when this limit is exceeded, and does Octane include a Retry-After header in that case?
 
 
 
-Thanks & Regards,
-Dhatchanamoorthy S
+This information will help us fine-tune our upload strategy, implement proper throttling, and avoid unnecessary request failures.
+
+Appreciate your clarification on this.
+
+Thanks,
+[Your Name]
 
 
 ---
 
-Let me know if you'd like it in a downloadable Word format.
+Let me know if you want to include technical logs or retry mechanism description in the email too.
 
