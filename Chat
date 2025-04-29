@@ -1,38 +1,105 @@
+import wx
+import os
+import pandas as pd
 
+class FileExtractor(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="PDF/Excel Extractor", size=(650, 500))
+        notebook = wx.Notebook(self)
 
-Subject: Query on Controlling Upload Jobs via Fat Controller Considering Octane Queue Limit
+        self.pdf_dir_path = ""
+        self.excel_files = []
+        self.output_path = ""
 
-Hi [Team/Name],
+        # === Tab 1 ===
+        tab1 = wx.Panel(notebook)
 
-Currently, when users click the "Upload Evidence" button, the fat controller receives the request and spawns a job immediately.
+        # PDF Directory Selection
+        pdf_label = wx.StaticText(tab1, label="Select PDF Directory:", pos=(20, 20))
+        self.pdf_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 45), size=(450, 25))
+        self.pdf_path_ctrl.SetBackgroundColour(wx.Colour(230, 240, 255))  # Light Blue
+        pdf_btn = wx.Button(tab1, label="Browse PDF Folder", pos=(480, 45))
+        pdf_btn.Bind(wx.EVT_BUTTON, self.browse_pdf_directory)
 
-Given that Octane enforces a queue limit of around 50 concurrent uploads per shared space,
-can we enhance the fat controller to check if active upload jobs are already running, and if a limit (say, 2–3 active jobs) is reached, queue new upload requests until slots are available?
+        # Excel File Selection
+        excel_label = wx.StaticText(tab1, label="Select Excel Files:", pos=(20, 90))
+        self.excel_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
+        self.excel_path_ctrl.SetBackgroundColour(wx.Colour(240, 230, 255))  # Light Purple
+        excel_btn = wx.Button(tab1, label="Browse Excel Files", pos=(480, 115))
+        excel_btn.Bind(wx.EVT_BUTTON, self.browse_excel_files)
 
-This could help avoid exceeding Octane’s queue limit when multiple projects upload simultaneously.
+        # Output Path
+        output_label = wx.StaticText(tab1, label="Output File Path:", pos=(20, 160))
+        self.output_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 185), size=(450, 25))
+        self.output_path_ctrl.SetBackgroundColour(wx.Colour(230, 255, 230))  # Light Green
+        output_btn = wx.Button(tab1, label="Choose Output File", pos=(480, 185))
+        output_btn.Bind(wx.EVT_BUTTON, self.choose_output_file)
 
-Please share your thoughts.
+        # Process Button
+        process_btn = wx.Button(tab1, label="Process and Save", pos=(20, 240))
+        process_btn.Bind(wx.EVT_BUTTON, self.process_files)
 
-Thanks,
-[Your Name]
+        # === Tab 2 ===
+        tab2 = wx.Panel(notebook)
+        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(580, 350))
 
+        notebook.AddPage(tab1, "Select & Process")
+        notebook.AddPage(tab2, "Selected Excel Files")
 
----
+        self.Show()
 
-Highlights:
+    def browse_pdf_directory(self, event):
+        with wx.DirDialog(self, "Select PDF Directory") as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.pdf_dir_path = dialog.GetPath()
+                self.pdf_path_ctrl.SetValue(self.pdf_dir_path)
 
-Mentions Octane queue limit (50 concurrent uploads).
+    def browse_excel_files(self, event):
+        with wx.FileDialog(self, "Select Excel Files", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
+                           style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.excel_files = dialog.GetPaths()
+                self.excel_path_ctrl.SetValue("; ".join(self.excel_files))
+                self.file_listbox.Clear()
+                self.file_listbox.InsertItems(self.excel_files, 0)
 
-Clearly explains current controller behavior.
+    def choose_output_file(self, event):
+        with wx.FileDialog(self, "Save Output File", wildcard="Excel files (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.output_path = dialog.GetPath()
+                self.output_path_ctrl.SetValue(self.output_path)
 
-Politely asks for validation on adding job-level queuing.
+    def process_files(self, event):
+        if not self.pdf_dir_path and not self.excel_files:
+            wx.MessageBox("Please select PDF directory or Excel files!", "Error", wx.ICON_ERROR)
+            return
 
-Professional and quick to read internally.
+        combined_df = pd.DataFrame()
 
+        # Process Excel Files
+        for file in self.excel_files:
+            try:
+                df = pd.read_excel(file)
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
+            except Exception as e:
+                wx.MessageBox(f"Error reading Excel file:\n{file}\n{str(e)}", "Error", wx.ICON_ERROR)
 
+        # Just list PDF files - Placeholder for PDF logic
+        if self.pdf_dir_path:
+            pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
+                         if f.lower().endswith(".pdf")]
+            for pdf in pdf_files:
+                print(f"Found PDF: {pdf}")
+                # Add actual PDF parsing logic if needed
 
----
+        if self.output_path:
+            combined_df.to_excel(self.output_path, index=False)
+            wx.MessageBox("File saved successfully!", "Success")
+        else:
+            wx.MessageBox("Please choose an output file path!", "Error", wx.ICON_ERROR)
 
-Would you like a second version where it sounds even more technical (if you’re sending it to an architect/lead engineer)?
-(If yes, I can make a slightly heavier technical one too.)
-
+if __name__ == '__main__':
+    app = wx.App(False)
+    frame = FileExtractor()
+    app.MainLoop()
