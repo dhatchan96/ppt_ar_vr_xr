@@ -4,11 +4,11 @@ import pandas as pd
 
 class FileExtractor(wx.Frame):
     def __init__(self):
-        super().__init__(parent=None, title="PDF/Excel Extractor", size=(650, 500))
+        super().__init__(parent=None, title="PDF Extractor - Config Based", size=(650, 450))
         notebook = wx.Notebook(self)
 
         self.pdf_dir_path = ""
-        self.excel_files = []
+        self.config_file_path = ""
         self.output_path = ""
 
         # === Tab 1 ===
@@ -21,12 +21,12 @@ class FileExtractor(wx.Frame):
         pdf_btn = wx.Button(tab1, label="Browse PDF Folder", pos=(480, 45))
         pdf_btn.Bind(wx.EVT_BUTTON, self.browse_pdf_directory)
 
-        # Excel File Selection
-        excel_label = wx.StaticText(tab1, label="Select Excel Files:", pos=(20, 90))
-        self.excel_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
-        self.excel_path_ctrl.SetBackgroundColour(wx.Colour(240, 230, 255))  # Light Purple
-        excel_btn = wx.Button(tab1, label="Browse Excel Files", pos=(480, 115))
-        excel_btn.Bind(wx.EVT_BUTTON, self.browse_excel_files)
+        # Config Excel File Selection
+        config_label = wx.StaticText(tab1, label="Select Config Excel File:", pos=(20, 90))
+        self.config_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
+        self.config_path_ctrl.SetBackgroundColour(wx.Colour(240, 230, 255))  # Light Purple
+        config_btn = wx.Button(tab1, label="Browse Config File", pos=(480, 115))
+        config_btn.Bind(wx.EVT_BUTTON, self.browse_config_file)
 
         # Output Path
         output_label = wx.StaticText(tab1, label="Output File Path:", pos=(20, 160))
@@ -36,15 +36,15 @@ class FileExtractor(wx.Frame):
         output_btn.Bind(wx.EVT_BUTTON, self.choose_output_file)
 
         # Process Button
-        process_btn = wx.Button(tab1, label="Process and Save", pos=(20, 240))
+        process_btn = wx.Button(tab1, label="Extract and Save", pos=(20, 240))
         process_btn.Bind(wx.EVT_BUTTON, self.process_files)
 
         # === Tab 2 ===
         tab2 = wx.Panel(notebook)
         self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(580, 350))
 
-        notebook.AddPage(tab1, "Select & Process")
-        notebook.AddPage(tab2, "Selected Excel Files")
+        notebook.AddPage(tab1, "PDF Extraction")
+        notebook.AddPage(tab2, "PDF Files Found")
 
         self.Show()
 
@@ -54,14 +54,12 @@ class FileExtractor(wx.Frame):
                 self.pdf_dir_path = dialog.GetPath()
                 self.pdf_path_ctrl.SetValue(self.pdf_dir_path)
 
-    def browse_excel_files(self, event):
-        with wx.FileDialog(self, "Select Excel Files", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
-                           style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST) as dialog:
+    def browse_config_file(self, event):
+        with wx.FileDialog(self, "Select Config Excel File", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
             if dialog.ShowModal() == wx.ID_OK:
-                self.excel_files = dialog.GetPaths()
-                self.excel_path_ctrl.SetValue("; ".join(self.excel_files))
-                self.file_listbox.Clear()
-                self.file_listbox.InsertItems(self.excel_files, 0)
+                self.config_file_path = dialog.GetPath()
+                self.config_path_ctrl.SetValue(self.config_file_path)
 
     def choose_output_file(self, event):
         with wx.FileDialog(self, "Save Output File", wildcard="Excel files (*.xlsx)|*.xlsx",
@@ -71,27 +69,29 @@ class FileExtractor(wx.Frame):
                 self.output_path_ctrl.SetValue(self.output_path)
 
     def process_files(self, event):
-        if not self.pdf_dir_path and not self.excel_files:
-            wx.MessageBox("Please select PDF directory or Excel files!", "Error", wx.ICON_ERROR)
+        if not self.pdf_dir_path or not self.config_file_path:
+            wx.MessageBox("Please select both PDF directory and Config Excel file!", "Error", wx.ICON_ERROR)
             return
 
         combined_df = pd.DataFrame()
 
-        # Process Excel Files
-        for file in self.excel_files:
-            try:
-                df = pd.read_excel(file)
-                combined_df = pd.concat([combined_df, df], ignore_index=True)
-            except Exception as e:
-                wx.MessageBox(f"Error reading Excel file:\n{file}\n{str(e)}", "Error", wx.ICON_ERROR)
+        # Process Config Excel File (placeholder usage)
+        try:
+            config_df = pd.read_excel(self.config_file_path)
+            combined_df = config_df.copy()  # Replace with actual processing logic
+        except Exception as e:
+            wx.MessageBox(f"Error reading config file:\n{str(e)}", "Error", wx.ICON_ERROR)
+            return
 
-        # Just list PDF files - Placeholder for PDF logic
-        if self.pdf_dir_path:
-            pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
-                         if f.lower().endswith(".pdf")]
-            for pdf in pdf_files:
-                print(f"Found PDF: {pdf}")
-                # Add actual PDF parsing logic if needed
+        # List PDF files (you can add actual parsing logic here)
+        pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
+                     if f.lower().endswith(".pdf")]
+        self.file_listbox.Clear()
+        self.file_listbox.InsertItems(pdf_files, 0)
+
+        print("PDFs found:")
+        for pdf in pdf_files:
+            print(pdf)
 
         if self.output_path:
             combined_df.to_excel(self.output_path, index=False)
