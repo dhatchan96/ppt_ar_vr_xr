@@ -4,8 +4,13 @@ import pandas as pd
 
 class FileExtractor(wx.Frame):
     def __init__(self):
-        super().__init__(parent=None, title="PDF Extractor - Config Based", size=(670, 500))
-        notebook = wx.Notebook(self)
+        super().__init__(parent=None, title="PDF Extractor - Config Based", size=(700, 520))
+
+        panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Notebook with tabs
+        notebook = wx.Notebook(panel, size=(660, 300))
 
         self.pdf_dir_path = ""
         self.config_file_path = ""
@@ -38,24 +43,35 @@ class FileExtractor(wx.Frame):
 
         # === Tab 2 ===
         tab2 = wx.Panel(notebook)
-        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(580, 350))
+        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(600, 230))
 
         notebook.AddPage(tab1, "PDF Extraction")
         notebook.AddPage(tab2, "PDF Files Found")
 
-        # === Log Panel + Clear Button ===
-        self.log_box = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(510, 100))
-        self.log_box.Move((10, 330))
+        # === Log Panel ===
+        self.log_box = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 100))
         self.log_box.SetBackgroundColour(wx.Colour(250, 250, 250))
 
-        self.clear_log_btn = wx.Button(self, label="Clear Logs", size=(120, 30))
-        self.clear_log_btn.Move((530, 400))
+        # === Clear Logs Button ===
+        self.clear_log_btn = wx.Button(panel, label="Clear Logs", size=(100, 30))
         self.clear_log_btn.Bind(wx.EVT_BUTTON, self.clear_logs)
+
+        log_btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        log_btn_sizer.AddStretchSpacer()
+        log_btn_sizer.Add(self.clear_log_btn, 0, wx.RIGHT, 10)
+
+        # === Layout Composition ===
+        main_sizer.Add(notebook, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.log_box, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        main_sizer.Add(log_btn_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 10)
+
+        panel.SetSizer(main_sizer)
 
         # === Status Bar ===
         self.CreateStatusBar()
         self.SetStatusText("Waiting for input...")
 
+        self.Centre()
         self.Show()
 
     def browse_pdf_directory(self, event):
@@ -140,3 +156,8 @@ class FileExtractor(wx.Frame):
     def clear_logs(self, event):
         self.log_box.Clear()
         self.SetStatusText("Logs cleared")
+
+if __name__ == '__main__':
+    app = wx.App(False)
+    frame = FileExtractor()
+    app.MainLoop()
