@@ -1,31 +1,17 @@
-Here’s a professional email draft you can use to discuss the scenario with your internal Octane team:
 
 
----
-
-Subject: Clarification on Octane Queue Limit Behavior for Parallel Uploads Across IPs
+Subject: Query on Controlling Upload Jobs via Fat Controller Considering Octane Queue Limit
 
 Hi [Team/Name],
 
-I’m looking to clarify the queue limit behavior in ALM Octane during automated test result uploads.
+Currently, when users click the "Upload Evidence" button, the fat controller receives the request and spawns a job immediately.
 
-We are currently planning to run 300 parallel upload threads using the same Octane credentials, but from different IP addresses (across distributed agents). I understand that Octane enforces a queue limit—typically 50 concurrent uploads per shared space or workspace—to maintain system stability.
+Given that Octane enforces a queue limit of around 50 concurrent uploads per shared space,
+can we enhance the fat controller to check if active upload jobs are already running, and if a limit (say, 2–3 active jobs) is reached, queue new upload requests until slots are available?
 
-Before proceeding, I’d like to confirm the following:
+This could help avoid exceeding Octane’s queue limit when multiple projects upload simultaneously.
 
-1. Will Octane enforce the queue limit globally per shared space, regardless of how many IPs or client systems initiate the upload?
-
-
-2. Is there any advantage in distributing uploads across multiple IPs (e.g., bypassing queue restrictions), or is the limit strictly applied at the shared space level?
-
-
-3. Is the “429 Too Many Requests” response expected when this limit is exceeded, and does Octane include a Retry-After header in that case?
-
-
-
-This information will help us fine-tune our upload strategy, implement proper throttling, and avoid unnecessary request failures.
-
-Appreciate your clarification on this.
+Please share your thoughts.
 
 Thanks,
 [Your Name]
@@ -33,5 +19,20 @@ Thanks,
 
 ---
 
-Let me know if you want to include technical logs or retry mechanism description in the email too.
+Highlights:
+
+Mentions Octane queue limit (50 concurrent uploads).
+
+Clearly explains current controller behavior.
+
+Politely asks for validation on adding job-level queuing.
+
+Professional and quick to read internally.
+
+
+
+---
+
+Would you like a second version where it sounds even more technical (if you’re sending it to an architect/lead engineer)?
+(If yes, I can make a slightly heavier technical one too.)
 
