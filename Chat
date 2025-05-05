@@ -1,30 +1,6 @@
-def getOrCreateRootApplicationModuleID(self, module_name):
-    """
-    Returns root application module ID for given name.
-    - If one match → returns ID.
-    - If multiple matches → logs error.
-    - If not found → creates new root module and returns ID.
-    """
-    query = f"name EQ \"{module_name}\""
-    status, response = self.endpoint.get(f"application_modules?query=\"{query}\"")
+def createApplicationModule(self, name, parentID=None):
+    data = {"name": name}
+    if parentID:
+        data["parent"] = {"type": "application_module", "id": parentID}
 
-    if status != "Success":
-        logger.error(f"Failed to fetch application module: {response}")
-        return None
-
-    matches = response.get("data", [])
-    if len(matches) > 1:
-        logger.error(f"Duplicate root application modules found for name '{module_name}'. Cannot proceed.")
-        return None
-    elif len(matches) == 1:
-        logger.info(f"Found root module '{module_name}' with ID: {matches[0]['id']}")
-        return matches[0]["id"]
-    else:
-        # Create root module using existing method
-        logger.info(f"No module named '{module_name}' found. Creating new root module...")
-        create_resp = self.createApplicationModule(module_name, parentID=None)
-        if create_resp[0] == "Success":
-            return create_resp[1]["data"][0]["id"]
-        else:
-            logger.error(f"Failed to create root module '{module_name}': {create_resp[1]}")
-            return None
+    return self.endpoint.post("application_modules", data={"data": [data]})
