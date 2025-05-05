@@ -1,92 +1,47 @@
-1. What natural light appears after rain?
-→ Rainbow
-2. What force pulls objects toward the Earth?
-→ Gravity
-3. What is frozen water called?
-→ Ice
-4. What do astronauts travel in to reach space?
-→ Rocket
-5. What is the closest planet to the Sun?
-→ Mercury
-6. What invention lets you look right through a wall?
-→ Window
-7. Who flies on a broomstick and wears a pointy hat?
-→ Witch
-8. What does Cinderella leave behind at the ball?
-→ Shoe
-9. What magical item helps Aladdin fly?
-→ Carpet
-10. What do minions love to eat?
-→ Banana
-11. What starts with “e,” ends with “e,” and has one letter in it?
-→ Envelope
-12. What has hands but no arms or legs?
-→ Clock
-12. What can fill a room but takes up no space?
-→ Light
-13. What goes up but never comes down?
-→ Age
-14. What is always in front of you but can’t be seen?
-→ Future
-15. What is full of holes but still holds water?
-→ Sponge
-Hi nga 
-Mine 15
-1. What office buddy delivers your emails and calendar invites like clockwork?
-→ Outlook
+def upload_single_slice(self, resultsSlice, slice_index):
+    testRuns = "\n".join([
+        TEST_RUN.format(
+            testname=testname.split('.')[0] + '.' + testname.split('.')[-1].rsplit('-', 3)[1],
+            testclass=testclass,
+            status=status,
+            started=int(started)*1000,
+            duration=int(duration),
+            package=testname.rsplit('/', 1)[0],
+            module=testSuitePath.rsplit('/', 1)[0]
+        )
+        for (testname, testclass, status, started, duration) in resultsSlice
+    ])
 
+    data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
+        test_results=testRuns,
+        testSuiteID=testSuiteID,
+        externalRunID=externalRunID,
+        applicationModuleID=applicationModuleID
+    )
 
-2. What cheerful machine grants snacks and smiles with a simple push?
-→ Vending Machine
+    max_retries = 5
+    retry_delay = 10  # seconds
 
+    for attempt in range(max_retries):
+        response = self.endpoint.post("test-results", data=data, dataType="xml")
+        status, task_response = response
 
-3. What brainstorm party fills the room with ideas, charts, and laughter?
-→ Meeting
+        if status == "Success":
+            task_id = task_response.get("id")
+            logger.info(f"Slice {slice_index}: Upload successful. Task ID: {task_id}")
+            break
 
+        elif "testbox_queue_full" in str(task_response) or "Queue limit" in str(task_response):
+            logger.warning(f"Slice {slice_index}: Queue limit hit. Retrying after {retry_delay}s... ({attempt + 1}/{max_retries})")
+            time.sleep(retry_delay)
+            continue
 
-4. What bright buddy shows your projects, pictures, and presentations all day long?
-→ Monitor
+        else:
+            logger.error(f"Slice {slice_index}: Upload failed: {task_response}")
+            raise RuntimeError(f"Failed to upload test results slice: {task_response}")
+    else:
+        raise RuntimeError(f"Slice {slice_index}: Failed after {max_retries} retries due to persistent queue limit.")
 
-
-5. What pocket-sized pass unlocks doors and welcomes you to work?
-→ ID
-
-
-6. What happy place fills the air with the smell of coffee, snacks, and chatter?
-→ Cafeteria
-
-
-7. What cozy space holds your car safely while you chase your dreams inside?
-→ Parking
-
-
-8. What magic box lifts you to new heights with just a button press?
-→ Elevator
-
-
-9. What patient parade moves one step at a time toward something exciting?
-→ Queue
-
-
-10. What buzzing buddy fits in your pocket and keeps you connected everywhere?
-→ Mobile
-
-
-11. What silent superhero recharges you for a brand-new day?
-→ Sleep
-
-
-12. What magical suitcase carries your laptop, notebook, and dreams?
-→ Bag
-
-
-13. What buzzing sound signals a new start to the day or meeting?
-→ Bell
-
-
-14. What tiny spark powers up your gadgets for another busy day?
-→ Charger
-
-
-15. What colorful circles bring fun and flavor to every celebration?
-→ Donut
+    # Proceed with task tracking
+    task_id = task_response.get("id")
+    return task_id
