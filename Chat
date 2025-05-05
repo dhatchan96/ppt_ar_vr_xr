@@ -1,47 +1,30 @@
-def upload_single_slice(self, resultsSlice, slice_index):
-    testRuns = "\n".join([
-        TEST_RUN.format(
-            testname=testname.split('.')[0] + '.' + testname.split('.')[-1].rsplit('-', 3)[1],
-            testclass=testclass,
-            status=status,
-            started=int(started)*1000,
-            duration=int(duration),
-            package=testname.rsplit('/', 1)[0],
-            module=testSuitePath.rsplit('/', 1)[0]
-        )
-        for (testname, testclass, status, started, duration) in resultsSlice
-    ])
+def getOrCreateRootApplicationModuleID(self, module_name):
+    """
+    Returns root application module ID for given name.
+    - If one match → returns ID.
+    - If multiple matches → logs error.
+    - If not found → creates new root module and returns ID.
+    """
+    query = f"name EQ \"{module_name}\""
+    status, response = self.endpoint.get(f"application_modules?query=\"{query}\"")
 
-    data = EVIDENCE_TEMPLATE_TEST_SUITE.format(
-        test_results=testRuns,
-        testSuiteID=testSuiteID,
-        externalRunID=externalRunID,
-        applicationModuleID=applicationModuleID
-    )
+    if status != "Success":
+        logger.error(f"Failed to fetch application module: {response}")
+        return None
 
-    max_retries = 5
-    retry_delay = 10  # seconds
-
-    for attempt in range(max_retries):
-        response = self.endpoint.post("test-results", data=data, dataType="xml")
-        status, task_response = response
-
-        if status == "Success":
-            task_id = task_response.get("id")
-            logger.info(f"Slice {slice_index}: Upload successful. Task ID: {task_id}")
-            break
-
-        elif "testbox_queue_full" in str(task_response) or "Queue limit" in str(task_response):
-            logger.warning(f"Slice {slice_index}: Queue limit hit. Retrying after {retry_delay}s... ({attempt + 1}/{max_retries})")
-            time.sleep(retry_delay)
-            continue
-
-        else:
-            logger.error(f"Slice {slice_index}: Upload failed: {task_response}")
-            raise RuntimeError(f"Failed to upload test results slice: {task_response}")
+    matches = response.get("data", [])
+    if len(matches) > 1:
+        logger.error(f"Duplicate root application modules found for name '{module_name}'. Cannot proceed.")
+        return None
+    elif len(matches) == 1:
+        logger.info(f"Found root module '{module_name}' with ID: {matches[0]['id']}")
+        return matches[0]["id"]
     else:
-        raise RuntimeError(f"Slice {slice_index}: Failed after {max_retries} retries due to persistent queue limit.")
-
-    # Proceed with task tracking
-    task_id = task_response.get("id")
-    return task_id
+        # Create root module using existing method
+        logger.info(f"No module named '{module_name}' found. Creating new root module...")
+        create_resp = self.createApplicationModule(module_name, parentID=None)
+        if create_resp[0] == "Success":
+            return create_resp[1]["data"][0]["id"]
+        else:
+            logger.error(f"Failed to create root module '{module_name}': {create_resp[1]}")
+            return None
