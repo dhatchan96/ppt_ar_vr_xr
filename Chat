@@ -1,6 +1,349 @@
-def createApplicationModule(self, name, parentID=None):
-    data = {"name": name}
-    if parentID:
-        data["parent"] = {"type": "application_module", "id": parentID}
+import wx
+import os
+import subprocess
+import pandas as pd
 
-    return self.endpoint.post("application_modules", data={"data": [data]})
+class FileExtractor(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="PDF Extractor - Config Based", size=(700, 520))
+
+        panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Notebook with tabs
+        notebook = wx.Notebook(panel, size=(660, 300))
+
+        self.pdf_dir_path = ""
+        self.config_file_path = ""
+        self.output_path = ""
+
+        # === Tab 1 ===
+        tab1 = wx.Panel(notebook)
+
+        pdf_label = wx.StaticText(tab1, label="Select PDF Directory:", pos=(20, 20))
+        self.pdf_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 45), size=(450, 25))
+        self.pdf_path_ctrl.SetBackgroundColour(wx.Colour(230, 240, 255))
+        pdf_btn = wx.Button(tab1, label="Browse", pos=(480, 45))
+        pdf_btn.Bind(wx.EVT_BUTTON, self.browse_pdf_directory)
+
+        config_label = wx.StaticText(tab1, label="Select Config Excel File:", pos=(20, 90))
+        self.config_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
+        self.config_path_ctrl.SetBackgroundColour(wx.Colour(240, 230, 255))
+        config_btn = wx.Button(tab1, label="Browse", pos=(480, 115))
+        config_btn.Bind(wx.EVT_BUTTON, self.browse_config_file)
+
+        output_label = wx.StaticText(tab1, label="Save Output As:", pos=(20, 160))
+        self.output_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 185), size=(450, 25))
+        self.output_path_ctrl.SetBackgroundColour(wx.Colour(230, 255, 230))
+        output_btn = wx.Button(tab1, label="Browse", pos=(480, 185))
+        output_btn.Bind(wx.EVT_BUTTON, self.choose_output_file)
+
+        self.debug_checkbox = wx.CheckBox(tab1, label="Debug Mode", pos=(20, 220))
+
+        self.process_btn = wx.Button(tab1, label="Extract and Save", pos=(120, 240))
+        self.process_btn.Disable()
+        self.process_btn.Bind(wx.EVT_BUTTON, self.process_files)
+
+        # === Tab 2 ===
+        tab2 = wx.Panel(notebook)
+        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(600, 230))
+
+        notebook.AddPage(tab1, "PDF Extraction")
+        notebook.AddPage(tab2, "PDF Files Found")
+
+        # === Log Panel ===
+        self.log_box = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 100))
+        self.log_box.SetBackgroundColour(wx.Colour(250, 250, 250))
+
+        # === Open Log Location Button ===
+        self.open_log_btn = wx.Button(panel, label="Open Log Location", size=(150, 30))
+        self.open_log_btn.Bind(wx.EVT_BUTTON, self.open_output_folder)
+
+        log_btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        log_btn_sizer.AddStretchSpacer()
+        log_btn_sizer.Add(self.open_log_btn, 0, wx.RIGHT, 10)
+
+        # === Layout Composition ===
+        main_sizer.Add(notebook, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.log_box, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        main_sizer.Add(log_btn_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 10)
+
+        panel.SetSizer(main_sizer)
+
+        # === Status Bar ===
+        self.CreateStatusBar()
+        self.SetStatusText("Waiting for input...")
+
+        self.Centre()
+        self.Show()
+
+    def browse_pdf_directory(self, event):
+        with wx.DirDialog(self, "Select PDF Directory") as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.pdf_dir_path = dialog.GetPath()
+                self.pdf_path_ctrl.SetValue(self.pdf_dir_path)
+                self.check_ready()
+
+    def browse_config_file(self, event):
+        with wx.FileDialog(self, "Select Config Excel File", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.config_file_path = dialog.GetPath()
+                self.config_path_ctrl.SetValue(self.config_file_path)
+                self.check_ready()
+
+    def choose_output_file(self, event):
+        with wx.FileDialog(self, "Save Output File", wildcard="Excel files (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.output_path = dialog.GetPath()
+                self.output_path_ctrl.SetValue(self.output_path)
+                self.check_ready()
+
+    def check_ready(self):
+        if self.pdf_dir_path and self.config_file_path and self.output_path:
+            self.process_btn.Enable()
+            self.SetStatusText("Ready to extract")
+        else:
+            self.process_btn.Disable()
+            self.SetStatusText("Waiting for input...")
+
+    def process_files(self, event):
+        self.log_box.Clear()
+        self.SetStatusText("Processing...")
+        self.log("Starting PDF extraction process...")
+
+        if not self.pdf_dir_path or not self.config_file_path:
+            wx.MessageBox("Please select both PDF directory and Config Excel file!", "Error", wx.ICON_ERROR)
+            self.SetStatusText("Missing inputs")
+            return
+
+        combined_df = pd.DataFrame()
+
+        try:
+            config_df = pd.read_excel(self.config_file_path)
+            combined_df = config_df.copy()
+            self.log(f"Loaded config file: {self.config_file_path}")
+        except Exception as e:
+            msg = f"[ERROR] Failed to read config: {str(e)}"
+            self.log(msg)
+            self.SetStatusText("Error reading config")
+            wx.MessageBox(msg, "Error", wx.ICON_ERROR)
+            return
+
+        pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
+                     if f.lower().endswith(".pdf")]
+        self.file_listbox.Clear()
+        self.file_listbox.InsertItems(pdf_files, 0)
+
+        self.log("PDFs found:")
+        for pdf in pdf_files:
+            self.log(f"  - {pdf}")
+
+        if self.output_path:
+            try:
+                combined_df.to_excel(self.output_path, index=False)
+                self.log(f"Output saved to: {self.output_path}")
+                if self.debug_checkbox.IsChecked():
+                    self.log("[Debug Mode Enabled]")
+                wx.MessageBox("File saved successfully!", "Success")
+                self.SetStatusText("File saved successfully")
+            except Exception as e:
+                self.log(f"[ERROR] Saving failed: {str(e)}")
+                self.SetStatusText("Failed to save file")
+                wx.MessageBox(f"Failed to save file: {str(e)}", "Error", wx.ICON_ERROR)
+        else:
+            wx.MessageBox("Please choose an output file path!", "Error", wx.ICON_ERROR)
+            self.SetStatusText("Output path missing")
+
+    def log(self, message):
+        self.log_box.AppendText(message + "\n")
+
+    def open_output_folder(self, event):
+        if self.output_path:
+            folder = os.path.dirname(self.output_path)
+            if os.name == 'nt':  # Windows
+                os.startfile(folder)
+            elif os.name == 'posix':  # macOS or Linux
+                subprocess.call(['open', folder] if sys.platform == 'darwin' else ['xdg-open', folder])
+        else:
+            wx.MessageBox("Output path not set yet.", "Info", wx.ICON_INFORMATION)
+
+if __name__ == '__main__':
+    app = wx.App(False)
+    frame = FileExtractor()
+    app.MainLoop()import wx
+import os
+import subprocess
+import pandas as pd
+
+class FileExtractor(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="PDF Extractor - Config Based", size=(700, 520))
+
+        panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Notebook with tabs
+        notebook = wx.Notebook(panel, size=(660, 300))
+
+        self.pdf_dir_path = ""
+        self.config_file_path = ""
+        self.output_path = ""
+
+        # === Tab 1 ===
+        tab1 = wx.Panel(notebook)
+
+        pdf_label = wx.StaticText(tab1, label="Select PDF Directory:", pos=(20, 20))
+        self.pdf_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 45), size=(450, 25))
+        self.pdf_path_ctrl.SetBackgroundColour(wx.Colour(230, 240, 255))
+        pdf_btn = wx.Button(tab1, label="Browse", pos=(480, 45))
+        pdf_btn.Bind(wx.EVT_BUTTON, self.browse_pdf_directory)
+
+        config_label = wx.StaticText(tab1, label="Select Config Excel File:", pos=(20, 90))
+        self.config_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 115), size=(450, 25))
+        self.config_path_ctrl.SetBackgroundColour(wx.Colour(240, 230, 255))
+        config_btn = wx.Button(tab1, label="Browse", pos=(480, 115))
+        config_btn.Bind(wx.EVT_BUTTON, self.browse_config_file)
+
+        output_label = wx.StaticText(tab1, label="Save Output As:", pos=(20, 160))
+        self.output_path_ctrl = wx.TextCtrl(tab1, style=wx.TE_READONLY, pos=(20, 185), size=(450, 25))
+        self.output_path_ctrl.SetBackgroundColour(wx.Colour(230, 255, 230))
+        output_btn = wx.Button(tab1, label="Browse", pos=(480, 185))
+        output_btn.Bind(wx.EVT_BUTTON, self.choose_output_file)
+
+        self.debug_checkbox = wx.CheckBox(tab1, label="Debug Mode", pos=(20, 220))
+
+        self.process_btn = wx.Button(tab1, label="Extract and Save", pos=(120, 240))
+        self.process_btn.Disable()
+        self.process_btn.Bind(wx.EVT_BUTTON, self.process_files)
+
+        # === Tab 2 ===
+        tab2 = wx.Panel(notebook)
+        self.file_listbox = wx.ListBox(tab2, pos=(20, 20), size=(600, 230))
+
+        notebook.AddPage(tab1, "PDF Extraction")
+        notebook.AddPage(tab2, "PDF Files Found")
+
+        # === Log Panel ===
+        self.log_box = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 100))
+        self.log_box.SetBackgroundColour(wx.Colour(250, 250, 250))
+
+        # === Open Log Location Button ===
+        self.open_log_btn = wx.Button(panel, label="Open Log Location", size=(150, 30))
+        self.open_log_btn.Bind(wx.EVT_BUTTON, self.open_output_folder)
+
+        log_btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        log_btn_sizer.AddStretchSpacer()
+        log_btn_sizer.Add(self.open_log_btn, 0, wx.RIGHT, 10)
+
+        # === Layout Composition ===
+        main_sizer.Add(notebook, 0, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.log_box, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        main_sizer.Add(log_btn_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 10)
+
+        panel.SetSizer(main_sizer)
+
+        # === Status Bar ===
+        self.CreateStatusBar()
+        self.SetStatusText("Waiting for input...")
+
+        self.Centre()
+        self.Show()
+
+    def browse_pdf_directory(self, event):
+        with wx.DirDialog(self, "Select PDF Directory") as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.pdf_dir_path = dialog.GetPath()
+                self.pdf_path_ctrl.SetValue(self.pdf_dir_path)
+                self.check_ready()
+
+    def browse_config_file(self, event):
+        with wx.FileDialog(self, "Select Config Excel File", wildcard="Excel files (*.xls;*.xlsx)|*.xls;*.xlsx",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.config_file_path = dialog.GetPath()
+                self.config_path_ctrl.SetValue(self.config_file_path)
+                self.check_ready()
+
+    def choose_output_file(self, event):
+        with wx.FileDialog(self, "Save Output File", wildcard="Excel files (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dialog:
+            if dialog.ShowModal() == wx.ID_OK:
+                self.output_path = dialog.GetPath()
+                self.output_path_ctrl.SetValue(self.output_path)
+                self.check_ready()
+
+    def check_ready(self):
+        if self.pdf_dir_path and self.config_file_path and self.output_path:
+            self.process_btn.Enable()
+            self.SetStatusText("Ready to extract")
+        else:
+            self.process_btn.Disable()
+            self.SetStatusText("Waiting for input...")
+
+    def process_files(self, event):
+        self.log_box.Clear()
+        self.SetStatusText("Processing...")
+        self.log("Starting PDF extraction process...")
+
+        if not self.pdf_dir_path or not self.config_file_path:
+            wx.MessageBox("Please select both PDF directory and Config Excel file!", "Error", wx.ICON_ERROR)
+            self.SetStatusText("Missing inputs")
+            return
+
+        combined_df = pd.DataFrame()
+
+        try:
+            config_df = pd.read_excel(self.config_file_path)
+            combined_df = config_df.copy()
+            self.log(f"Loaded config file: {self.config_file_path}")
+        except Exception as e:
+            msg = f"[ERROR] Failed to read config: {str(e)}"
+            self.log(msg)
+            self.SetStatusText("Error reading config")
+            wx.MessageBox(msg, "Error", wx.ICON_ERROR)
+            return
+
+        pdf_files = [os.path.join(self.pdf_dir_path, f) for f in os.listdir(self.pdf_dir_path)
+                     if f.lower().endswith(".pdf")]
+        self.file_listbox.Clear()
+        self.file_listbox.InsertItems(pdf_files, 0)
+
+        self.log("PDFs found:")
+        for pdf in pdf_files:
+            self.log(f"  - {pdf}")
+
+        if self.output_path:
+            try:
+                combined_df.to_excel(self.output_path, index=False)
+                self.log(f"Output saved to: {self.output_path}")
+                if self.debug_checkbox.IsChecked():
+                    self.log("[Debug Mode Enabled]")
+                wx.MessageBox("File saved successfully!", "Success")
+                self.SetStatusText("File saved successfully")
+            except Exception as e:
+                self.log(f"[ERROR] Saving failed: {str(e)}")
+                self.SetStatusText("Failed to save file")
+                wx.MessageBox(f"Failed to save file: {str(e)}", "Error", wx.ICON_ERROR)
+        else:
+            wx.MessageBox("Please choose an output file path!", "Error", wx.ICON_ERROR)
+            self.SetStatusText("Output path missing")
+
+    def log(self, message):
+        self.log_box.AppendText(message + "\n")
+
+    def open_output_folder(self, event):
+        if self.output_path:
+            folder = os.path.dirname(self.output_path)
+            if os.name == 'nt':  # Windows
+                os.startfile(folder)
+            elif os.name == 'posix':  # macOS or Linux
+                subprocess.call(['open', folder] if sys.platform == 'darwin' else ['xdg-open', folder])
+        else:
+            wx.MessageBox("Output path not set yet.", "Info", wx.ICON_INFORMATION)
+
+if __name__ == '__main__':
+    app = wx.App(False)
+    frame = FileExtractor()
+    app.MainLoop()
