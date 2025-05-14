@@ -1,3 +1,36 @@
+Here's a concise Given–When–Then formatted Acceptance Criteria for ticket QZSDLC-44158:
+
+
+---
+
+Acceptance Criteria
+
+Given the Octane configuration is available,
+When the client and API modules are initialized,
+Then they should support secure authentication and token caching.
+
+Given valid test result data and Octane credentials,
+When the upload() method is triggered,
+Then test results should be uploaded via REST API in slices.
+
+Given the Octane queue limit (50) is reached,
+When a slice fails with queue_full,
+Then the system should retry the slice upload with a 10-second delay until successful.
+
+Given the test run is completed,
+When the tasks are monitored using trackPendingTasks(),
+Then the system should log final status and timeout after 10 minutes.
+
+Given the task slice status,
+When upload fails or succeeds,
+Then it should be stored in the database for future retrieval or retry.
+
+
+
+---
+
+Let me know if you want it in .rst, .md, or .docx format.
+
 mock_ticket = MagicMock()
 mock_ticket.fields.customfield_12970.value = 'Regression Test'
 mock_ticket.fields.customfield_12370.value = 'Regression Test'
