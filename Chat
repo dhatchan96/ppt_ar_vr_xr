@@ -1,56 +1,116 @@
-Here's a concise Given–When–Then formatted Acceptance Criteria for ticket QZSDLC-44158:
+Here is the acceptance criteria in Given-When-Then format for the ticket related to code cleanup and optimization in qz_remedy_client.py:
 
 
 ---
 
 Acceptance Criteria
 
-Given the Octane configuration is available,
-When the client and API modules are initialized,
-Then they should support secure authentication and token caching.
+1. Remove Unused Methods
 
-Given valid test result data and Octane credentials,
-When the upload() method is triggered,
-Then test results should be uploaded via REST API in slices.
+Given the qz_remedy_client.py file contains methods that are no longer used in the codebase,
 
-Given the Octane queue limit (50) is reached,
-When a slice fails with queue_full,
-Then the system should retry the slice upload with a 10-second delay until successful.
+When the cleanup script or manual review is performed,
 
-Given the test run is completed,
-When the tasks are monitored using trackPendingTasks(),
-Then the system should log final status and timeout after 10 minutes.
+Then all unused methods should be safely removed without affecting existing functionality.
 
-Given the task slice status,
-When upload fails or succeeds,
-Then it should be stored in the database for future retrieval or retry.
 
+
+2. Optimize Redundant Code
+
+Given there are redundant or repetitive code blocks in the qz_remedy_client.py,
+
+When the file is refactored,
+
+Then such blocks should be optimized using standard coding best practices without changing the output or logic.
+
+
+
+3. Pass All Unit Tests
+
+Given the cleanup changes are committed,
+
+When the test suite is executed,
+
+Then all relevant unit and integration tests should pass without any failures or regressions.
+
+
+
+4. Maintain Code Readability and PEP8 Compliance
+
+Given the file is cleaned and optimized,
+
+When reviewed using linters or code scanners,
+
+Then the code should follow PEP8 standards and be easily readable and maintainable.
+
+
+
+5. No Change in External Behavior
+
+Given existing services or clients depend on qz_remedy_client.py,
+
+When the cleaned-up code is deployed,
+
+Then there should be no change in expected API behavior or data processing
+
+
+
+
+Here is the acceptance criteria in Given-When-Then format for the ticket related to code cleanup and optimization in qz_remedy_client.py:
 
 
 ---
 
-Let me know if you want it in .rst, .md, or .docx format.
+Acceptance Criteria
 
-mock_ticket = MagicMock()
-mock_ticket.fields.customfield_12970.value = 'Regression Test'
-mock_ticket.fields.customfield_12370.value = 'Regression Test'
+1. Remove Unused Methods
 
-mock_jira = MagicMock()
-mock_jira.search_issues.return_value = [mock_ticket]
+Given the qz_remedy_client.py file contains methods that are no longer used in the codebase,
 
-dialog.JiraClients = [mock_jira]
-dialog.RequestOnly = lambda: True
-dialog.Build().eval().trainVersion.trainConfig.name = 'prod'
+When the cleanup script or manual review is performed,
 
-error = [
-    "An issue with key 'QzSDLC-1234' does not exist for field 'key'."
-]
+Then all unused methods should be safely removed without affecting existing functionality.
 
-self.assertSetEqual(
-    dialog.getValidationErrors(),
-    scheduleEndTimeErrors(dialog)
-    + scheduleStartTimeErrors(dialog)
-    + self.releaseContainerIdErrors(dialog)
-    + self.validateRegressionJiraError(dialog)
-    + error
-)
+
+
+2. Optimize Redundant Code
+
+Given there are redundant or repetitive code blocks in the qz_remedy_client.py,
+
+When the file is refactored,
+
+Then such blocks should be optimized using standard coding best practices without changing the output or logic.
+
+
+
+3. Pass All Unit Tests
+
+Given the cleanup changes are committed,
+
+When the test suite is executed,
+
+Then all relevant unit and integration tests should pass without any failures or regressions.
+
+
+
+4. Maintain Code Readability and PEP8 Compliance
+
+Given the file is cleaned and optimized,
+
+When reviewed using linters or code scanners,
+
+Then the code should follow PEP8 standards and be easily readable and maintainable.
+
+
+
+5. No Change in External Behavior
+
+Given existing services or clients depend on qz_remedy_client.py,
+
+When the cleaned-up code is deployed,
+
+Then there should be no change in expected API behavior or data processing
+
+
+
+
