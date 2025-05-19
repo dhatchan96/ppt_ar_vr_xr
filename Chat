@@ -1,116 +1,80 @@
-Here is the acceptance criteria in Given-When-Then format for the ticket related to code cleanup and optimization in qz_remedy_client.py:
+What is prompt engineering 
 
 
----
+Imagine if you could talk to computers like you talk to people — but with the precision of Sherlock Holmes and the creativity of a Pixar writer. That’s what prompt engineering lets you do. At its core, it’s all about crafting questions, statements, or instructions that guide AI models to give you high-quality, relevant, and smart responses. It’s not about learning a programming language — it’s about learning how to ask better.
 
-Acceptance Criteria
+When you type something into Github copilot or any other language model, you’re giving it a “prompt.” The AI then tries to guess what comes next. If your prompt is clear, specific, and well-structured, the model nails it. If it’s vague or confusing, you get garbled gibberish or off-track results. So, a great prompt might be the difference between “write a poem” and “write a Shakespearean-style sonnet about a confused AI learning to love coffee.”
 
-1. Remove Unused Methods
+Prompt engineering also includes powerful techniques like zero-shot prompting (no examples), few-shot prompting (some examples), and chain-of-thought prompting (asking the model to explain its steps). You can even give it a role — like “Act as a cybersecurity expert” or “Imagine you’re a stand-up comedian explaining quantum physics.” With the right prompt, you unlock powerful AI behavior without needing to train or code a model yourself.
 
-Given the qz_remedy_client.py file contains methods that are no longer used in the codebase,
+In a world where AI is becoming the new work buddy, study partner, or idea factory, prompt engineering is the super skill that separates average results from brilliant ones. Whether you’re building apps, writing emails, analyzing data, or cracking jokes — knowing how to speak “AI” fluently gives you a creative edge in the age of intelligence.
 
-When the cleanup script or manual review is performed,
+Diagram :
 
-Then all unused methods should be safely removed without affecting existing functionality.
+Toolkits
 
+FlowGPT: Explore and share ready-made prompts for different tasks — like a Pinterest for prompt engineers.
 
+PromptHero: A huge library of prompts curated by creators across categories — from AI art to marketing content.
 
-2. Optimize Redundant Code
+LangChain PromptTemplates: For devs building prompt-based pipelines into AI apps.
 
-Given there are redundant or repetitive code blocks in the qz_remedy_client.py,
+Tech story :
+OpenAI’s GPT-4 Turbo Prompt Power-Up
 
-When the file is refactored,
+Story: OpenAI’s GPT-4 Turbo now supports function calling, tool use, and long prompts (128k tokens!) – that’s like feeding it a whole Harry Potter book in one go and asking it to rewrite it as a rap.
 
-Then such blocks should be optimized using standard coding best practices without changing the output or logic.
+OpenAI’s GPT-4 Turbo Prompt Power-Up
 
+Story: OpenAI’s GPT-4 Turbo now supports function calling, tool use, and long prompts (128k tokens!) – that’s like feeding it a whole Harry Potter book in one go and asking it to rewrite it as a rap.
 
 
-3. Pass All Unit Tests
+Challenge :
 
-Given the cleanup changes are committed,
+—-
+Second docs:
 
-When the test suite is executed,
+Welcome to the Prompt Engineering Special Edition of NEWZLET!
+We’re thrilled to explore the powerful art of talking to machines — not with code, but with words. If you’ve ever typed a sentence into ChatGPT, MidJourney, or DALL·E and got a surprisingly intelligent response, guess what? You’ve already done prompt engineering. Let’s break it down, demystify it, and even get hands-on.
 
-Then all relevant unit and integration tests should pass without any failures or regressions.
+⸻
 
+WHAT IS PROMPT ENGINEERING?
 
+Prompt engineering is the skill of crafting effective prompts — questions, instructions, or inputs — that guide AI models like ChatGPT, Claude, or DALL·E to give you accurate, creative, or insightful outputs. These prompts act as a bridge between human intent and machine understanding. Since language models don’t “know” context like humans do, a well-engineered prompt can unlock better answers, images, summaries, or code.
 
-4. Maintain Code Readability and PEP8 Compliance
+Imagine you’re speaking with a powerful but very literal genie. If you ask vaguely, you might get nonsense. But a clear, well-structured prompt like: “Write a 200-word email rejecting a job offer politely, showing gratitude” helps the AI understand exactly what you want. That’s the art and science of prompt engineering — guiding AI to act in line with your intent through smart design.
 
-Given the file is cleaned and optimized,
+Prompt engineering is evolving from a niche skill to a mainstream tech capability. It’s being used in marketing, legal writing, customer service, coding, healthcare — almost anywhere AI touches. The best part? You don’t need to be a programmer to get started — just curious, creative, and a little strategic.
 
-When reviewed using linters or code scanners,
+At the heart of prompt engineering lies understanding the model’s behavior, context limits, and instruction styles. A great prompt breaks ambiguity and aligns model predictions with your goals. This makes prompt engineers the new architects of human-AI collaboration.
 
-Then the code should follow PEP8 standards and be easily readable and maintainable.
+Type	Description	Example
+Zero-Shot Prompting	Ask the model a question directly without examples.	“Translate ‘hello’ to French.”
+One-Shot Prompting	Provide one example to guide the model.	“Translate ‘cat’ to French: chat. Now translate ‘dog’ to French.”
+Few-Shot Prompting	Give several examples to help the model learn the pattern.	“Translate: ‘cat’: chat, ‘dog’: chien, ‘mouse’: ?”
+Chain-of-Thought Prompting	Ask the model to explain its reasoning step by step.	“If John has 3 apples and buys 2 more…”
+Role Prompting	Assign a role or persona to the model.	“Act as a financial advisor. Help me build a savings plan.”
+Instruction Tuning Prompts	Use specially designed commands based on fine-tuned models.	
 
+TECH STORY OF THE MONTH
 
+OpenAI launches GPT-4o (Omni) with Enhanced Prompt Understanding
+The newest model, GPT-4o, can handle text, audio, and vision inputs with deeper context awareness. Prompt engineering now goes multimodal, where how you describe an image or say a command can shape outcomes. Try:
+“Describe this photo like a travel brochure” — and GPT-4o delivers magic.
 
-5. No Change in External Behavior
+PICKS / TOOLS OF THE MONTH
+	•	PromptHero – Browse thousands of curated prompts for ChatGPT, MidJourney, and more.
+	•	FlowGPT – A prompt-sharing community for prompt engineers to showcase, reuse, and remix prompts.
+	•	LangChain Prompt Templates – Create dynamic, composable prompts for coding and agents.
+	•	PromptLayer – Track, log, and manage prompt versions like you would code!
 
-Given existing services or clients depend on qz_remedy_client.py,
+CHALLENGE OF THE MONTH:
 
-When the cleaned-up code is deployed,
+Build Your Own Prompt Library Web App
 
-Then there should be no change in expected API behavior or data processing
-
-
-
-
-Here is the acceptance criteria in Given-When-Then format for the ticket related to code cleanup and optimization in qz_remedy_client.py:
-
-
----
-
-Acceptance Criteria
-
-1. Remove Unused Methods
-
-Given the qz_remedy_client.py file contains methods that are no longer used in the codebase,
-
-When the cleanup script or manual review is performed,
-
-Then all unused methods should be safely removed without affecting existing functionality.
-
-
-
-2. Optimize Redundant Code
-
-Given there are redundant or repetitive code blocks in the qz_remedy_client.py,
-
-When the file is refactored,
-
-Then such blocks should be optimized using standard coding best practices without changing the output or logic.
-
-
-
-3. Pass All Unit Tests
-
-Given the cleanup changes are committed,
-
-When the test suite is executed,
-
-Then all relevant unit and integration tests should pass without any failures or regressions.
-
-
-
-4. Maintain Code Readability and PEP8 Compliance
-
-Given the file is cleaned and optimized,
-
-When reviewed using linters or code scanners,
-
-Then the code should follow PEP8 standards and be easily readable and maintainable.
-
-
-
-5. No Change in External Behavior
-
-Given existing services or clients depend on qz_remedy_client.py,
-
-When the cleaned-up code is deployed,
-
-Then there should be no change in expected API behavior or data processing
-
-
-
-
+🚀 What you’ll build:
+	•	A mini app where users can select prompt types and see results in real time
+	•	Uses Gradio + OpenAI API (or any LLM API)
+	•	Add categories like “Writing,” “Coding,” “Education,” and “Fun”
+	◦
