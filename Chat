@@ -1,7 +1,7 @@
-from qz.sdlc.rm.services.releasemanager import ReleaseManagerService
-import sandra
 from unittest import mock
 from qz.core.test.qzunittest import QzTestCase
+from qz.sdlc.rm.services.releasemanager import ReleaseManagerService
+import sandra
 
 class ReleaseManagerServiceTest(QzTestCase):
 
@@ -29,36 +29,71 @@ class ReleaseManagerServiceTest(QzTestCase):
             }
         )
 
-    def test_getReleaseContainer(self):
-        with mock.patch(
-            'qz.sdlc.rm.lib.api.get_release_container_status',
-            return_value=(200, {
-                'status': 'OK',
-                'releaseKey': 'releaseKey',
-                'releaseName': 'releaseName',
-                'status': 'status',
-                'links': {'links': 'links'},
-                'workItemIds': ['workItemIds']
-            })
-        ):
-            rms = ReleaseManagerService('Quartz', 'local')
-            self.assertEqual(
-                rms.getReleaseContainer('RM-SDLC-1234'),
-                {
-                    'status': True,
-                    'message': 'OK',
-                    'status_code': 200,
-                    'ReleaseContainer': {
-                        'releaseKey': 'releaseKey',
-                        'releaseName': 'releaseName',
-                        'status': 'status',
-                        'links': {'links': 'links'},
-                        'workItemIds': ['workItemIds'],
-                        'crq': None,
-                        'createdAt': None,
-                        'createdBy': None,
-                        'updatedAt': None,
-                        'updatedBy': None,
-                    }
-                }
-            )
+    @mock.patch('qz.sdlc.rm.lib.api.associate_crq_with_container')
+    def test_associateCrqWithContainer(self, mock_func):
+        mock_func.return_value = (
+            200,
+            {'status': 'Success'},
+            {'isSuccess': True}
+        )
+        rms = ReleaseManagerService('Quartz', 'local')
+        self.assertEqual(
+            rms.associateCrqWithContainer('RM-1234', 'CRQ-001'),
+            {
+                'status': True,
+                'requestStatus': 'Success',
+                'isSuccess': True
+            }
+        )
+
+    @mock.patch('qz.sdlc.rm.lib.api.disassociate_crq_with_container')
+    def test_disassociateCrqWithContainer(self, mock_func):
+        mock_func.return_value = (
+            200,
+            {'status': 'Done'},
+            {'isSuccess': False}
+        )
+        rms = ReleaseManagerService('Quartz', 'local')
+        self.assertEqual(
+            rms.disassociateCrqWithContainer('RM-1234', 'CRQ-002'),
+            {
+                'status': True,
+                'requestStatus': 'Done',
+                'isSuccess': False
+            }
+        )
+
+    @mock.patch('qz.sdlc.rm.lib.api.cancel_release_container')
+    def test_cancelReleaseContainer(self, mock_func):
+        mock_func.return_value = (
+            200,
+            {'status': 'Cancelled'},
+            {'release_key': 'REL123'}
+        )
+        rms = ReleaseManagerService('Quartz', 'local')
+        self.assertEqual(
+            rms.cancelReleaseContainer('RM-1234'),
+            {
+                'status': True,
+                'status_code': 200,
+                'message': 'Cancelled',
+                'releaseKey': 'REL123'
+            }
+        )
+
+    @mock.patch('qz.sdlc.rm.lib.api.get_available_jira_projects')
+    def test_getAvailableJiraProjects(self, mock_func):
+        mock_func.return_value = (
+            200,
+            {'status': 'OK'},
+            {'projects': ['JIRA-1', 'JIRA-2']}
+        )
+        rms = ReleaseManagerService('Quartz', 'local')
+        self.assertEqual(
+            rms.getAvailableJiraProjects(),
+            {
+                'status': True,
+                'status_code': 200,
+                'body': {'projects': ['JIRA-1', 'JIRA-2']}
+            }
+        )
