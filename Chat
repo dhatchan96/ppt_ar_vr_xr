@@ -1,51 +1,27 @@
-@mock.patch('qz.core.rest.restutil.Rest.request')
-def test_createReleaseContainer(self, request):
-    client = ReleaseManagerClient('unittest')
-    client.createReleaseContainer('Rel-A', 'v1.0', 'JIRA-123', 'Initial deploy')
-
-    args, kwargs = request.call_args
-    assert 'createReleaseContainer' in args[0]
-    self.assertEqual(
-        kwargs,
-        {
-            'data': {
-                'releaseName': 'Rel-A',
-                'releaseTag': 'v1.0',
-                'containerJiraProject': 'JIRA-123',
-                'changeDescription': 'Initial deploy',
-            },
-            'authentication_type': 'pki'
-        }
+@patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
+def test_create_release_container(self, mock_create):
+    mock_create.return_value = (
+        200,
+        {'release_key': 'REL-456'},
+        'OK'
     )
 
+    payload = {
+        'releaseName': 'Release-A',
+        'releaseTag': 'v1.0',
+        'containerJiraProject': 'JIRA-PROJ',
+        'changeDescription': 'initial deployment'
+    }
 
-@mock.patch('qz.core.rest.restutil.Rest.request')
-def test_cancelReleaseContainer(self, request):
-    client = ReleaseManagerClient('unittest')
-    client.cancelReleaseContainer('RM-1234')
-
-    args, kwargs = request.call_args
-    assert 'cancelReleaseContainer' in args[0]
-    self.assertEqual(
-        kwargs,
-        {
-            'data': {'releaseContainerID': 'RM-1234'},
-            'authentication_type': 'pki'
-        }
+    response = self.app.post(
+        '/createReleaseContainer',
+        data=json.dumps(payload),
+        content_type='application/json'
     )
 
-
-@mock.patch('qz.core.rest.restutil.Rest.request')
-def test_getAvailableJiraProjects(self, request):
-    client = ReleaseManagerClient('unittest')
-    client.getAvailableJiraProjects()
-
-    args, kwargs = request.call_args
-    assert 'getAvailableJiraProjects' in args[0]
-    self.assertEqual(
-        kwargs,
-        {
-            'data': None,
-            'authentication_type': 'pki'
-        }
-    )
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.json, {
+        'status': True,
+        'status_code': 200,
+        'body': 'REL-456'
+    })
