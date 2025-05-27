@@ -1,12 +1,8 @@
-# At the top of your test file (before class definition)
-import types
-from qz.sdlc.rm.services import releasemanager
+class TestReleaseManagerRoutes(QzTestCase):
+    QzTestCase_txn = False  # or True depending on your test infra
 
-original_route = releasemanager.route
-
-def safe_route(self, rule, *args, **kwargs):
-    if not rule.startswith('/'):
-        rule = '/' + rule
-    return original_route(self, rule, *args, **kwargs)
-
-releasemanager.route = types.MethodType(safe_route, releasemanager)
+    def setUp(self):
+        app = Flask(__name__)
+        app.register_blueprint(releasemanager)
+        self.app = app.test_client()
+        self.app.testing = True
