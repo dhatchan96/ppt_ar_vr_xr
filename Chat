@@ -1,40 +1,64 @@
-import unittest
-import json
-from flask import Flask
+from qz.sdlc.rm.services.releasemanager import ReleaseManagerService
+import sandra
 from unittest import mock
-from qz.sdlc.rm.services import releasemanager
-from qz.sdlc.rm.services.releasemanager import getReleaseContainer, updateContainerWorkItems
+from qz.core.test.qzunittest import QzTestCase
 
-class ReleaseManagerTestCase(unittest.TestCase):
+class ReleaseManagerServiceTest(QzTestCase):
 
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.app.register_blueprint(releasemanager.releasemanager)
-        self._makeTestURL = lambda page='': page  # Simulate URL generation used in test context
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        mock.patch(
+            'qz.sdlc.rm.services.releasemanager.ReleaseManagerService._fetchOnBehalfOfToken',
+            return_value={'token': 'token_code', 'status_code': 200}
+        ).start()
+        mock.patch(
+            'qz.people.isServiceAccount',
+            return_value=False
+        ).start()
 
-    @mock.patch('releasemanager.releaseManagerService.getReleaseContainer')
-    def test_get_release_container(self, mock_get):
-        mock_get.return_value = {'status': True, 'body': {'container': 'xyz'}}
-        with self.app.test_request_context(self._makeTestURL(page='/getReleaseContainer?releaseContainerID=test123')):
-            response = getReleaseContainer()
-            self.assertEqual(200, response.status_code)
+    def test_getToken(self):
+        rms = ReleaseManagerService('Quartz', 'local')
+        self.assertEqual(
+            rms.getToken(),
+            {
+                'status': True,
+                'on_behalf': sandra.srcdb.user,
+                'token': 'token_code',
+                'status_code': 200
+            }
+        )
 
-    @mock.patch('releasemanager.releaseManagerService.updateContainerWorkItems')
-    def test_update_work_items(self, mock_update):
-        mock_update.return_value = {'status': True, 'message': 'Updated'}
-        payload = {
-            'releaseContainerID': 'test123',
-            'work_items': ['WI123'],
-            'action': 'ADD'
-        }
-        with self.app.test_request_context(
-            self._makeTestURL(page='/updateContainerWorkItems'),
-            method='POST',
-            data=json.dumps(payload),
-            content_type='application/json'
+    def test_getReleaseContainer(self):
+        with mock.patch(
+            'qz.sdlc.rm.lib.api.get_release_container_status',
+            return_value=(200, {
+                'status': 'OK',
+                'releaseKey': 'releaseKey',
+                'releaseName': 'releaseName',
+                'status': 'status',
+                'links': {'links': 'links'},
+                'workItemIds': ['workItemIds']
+            })
         ):
-            response = updateContainerWorkItems()
-            self.assertEqual(200, response.status_code)
-
-if __name__ == '__main__':
-    unittest.main()
+            rms = ReleaseManagerService('Quartz', 'local')
+            self.assertEqual(
+                rms.getReleaseContainer('RM-SDLC-1234'),
+                {
+                    'status': True,
+                    'message': 'OK',
+                    'status_code': 200,
+                    'ReleaseContainer': {
+                        'releaseKey': 'releaseKey',
+                        'releaseName': 'releaseName',
+                        'status': 'status',
+                        'links': {'links': 'links'},
+                        'workItemIds': ['workItemIds'],
+                        'crq': None,
+                        'createdAt': None,
+                        'createdBy': None,
+                        'updatedAt': None,
+                        'updatedBy': None,
+                    }
+                }
+            )
