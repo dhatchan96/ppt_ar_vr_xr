@@ -1,7 +1,7 @@
 from flask import Flask
 from unittest import mock
-import json
 from qz.sdlc.rm.services import releasemanager
+import json
 
 class ReleaseManagerRouteTest(QzTestCase):
 
@@ -10,26 +10,15 @@ class ReleaseManagerRouteTest(QzTestCase):
         app.register_blueprint(releasemanager.releasemanager)
         self.client = app.test_client()
 
-    @mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerService.updateContainerWorkItems')
-    def test_updateContainerWorkItems_route(self, mock_update):
-        mock_update.return_value = {
+    @mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerService.getReleaseContainer')
+    def test_getReleaseContainer_route(self, mock_get):
+        mock_get.return_value = {
             'status': True,
             'status_code': 200,
-            'message': 'Updated successfully',
-            'body': 'mocked_body'
+            'message': 'OK',
+            'ReleaseContainer': {'releaseKey': 'REL-123'}
         }
 
-        payload = {
-            "releaseContainerID": "RM-1234",
-            "work_items": ["WI-001"],
-            "action": "ADD"
-        }
-
-        response = self.client.post(
-            '/updateContainerWorkItems',
-            data=json.dumps(payload),
-            content_type='application/json'
-        )
-
+        response = self.client.get('/getReleaseContainer?releaseContainerID=RM-1234')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Updated successfully', response.get_data(as_text=True))
+        self.assertIn('REL-123', response.get_data(as_text=True))
