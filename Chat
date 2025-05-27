@@ -17,3 +17,35 @@ def test_createReleaseContainer(self, request):
             'authentication_type': 'pki'
         }
     )
+
+
+@mock.patch('qz.core.rest.restutil.Rest.request')
+def test_cancelReleaseContainer(self, request):
+    client = ReleaseManagerClient('unittest')
+    client.cancelReleaseContainer('RM-1234')
+
+    args, kwargs = request.call_args
+    assert 'cancelReleaseContainer' in args[0]
+    self.assertEqual(
+        kwargs,
+        {
+            'data': {'releaseContainerID': 'RM-1234'},
+            'authentication_type': 'pki'
+        }
+    )
+
+
+@mock.patch('qz.core.rest.restutil.Rest.request')
+def test_getAvailableJiraProjects(self, request):
+    client = ReleaseManagerClient('unittest')
+    client.getAvailableJiraProjects()
+
+    args, kwargs = request.call_args
+    assert 'getAvailableJiraProjects' in args[0]
+    self.assertEqual(
+        kwargs,
+        {
+            'data': None,
+            'authentication_type': 'pki'
+        }
+    )
