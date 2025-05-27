@@ -1,12 +1,4 @@
-import types
+from qz.sdlc.rm.services import releasemanager
 
-def safe_route(self, rule, **options):
-    if not rule.startswith('/'):
-        rule = '/' + rule
-    return original_route(self, rule, **options)
-
-# Save the original route method
-original_route = releasemanager.route
-
-# Monkey patch the route method
-releasemanager.route = types.MethodType(safe_route, releasemanager)
+original_route = releasemanager.releasemanager.route
+releasemanager.releasemanager.route = types.MethodType(safe_route, releasemanager.releasemanager)
