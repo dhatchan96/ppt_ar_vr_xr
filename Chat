@@ -1,24 +1,43 @@
-from flask import Flask
-from unittest import mock
-from qz.sdlc.rm.services import releasemanager
-import json
+from unittest.mock import patch
+from qz.core.rest.restutil import Rest
+from qz.core.rest.qzunittest import QzTestCase
+from qz.sdlc.rm.client import ReleaseManagerClient
 
-class ReleaseManagerRouteTest(QzTestCase):
 
-    def setUp(self):
-        app = Flask(__name__)
-        app.register_blueprint(releasemanager.releasemanager)
-        self.client = app.test_client()
+class TestReleaseManagerClient(QzTestCase):
 
-    @mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerService.getReleaseContainer')
-    def test_getReleaseContainer_route(self, mock_get):
-        mock_get.return_value = {
-            'status': True,
-            'status_code': 200,
-            'message': 'OK',
-            'ReleaseContainer': {'releaseKey': 'REL-123'}
-        }
+    @patch('qz.core.rest.restutil.Rest.request')
+    def test_associateCrqWithContainer(self, request):
+        client = ReleaseManagerClient('unittest')
+        client.associateCrqWithContainer('RM-1234', 'CRQ123')
 
-        response = self.client.get('/getReleaseContainer?releaseContainerID=RM-1234')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('REL-123', response.get_data(as_text=True))
+        args, kwargs = request.call_args
+        assert 'associateCrqWithContainer' in args[0]
+        self.assertEqual(
+            kwargs,
+            {
+                'data': {
+                    'releaseContainerID': 'RM-1234',
+                    'crq': 'CRQ123'
+                },
+                'authentication_type': 'pki'
+            }
+        )
+
+    @patch('qz.core.rest.restutil.Rest.request')
+    def test_disassociateCrqWithContainer(self, request):
+        client = ReleaseManagerClient('unittest')
+        client.disassociateCrqWithContainer('RM-1234', 'CRQ123')
+
+        args, kwargs = request.call_args
+        assert 'disassociateCrqWithContainer' in args[0]
+        self.assertEqual(
+            kwargs,
+            {
+                'data': {
+                    'releaseContainerID': 'RM-1234',
+                    'crq': 'CRQ123'
+                },
+                'authentication_type': 'pki'
+            }
+        )
