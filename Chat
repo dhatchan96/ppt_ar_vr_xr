@@ -1,9 +1,12 @@
-from flask import Flask
-from qz.sdlc.rm.services import releasemanager
+import types
 
-class TestReleaseManagerRoutes(QzTestCase):
-    def setUp(self):
-        app = Flask(__name__)
-        app.register_blueprint(releasemanager)
-        self.app = app.test_client()
-        self.app.testing = True
+def safe_route(self, rule, **options):
+    if not rule.startswith('/'):
+        rule = '/' + rule
+    return original_route(self, rule, **options)
+
+# Save the original route method
+original_route = releasemanager.route
+
+# Monkey patch the route method
+releasemanager.route = types.MethodType(safe_route, releasemanager)
