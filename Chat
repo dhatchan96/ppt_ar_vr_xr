@@ -1,99 +1,36 @@
-from unittest import mock
-from qz.core.test.qzunittest import QzTestCase
-from qz.sdlc.rm.services.releasemanager import ReleaseManagerService
-import sandra
+@mock.patch('qz.sdlc.rm.lib.api.add_work_items')
+def test_updateContainerWorkItems_add(self, mock_add):
+    mock_add.return_value = (
+        200,
+        {'status': 'Added'},
+        'Added successfully'
+    )
+    rms = ReleaseManagerService('Quartz', 'local')
+    self.assertEqual(
+        rms.updateContainerWorkItems('RM-1234', ['WI-101'], 'ADD'),
+        {
+            'status': True,
+            'status_code': 200,
+            'message': 'Added successfully',
+            'body': 'Added successfully'
+        }
+    )
 
-class ReleaseManagerServiceTest(QzTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        mock.patch(
-            'qz.sdlc.rm.services.releasemanager.ReleaseManagerService._fetchOnBehalfOfToken',
-            return_value={'token': 'token_code', 'status_code': 200}
-        ).start()
-        mock.patch(
-            'qz.people.isServiceAccount',
-            return_value=False
-        ).start()
-
-    def test_getToken(self):
-        rms = ReleaseManagerService('Quartz', 'local')
-        self.assertEqual(
-            rms.getToken(),
-            {
-                'status': True,
-                'on_behalf': sandra.srcdb.user,
-                'token': 'token_code',
-                'status_code': 200
-            }
-        )
-
-    @mock.patch('qz.sdlc.rm.lib.api.associate_crq_with_container')
-    def test_associateCrqWithContainer(self, mock_func):
-        mock_func.return_value = (
-            200,
-            {'status': 'Success'},
-            {'isSuccess': True}
-        )
-        rms = ReleaseManagerService('Quartz', 'local')
-        self.assertEqual(
-            rms.associateCrqWithContainer('RM-1234', 'CRQ-001'),
-            {
-                'status': True,
-                'requestStatus': 'Success',
-                'isSuccess': True
-            }
-        )
-
-    @mock.patch('qz.sdlc.rm.lib.api.disassociate_crq_with_container')
-    def test_disassociateCrqWithContainer(self, mock_func):
-        mock_func.return_value = (
-            200,
-            {'status': 'Done'},
-            {'isSuccess': False}
-        )
-        rms = ReleaseManagerService('Quartz', 'local')
-        self.assertEqual(
-            rms.disassociateCrqWithContainer('RM-1234', 'CRQ-002'),
-            {
-                'status': True,
-                'requestStatus': 'Done',
-                'isSuccess': False
-            }
-        )
-
-    @mock.patch('qz.sdlc.rm.lib.api.cancel_release_container')
-    def test_cancelReleaseContainer(self, mock_func):
-        mock_func.return_value = (
-            200,
-            {'status': 'Cancelled'},
-            {'release_key': 'REL123'}
-        )
-        rms = ReleaseManagerService('Quartz', 'local')
-        self.assertEqual(
-            rms.cancelReleaseContainer('RM-1234'),
-            {
-                'status': True,
-                'status_code': 200,
-                'message': 'Cancelled',
-                'releaseKey': 'REL123'
-            }
-        )
-
-    @mock.patch('qz.sdlc.rm.lib.api.get_available_jira_projects')
-    def test_getAvailableJiraProjects(self, mock_func):
-        mock_func.return_value = (
-            200,
-            {'status': 'OK'},
-            {'projects': ['JIRA-1', 'JIRA-2']}
-        )
-        rms = ReleaseManagerService('Quartz', 'local')
-        self.assertEqual(
-            rms.getAvailableJiraProjects(),
-            {
-                'status': True,
-                'status_code': 200,
-                'body': {'projects': ['JIRA-1', 'JIRA-2']}
-            }
-        )
+@mock.patch('qz.sdlc.rm.lib.api.create_release_container')
+def test_createReleaseContainer(self, mock_create):
+    mock_create.return_value = (
+        200,
+        {},
+        {
+            'release_key': 'REL-456'
+        }
+    )
+    rms = ReleaseManagerService('Quartz', 'local')
+    self.assertEqual(
+        rms.createReleaseContainer('Release-A', 'v1.0', 'JIRA-PROJ', 'Initial deployment'),
+        {
+            'status': True,
+            'status_code': 200,
+            'body': 'REL-456'
+        }
+    )
