@@ -1,27 +1,97 @@
-class TestReleaseManagerRoutes(QzTestCase):
-    QzTestCase_txn = False
+import unittest
+from unittest.mock import patch, MagicMock
+from octane.client import OctaneClient
 
-    def setUp(self):
-        app = Flask(__name__)
-        app.register_blueprint(releasemanager)
-        self.app = app.test_client()
-        self.app.testing = True
+class TestOctaneClientUpload(unittest.TestCase):
 
-    @patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
-    def test_create_release_container(self, mock_create):
-        mock_create.return_value = (200, {'release_key': 'REL-456'}, 'OK')
+    @patch('octane.client.ThreadPoolExecutor')
+    @patch('octane.client.OctaneEndPoint')
+    def test_upload_all_successful_slices(self, mock_endpoint_class, mock_executor):
+        mock_endpoint = MagicMock()
+        mock_endpoint.post.return_value = ("Success", {"id": "task_1001"})
+        mock_endpoint.get.return_value = ("Success", {"status": "SUCCESS"})
+        mock_endpoint_class.return_value = mock_endpoint
 
-        payload = {
-            'releaseName': 'Release-A',
-            'releaseTag': 'v1.0',
-            'containerJiraProject': 'JIRA-PROJ',
-            'changeDescription': 'initial deployment'
+        # Dummy OctaneClient with mock config
+        client = OctaneClient(config={}, spkConfig=None)
+        client.octaneConfig = {
+            "uploadSliceSize": 1,
+            "max_retries": 2,
+            "num_threads": 1,
+            "retry_delay": 0,
+            "releaseName": "rel"
         }
 
-        response = self.app.post('/createReleaseContainer', json=payload)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {
-            'status': True,
-            'status_code': 200,
-            'body': 'REL-456'
-        })
+        test_data = [{
+            'script': 'test-slice.pass',
+            'status': 'Passed',
+            'started': 1716970000,
+            'duration': 5
+        }]
+
+        running_tasks, evidence_status = client.upload(
+            test_data, "run123", "mod123", "suite123", "path/to/test"
+        )
+
+        self.assertEqual(evidence_status["task_1001"]["Status"], "Success")
+        self.assertIn("task_1001", running_tasks)
+
+    @patch('octane.client.OctaneEndPoint')
+    def test_retry_on_queue_limit(self, mock_endpoint_class):
+        mock_endpoint = MagicMock()
+        mock_endpoint.post.side_effect = [
+            ("Failed", {"error_code": "testbox.queue_full"}),
+            ("Success", {"id": "task_1002"})
+        ]
+        mock_endpoint.get.return_value = ("Success", {"status": "SUCCESS"})
+        mock_endpoint_class.return_value = mock_endpoint
+
+        client = OctaneClient(config={}, spkConfig=None)
+        client.octaneConfig = {
+            "uploadSliceSize": 1,
+            "max_retries": 1,
+            "num_threads": 1,
+            "retry_delay": 0,
+            "releaseName": "rel"
+        }
+
+        data = [{
+            'script': 'retry.test',
+            'status': 'Passed',
+            'started': 123456,
+            'duration': 4
+        }]
+
+        running_tasks, evidence_status = client.upload(
+            data, "run124", "mod124", "suite124", "path/test"
+        )
+
+        self.assertEqual(evidence_status["task_1002"]["Status"], "Success")
+
+    @patch('octane.client.OctaneEndPoint')
+    def test_failed_task_status_recorded(self, mock_endpoint_class):
+        mock_endpoint = MagicMock()
+        mock_endpoint.post.return_value = ("Failed", {"error_code": "internal_error"})
+        mock_endpoint_class.return_value = mock_endpoint
+
+        client = OctaneClient(config={}, spkConfig=None)
+        client.octaneConfig = {
+            "uploadSliceSize": 1,
+            "max_retries": 0,
+            "num_threads": 1,
+            "retry_delay": 0,
+            "releaseName": "rel"
+        }
+
+        data = [{
+            'script': 'fail.test',
+            'status': 'Failed',
+            'started': 123456,
+            'duration': 1
+        }]
+
+        with self.assertRaises(RuntimeError):
+            client.upload(data, "run125", "mod125", "suite125", "suite")
+
+if __name__ == '__main__':
+    unittest.main()
