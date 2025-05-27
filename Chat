@@ -1,50 +1,88 @@
-Here’s a professional and concise email draft to announce the new Octane integration feature in QZRelease2 to a wider audience:
+import unittest
+from unittest.mock import patch, MagicMock
+from flask import json
 
+import releasemanager
 
----
+class ReleaseManagerTestCase(unittest.TestCase):
 
-Subject: [Announcement] Octane Integration Enabled in QZRelease2 for Test Evidence Upload
+    def setUp(self):
+        self.app = releasemanager.releasemanager.test_client()
+        self.app.testing = True
 
-Dear Team,
+    @patch('releasemanager.releaseManagerService.getReleaseContainer')
+    def test_get_release_container(self, mock_get):
+        mock_get.return_value = {'status': True}
+        response = self.app.get('/getReleaseContainer?releaseContainerID=test123')
+        self.assertEqual(response.status_code, 200)
 
-We’re excited to announce a new integration between QZRelease2 and Micro Focus Octane to streamline test evidence tracking during release promotions.
+    @patch('releasemanager.releaseManagerService.updateContainerWorkItems')
+    def test_update_work_items(self, mock_update):
+        mock_update.return_value = {'status': True}
+        payload = {
+            'releaseContainerID': 'test123',
+            'work_items': ['WI123'],
+            'action': 'ADD'
+        }
+        response = self.app.post('/updateContainerWorkItems', 
+                                 data=json.dumps(payload),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 200)
 
-What’s New?
+    @patch('releasemanager.releaseManagerService.associateCrqWithContainer')
+    def test_associate_crq(self, mock_associate):
+        mock_associate.return_value = {'status': True}
+        payload = {'releaseContainerID': 'test123', 'crq': 'CRQ123'}
+        response = self.app.post('/associateCrqWithContainer',
+                                 data=json.dumps(payload),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 200)
 
-When raising a Promotion to PROD request in QZRelease2, users can now select the 'Upload Regression Jira' checkbox.
+    @patch('releasemanager.releaseManagerService.disassociateCrqWithContainer')
+    def test_disassociate_crq(self, mock_disassociate):
+        mock_disassociate.return_value = {'status': True}
+        payload = {'releaseContainerID': 'test123', 'crq': 'CRQ123'}
+        response = self.app.post('/disassociateCrqWithContainer',
+                                 data=json.dumps(payload),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 200)
 
-Upon submission, a backend job is triggered to:
+    @patch('releasemanager.releaseManagerService.createReleaseContainer')
+    def test_create_container(self, mock_create):
+        mock_create.return_value = {'status': True}
+        payload = {
+            'releaseName': 'Rel1',
+            'releaseTag': 'v1.0',
+            'containerJiraProject': 'PRJ001',
+            'changeDescription': 'Initial deployment'
+        }
+        response = self.app.post('/createReleaseContainer',
+                                 data=json.dumps(payload),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 200)
 
-Generate test evidence for the current build
+    @patch('releasemanager.releaseManagerService.cancelReleaseContainer')
+    def test_cancel_container(self, mock_cancel):
+        mock_cancel.return_value = {'status': True}
+        payload = {'releaseContainerID': 'test123'}
+        response = self.app.post('/cancelReleaseContainer',
+                                 data=json.dumps(payload),
+                                 content_type='application/json')
+        self.assertEqual(response.status_code, 200)
 
-Upload results to both the Landing Zone and Octane
+    @patch('releasemanager.releaseManagerService.getAvailableJiraProjects')
+    def test_get_jira_projects(self, mock_jira):
+        mock_jira.return_value = {'status': True}
+        response = self.app.get('/getAvailableJiraProjects')
+        self.assertEqual(response.status_code, 200)
 
+    def test_heartbeat(self):
+        response = self.app.get('/heartbeat')
+        self.assertIn(response.status_code, [200, 500])
 
-Task status for Octane uploads can be monitored via the Octane tab on the release ticket.
+    def test_index(self):
+        response = self.app.get('/quack')
+        self.assertIn(response.status_code, [200, 500])
 
-
-Highlights of the Integration:
-
-Supports large-scale test uploads in batches of 1000 (Octane API limit)
-
-Background task tracking per slice
-
-Retry mechanism on queue limits
-
-Auto-delinking of JIRA from test runs if promotion is canceled
-
-
-This feature brings improved transparency and traceability for QA evidence during the release process.
-
-For more details:
-Refer to the [Runbook Documentation] or reach out to the QZRelease2 support team.
-
-Best regards,
-[Your Name]
-QZRelease2 Engineering Team
-
-
----
-
-Let me know if you want this tailored for a specific team, product, or toolchain context.
-
+if __name__ == '__main__':
+    unittest.main()
