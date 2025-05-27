@@ -1,23 +1,12 @@
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-# Load pre-trained model and tokenizer
-model_name = "tscholak/1zha5nwl-sql-en-question-sql"  # Example model for text-to-SQL
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-def text_to_sql(natural_language_text):
-    # Tokenize the input text
-    inputs = tokenizer(natural_language_text, return_tensors="pt")
-    
-    # Generate SQL query from the model
-    outputs = model.generate(inputs["input_ids"], max_length=512)
-    
-    # Decode the generated tokens into SQL query
-    sql_query = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    
-    return sql_query
-
-# Example usage
-input_text = "Show me the names and ages of users older than 25 sorted by age."
-sql_query = text_to_sql(input_text)
-print("Generated SQL Query:", sql_query)
+mock_func.return_value = (
+    200,
+    {'status': 'Cancelled'},
+    {
+        'releaseActionResponseDTOList': [
+            {
+                'release_status': 'Cancelled',
+                'release_key': 'REL123'
+            }
+        ]
+    }
+)
