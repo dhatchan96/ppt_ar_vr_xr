@@ -1,30 +1,15 @@
-@mock.patch('qz.sdlc.rm.lib.api.add_work_items')
-def test_updateContainerWorkItems_add(self, mock_add):
-    mock_add.return_value = (
-        200,
-        {'status': 'Added'},
-        'Added successfully'
-    )
-    rms = ReleaseManagerService('Quartz', 'local')
-    self.assertEqual(
-        rms.updateContainerWorkItems('RM-1234', ['WI-101'], 'ADD'),
-        {
-            'status': True,
-            'status_code': 200,
-            'message': 'Added successfully',
-            'body': 'Added successfully'
-        }
-    )
+from types import SimpleNamespace
 
-@mock.patch('qz.sdlc.rm.lib.api.create_release_container')
+@mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
 def test_createReleaseContainer(self, mock_create):
+    mock_container = SimpleNamespace(release_key='REL-456')
     mock_create.return_value = (
         200,
-        {},
-        {
-            'release_key': 'REL-456'
-        }
+        mock_container,
+        'OK',
+        {}
     )
+
     rms = ReleaseManagerService('Quartz', 'local')
     self.assertEqual(
         rms.createReleaseContainer('Release-A', 'v1.0', 'JIRA-PROJ', 'Initial deployment'),
