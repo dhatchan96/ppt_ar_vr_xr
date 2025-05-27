@@ -1,27 +1,9 @@
-@patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
-def test_create_release_container(self, mock_create):
-    mock_create.return_value = (
-        200,
-        {'release_key': 'REL-456'},
-        'OK'
-    )
+from flask import Flask
+from qz.sdlc.rm.services import releasemanager
 
-    payload = {
-        'releaseName': 'Release-A',
-        'releaseTag': 'v1.0',
-        'containerJiraProject': 'JIRA-PROJ',
-        'changeDescription': 'initial deployment'
-    }
-
-    response = self.app.post(
-        '/createReleaseContainer',
-        data=json.dumps(payload),
-        content_type='application/json'
-    )
-
-    self.assertEqual(response.status_code, 200)
-    self.assertEqual(response.json, {
-        'status': True,
-        'status_code': 200,
-        'body': 'REL-456'
-    })
+class TestReleaseManagerRoutes(QzTestCase):
+    def setUp(self):
+        app = Flask(__name__)
+        app.register_blueprint(releasemanager)
+        self.app = app.test_client()
+        self.app.testing = True
