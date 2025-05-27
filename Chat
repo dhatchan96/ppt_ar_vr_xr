@@ -1,43 +1,19 @@
-from unittest.mock import patch
-from qz.core.rest.restutil import Rest
-from qz.core.rest.qzunittest import QzTestCase
-from qz.sdlc.rm.client import ReleaseManagerClient
+@mock.patch('qz.core.rest.restutil.Rest.request')
+def test_createReleaseContainer(self, request):
+    client = ReleaseManagerClient('unittest')
+    client.createReleaseContainer('Rel-A', 'v1.0', 'JIRA-123', 'Initial deploy')
 
-
-class TestReleaseManagerClient(QzTestCase):
-
-    @patch('qz.core.rest.restutil.Rest.request')
-    def test_associateCrqWithContainer(self, request):
-        client = ReleaseManagerClient('unittest')
-        client.associateCrqWithContainer('RM-1234', 'CRQ123')
-
-        args, kwargs = request.call_args
-        assert 'associateCrqWithContainer' in args[0]
-        self.assertEqual(
-            kwargs,
-            {
-                'data': {
-                    'releaseContainerID': 'RM-1234',
-                    'crq': 'CRQ123'
-                },
-                'authentication_type': 'pki'
-            }
-        )
-
-    @patch('qz.core.rest.restutil.Rest.request')
-    def test_disassociateCrqWithContainer(self, request):
-        client = ReleaseManagerClient('unittest')
-        client.disassociateCrqWithContainer('RM-1234', 'CRQ123')
-
-        args, kwargs = request.call_args
-        assert 'disassociateCrqWithContainer' in args[0]
-        self.assertEqual(
-            kwargs,
-            {
-                'data': {
-                    'releaseContainerID': 'RM-1234',
-                    'crq': 'CRQ123'
-                },
-                'authentication_type': 'pki'
-            }
-        )
+    args, kwargs = request.call_args
+    assert 'createReleaseContainer' in args[0]
+    self.assertEqual(
+        kwargs,
+        {
+            'data': {
+                'releaseName': 'Rel-A',
+                'releaseTag': 'v1.0',
+                'containerJiraProject': 'JIRA-123',
+                'changeDescription': 'Initial deploy',
+            },
+            'authentication_type': 'pki'
+        }
+    )
