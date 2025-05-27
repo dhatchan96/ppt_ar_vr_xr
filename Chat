@@ -1,8 +1,27 @@
 class TestReleaseManagerRoutes(QzTestCase):
-    QzTestCase_txn = False  # or True depending on your test infra
+    QzTestCase_txn = False
 
     def setUp(self):
         app = Flask(__name__)
         app.register_blueprint(releasemanager)
         self.app = app.test_client()
         self.app.testing = True
+
+    @patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
+    def test_create_release_container(self, mock_create):
+        mock_create.return_value = (200, {'release_key': 'REL-456'}, 'OK')
+
+        payload = {
+            'releaseName': 'Release-A',
+            'releaseTag': 'v1.0',
+            'containerJiraProject': 'JIRA-PROJ',
+            'changeDescription': 'initial deployment'
+        }
+
+        response = self.app.post('/createReleaseContainer', json=payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {
+            'status': True,
+            'status_code': 200,
+            'body': 'REL-456'
+        })
