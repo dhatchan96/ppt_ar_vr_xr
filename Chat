@@ -1,21 +1,35 @@
-from types import SimpleNamespace
+from flask import Flask
+from unittest import mock
+import json
+from qz.sdlc.rm.services import releasemanager
 
-@mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerServiceClient.create_release_container')
-def test_createReleaseContainer(self, mock_create):
-    mock_container = SimpleNamespace(release_key='REL-456')
-    mock_create.return_value = (
-        200,
-        mock_container,
-        'OK',
-        {}
-    )
+class ReleaseManagerRouteTest(QzTestCase):
 
-    rms = ReleaseManagerService('Quartz', 'local')
-    self.assertEqual(
-        rms.createReleaseContainer('Release-A', 'v1.0', 'JIRA-PROJ', 'Initial deployment'),
-        {
+    def setUp(self):
+        app = Flask(__name__)
+        app.register_blueprint(releasemanager.releasemanager)
+        self.client = app.test_client()
+
+    @mock.patch('qz.sdlc.rm.services.releasemanager.ReleaseManagerService.updateContainerWorkItems')
+    def test_updateContainerWorkItems_route(self, mock_update):
+        mock_update.return_value = {
             'status': True,
             'status_code': 200,
-            'body': 'REL-456'
+            'message': 'Updated successfully',
+            'body': 'mocked_body'
         }
-    )
+
+        payload = {
+            "releaseContainerID": "RM-1234",
+            "work_items": ["WI-001"],
+            "action": "ADD"
+        }
+
+        response = self.client.post(
+            '/updateContainerWorkItems',
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Updated successfully', response.get_data(as_text=True))
