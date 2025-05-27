@@ -1,4 +1,18 @@
-from qz.sdlc.rm.services import releasemanager
+from unittest import TestCase
+from unittest.mock import patch
 
-original_route = releasemanager.releasemanager.route
-releasemanager.releasemanager.route = types.MethodType(safe_route, releasemanager.releasemanager)
+class TestRoutes(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Monkey patch route method to auto-prefix `/`
+        def safe_route(self, rule, *args, **kwargs):
+            if not rule.startswith('/'):
+                rule = '/' + rule
+            return original_route(self, rule, *args, **kwargs)
+
+        import types
+        import releasemanager
+        global original_route
+        original_route = releasemanager.route
+        releasemanager.route = types.MethodType(safe_route, releasemanager)
