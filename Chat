@@ -1,4 +1,4 @@
-Here's the updated email content with a More Information link section added, similar to the format you provided:
+Here’s the revised email announcement including the latest points mentioned in the new screenshot:
 
 
 ---
@@ -12,61 +12,80 @@ Informational
 
 What is Happening?
 
-QzRelease2 is now integrated with Octane ALM to streamline the process of test evidence generation and traceability. With this feature enabled:
+QzRelease2 now supports seamless integration with Octane ALM to automate test evidence uploads and improve traceability. With this new feature:
 
-Users can upload test results from QzRelease2 directly to Octane.
+Users can upload automated test results directly from QzRelease2 to Octane via REST API.
 
-The system supports parallel uploads and handles Octane's queue limit gracefully.
+Regression JIRAs are automatically linked as backlog coverage in Octane.
 
-Each slice of uploaded test results is tracked with status, viewable under the Octane tab on the Release ticket.
+When a promotion request is cancelled, the linked test runs are delinked from Octane.
 
-Regression JIRAs are automatically linked to test runs as backlog coverage.
+The status of each task slice can be viewed under the Octane tab on the Release ticket.
 
-If a promotion request is cancelled, the previously linked test evidence is delinked automatically from Octane.
+The system supports parallel uploads, with smart handling of Octane’s 50-task queue limit.
 
 
-This integration improves traceability, automates test evidence management, and ensures visibility into testing workflows within QzRelease2.
+> ⚠️ Note: This feature only applies to trains with a changeReleaseStrategy configured. Users on other trains must configure one to access Octane integration.
+
+
+
+Additionally:
+
+Only test evidence for the dedicated regression test story associated with the build will be uploaded.
+
+The regression JIRA can be populated manually or pulled automatically from the associated Release Container.
+
 
 
 ---
 
 When is it Happening?
 
-This feature is available to all QzRelease2 users starting immediately.
+The feature is available to all QzRelease2 users starting immediately.
 
 
 ---
 
 What Do I Need to Do?
 
-No manual action is needed. This feature is activated when using the Upload Regression Jira option while raising a promotion request.
+No manual setup is required. The integration activates automatically when:
+
+A promotion request is raised with the “Upload Regression Jira” checkbox enabled.
+
+A valid regression Jira is provided.
+
+
+
+---
+
+Need Help or Have Questions?
+
+We will be hosting office hours twice a week:
+
+One session for users with changeReleaseStrategy
+
+Another for users who need guidance on configuring it
+
+
+You can also contact DG Quartz SDLC Dev for additional support.
 
 
 ---
 
 More Information
 
-You can read the detailed documentation, including screenshots and examples, in the following link:
-👉 Octane Integration Guide for QzRelease2
-
-
----
-
-What if I Have Questions or Issues Not Addressed Here or in the Documentation?
-
-Please join the scheduled Quartz SDLC Office Hours for any queries related to this enhancement.
-Alternatively, you can reach out to the DG Quartz SDLC Dev group.
+📘 View Octane Integration Guide
 
 —
 
 – The Quartz Core Team
 
-> Please do not reply to this email as it is from an unmonitored mailbox.
+> Please do not reply to this email – this mailbox is not monitored.
 
 
 
 
 ---
 
-Let me know if you'd like this in .eml, .html, or .docx format for distribution.
+Let me know if you want this exported as an HTML email, PDF, or Word document for publishing.
 
