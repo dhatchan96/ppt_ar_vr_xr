@@ -1,8 +1,72 @@
-test_data = [[
-    "001",                # placeholder for ignored value (_)
-    "testname.sample",    # testname
-    "MyTestClass",        # testclass
-    "Passed",             # status
-    1716970000,           # started
-    5                     # duration
-]]
+Here's the updated email content with a More Information link section added, similar to the format you provided:
+
+
+---
+
+Subject: 📢 Integration of Octane with QzRelease2 – Now Available
+
+Informational
+
+
+---
+
+What is Happening?
+
+QzRelease2 is now integrated with Octane ALM to streamline the process of test evidence generation and traceability. With this feature enabled:
+
+Users can upload test results from QzRelease2 directly to Octane.
+
+The system supports parallel uploads and handles Octane's queue limit gracefully.
+
+Each slice of uploaded test results is tracked with status, viewable under the Octane tab on the Release ticket.
+
+Regression JIRAs are automatically linked to test runs as backlog coverage.
+
+If a promotion request is cancelled, the previously linked test evidence is delinked automatically from Octane.
+
+
+This integration improves traceability, automates test evidence management, and ensures visibility into testing workflows within QzRelease2.
+
+
+---
+
+When is it Happening?
+
+This feature is available to all QzRelease2 users starting immediately.
+
+
+---
+
+What Do I Need to Do?
+
+No manual action is needed. This feature is activated when using the Upload Regression Jira option while raising a promotion request.
+
+
+---
+
+More Information
+
+You can read the detailed documentation, including screenshots and examples, in the following link:
+👉 Octane Integration Guide for QzRelease2
+
+
+---
+
+What if I Have Questions or Issues Not Addressed Here or in the Documentation?
+
+Please join the scheduled Quartz SDLC Office Hours for any queries related to this enhancement.
+Alternatively, you can reach out to the DG Quartz SDLC Dev group.
+
+—
+
+– The Quartz Core Team
+
+> Please do not reply to this email as it is from an unmonitored mailbox.
+
+
+
+
+---
+
+Let me know if you'd like this in .eml, .html, or .docx format for distribution.
+
