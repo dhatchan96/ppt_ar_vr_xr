@@ -1,50 +1,185 @@
-import unittest2 as unittest
+import wx
+import os
+from src.elevated_access.role_classifier.main import runprocessing_comp1
+from src.elevated_access.impact_analysis.main import runprocess_Comp2
 
-from your_module_path import OCTANE_CONFIG  # Replace `your_module_path` with actual import path
+class MainPanel(wx.Panel):
+    def __init__(self, parent, label, browse_for="file", wildcard="All files (*.*)|*.*"):
+        super().__init__(parent)
+        self.browse_for = browse_for
+        self.wildcard = wildcard
 
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-class QzConfigOctaneTest(unittest.TestCase):
+        self.label = wx.StaticText(self, label=label, size=wx.Size(250, -1))
+        self.text_ctrl = wx.TextCtrl(self, style=wx.TE_READONLY, size=wx.Size(250, 20))
+        self.browse_button = wx.Button(self, label="Browse")
 
-    def test_structure(self):
-        self.assertIsInstance(OCTANE_CONFIG, dict)
+        self.text_ctrl.SetBackgroundColour("#f0f8ff")
 
-        required_envs = ['DEV', 'PROD']
-        for env in required_envs:
-            self.assertIn(env, OCTANE_CONFIG, f"{env} config missing")
+        sizer.Add(self.label, 0, wx.ALL | wx.EXPAND, 5)
+        sizer.Add(self.text_ctrl, 0, wx.ALL | wx.EXPAND, 5)
+        sizer.Add(self.browse_button, 0, wx.ALL, 5)
 
-            env_config = OCTANE_CONFIG[env]
-            self.assertIsInstance(env_config, dict)
+        self.SetSizer(sizer)
+        self.browse_button.Bind(wx.EVT_BUTTON, self.on_browse)
 
-            # Required top-level keys in each env config
-            required_keys = [
-                'system', 'rootApplicationModuleName', 'signInURL', 'credentialRoot', 'rootUrl',
-                'uploadSliceSize', 'autoRunsSliceSize', 'autoRunsPaginationLimit',
-                'autoRunsPaginationOffset', 'max_retries', 'num_threads',
-                'retry_delay', 'rootAppModuleID', 'releaseName'
-            ]
+    def on_browse(self, event):
+        if self.browse_for == "folder":
+            with wx.DirDialog(self, "Choose a Directory") as dir_dialog:
+                if dir_dialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                self.text_ctrl.SetValue(dir_dialog.GetPath())
+        elif self.browse_for == "file":
+            with wx.FileDialog(self, "Choose a file", wildcard=self.wildcard,
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as file_dialog:
+                if file_dialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                self.text_ctrl.SetValue(file_dialog.GetPath())
 
-            for key in required_keys:
-                self.assertIn(key, env_config, f"Missing key '{key}' in {env}")
-                self.assertIsNotNone(env_config[key], f"Key '{key}' in {env} should not be None")
-
-    def test_values(self):
-        # Simple value tests for expected static values
-        self.assertEqual(OCTANE_CONFIG['DEV']['system'], 'octane')
-        self.assertEqual(OCTANE_CONFIG['PROD']['system'], 'octane')
-
-        for env, config in OCTANE_CONFIG.items():
-            self.assertTrue(config['signInURL'].startswith("https://octane.horizon.bankofamerica.com"))
-
-            self.assertIn('{space_id}', config['rootUrl'])
-            self.assertIn('{workspace_id}', config['rootUrl'])
-
-    def test_upload_limits(self):
-        for env, config in OCTANE_CONFIG.items():
-            self.assertLessEqual(config['uploadSliceSize'], 1000)
-            self.assertLessEqual(config['autoRunsSliceSize'], 500)
-            self.assertGreater(config['num_threads'], 0)
+    def get_value(self):
+        return self.text_ctrl.GetValue()
 
 
-if __name__ == "__main__":
-    from qz.core.test.qzunittest import qzUnitTest
-    qzUnitTest(headless=True, cleanOutput=True)
+class PCATUpdateImpactSimulator(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+
+        header = wx.StaticText(self, label="PCAT Update Impact Simulator", style=wx.ALIGN_CENTER)
+        font = header.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_BOLD)
+        font.SetPointSize(10)
+        header.SetFont(font)
+        self.sizer.Add(header, 0, wx.ALL | wx.ALIGN_CENTER, 10)
+
+        input_box = wx.StaticBox(self, label="Input Fields")
+        input_sizer = wx.StaticBoxSizer(input_box, wx.VERTICAL)
+
+        # Source Inputs
+        source_group = wx.StaticBox(self, label="Source Paths")
+        source_sizer = wx.StaticBoxSizer(source_group, wx.VERTICAL)
+        self.pcat_extracts = MainPanel(self, label="PCAT Extracts", browse_for="folder")
+        self.pcat_document_path = MainPanel(self, label="Select NEW PCAT Metadata Validation Folder", browse_for="folder")
+        self.myaccess_review = MainPanel(self, label="Select Access Review directory", browse_for="folder")
+        source_sizer.Add(self.pcat_extracts, 0, wx.ALL | wx.EXPAND)
+        source_sizer.Add(self.pcat_document_path, 0, wx.ALL | wx.EXPAND)
+        source_sizer.Add(self.myaccess_review, 0, wx.ALL | wx.EXPAND)
+        input_sizer.Add(source_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        # Config Inputs
+        config_group = wx.StaticBox(self, label="Configuration Files")
+        config_sizer = wx.StaticBoxSizer(config_group, wx.VERTICAL)
+        self.excel_file = MainPanel(self, label="Select PCAT Platform Classifier File", browse_for="file")
+        self.config_file = MainPanel(self, label="Select Config file", browse_for="file", wildcard="Excel files (*.xlsx)|*.xlsx")
+        config_sizer.Add(self.excel_file, 0, wx.ALL | wx.EXPAND)
+        config_sizer.Add(self.config_file, 0, wx.ALL | wx.EXPAND)
+        input_sizer.Add(config_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        # Output Folder
+        output_group = wx.StaticBox(self, label="Output Folder")
+        output_sizer = wx.StaticBoxSizer(output_group, wx.VERTICAL)
+        self.output_file = MainPanel(self, label="Output file directory", browse_for="folder")
+        output_sizer.Add(self.output_file, 0, wx.ALL | wx.EXPAND)
+        input_sizer.Add(output_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.sizer.Add(input_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        # Outputs
+        output_box = wx.StaticBox(self, label="Outputs")
+        output_sizer = wx.StaticBoxSizer(output_box, wx.VERTICAL)
+
+        self.process_button = wx.Button(self, label="Process")
+        output_sizer.Add(self.process_button, 0, wx.ALL | wx.CENTER, 10)
+
+        self.output_display = wx.StaticText(self, label="", style=wx.ALIGN_LEFT)
+        output_sizer.Add(self.output_display, 0, wx.ALL | wx.EXPAND, 10)
+
+        self.progress = wx.Gauge(self, range=100, style=wx.GA_HORIZONTAL)
+        self.progress.SetValue(0)
+        output_sizer.Add(self.progress, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.log_area = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL)
+        self.log_area.SetMinSize(wx.Size(-1, 100))
+        output_sizer.Add(self.log_area, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.sizer.Add(output_sizer, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.SetSizer(self.sizer)
+        self.process_button.Bind(wx.EVT_BUTTON, self.on_process)
+
+    def on_process(self, event):
+        try:
+            self.progress.SetValue(10)
+            self.log_area.AppendText("Starting NEW PCAT processing...\n")
+
+            message = runprocess_Comp2(
+                PCAT_path=self.pcat_extracts.get_value(),
+                New_PCAT_path=self.pcat_document_path.get_value(),
+                accessReview_path=self.myaccess_review.get_value(),
+                PlatformList_path=self.excel_file.get_value(),
+                config_path=self.config_file.get_value(),
+                report_dir=self.output_file.get_value()
+            )
+
+            self.progress.SetValue(90)
+            self.output_display.SetLabel(message)
+            self.log_area.AppendText("NEW PCAT process completed.\n")
+            self.progress.SetValue(100)
+        except Exception as e:
+            self.output_display.SetLabel(f"Error: {str(e)}")
+            self.log_area.AppendText(f"Error: {str(e)}\n")
+
+
+class PCATRoleClassifierPanel(PCATUpdateImpactSimulator):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.GetChildren()[0].SetLabel("PCAT Role Classifier")
+        self.pcat_document_path.Hide()
+
+    def on_process(self, event):
+        try:
+            self.progress.SetValue(10)
+            self.log_area.AppendText("Starting processing...\n")
+
+            message = runprocessing_comp1(
+                pcat_path=self.pcat_extracts.get_value(),
+                accessreview_path=self.myaccess_review.get_value(),
+                platform_list_path=self.excel_file.get_value(),
+                config_path=self.config_file.get_value(),
+                output_folder=self.output_file.get_value()
+            )
+
+            self.progress.SetValue(90)
+            self.output_display.SetLabel(message)
+            self.log_area.AppendText("Process completed.\n")
+            self.progress.SetValue(100)
+        except Exception as e:
+            self.output_display.SetLabel(f"Error: {str(e)}")
+            self.log_area.AppendText(f"Error: {str(e)}\n")
+
+
+class MyFrame(wx.Frame):
+    def __init__(self):
+        super().__init__(parent=None, title="PCAT Tool", size=wx.Size(700, 600))
+        notebook = wx.Notebook(self)
+
+        tab1 = PCATRoleClassifierPanel(notebook)
+        notebook.AddPage(tab1, "PCAT Role Classifier")
+
+        tab2 = PCATUpdateImpactSimulator(notebook)
+        notebook.AddPage(tab2, "PCAT Update Impact Simulator")
+
+        self.Show()
+
+
+class MyApp(wx.App):
+    def OnInit(self):
+        frame = MyFrame()
+        self.SetTopWindow(frame)
+        return True
+
+
+if __name__ == '__main__':
+    app = MyApp()
+    app.MainLoop()
