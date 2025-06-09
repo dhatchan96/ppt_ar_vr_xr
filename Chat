@@ -1,77 +1,55 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-# Import your module here
-# from your_module_name import _uploadTestEvidence, run
+# Import your module where ValidateUploadRegressionTestEvidence is defined.
+# from your_module import YourClassContainingTheMethod
 
-class TestUploadTestEvidence(unittest.TestCase):
+class TestValidateUploadRegressionTestEvidence(unittest.TestCase):
 
-    @patch('your_module_name._uploadTestResultsToOctane')
-    @patch('your_module_name._uploadJiraTestEvidence')
-    @patch('your_module_name.logger')
-    def test_upload_only_octane(self, mock_logger, mock_upload_jira, mock_upload_octane):
-        build = MagicMock()
-        build.releaseTrain.name = 'Train_1'
+    def setUp(self):
+        # Initialize your class here
+        self.obj = YourClassContainingTheMethod()
+        
+        # Mock dependencies
+        self.obj.UploadRegressionTestEvidence = MagicMock()
+        self.obj.RegressionJiraId = MagicMock()
+        self.obj.RequestOnly = MagicMock()
+        self.obj.Build = MagicMock()
 
-        _uploadTestEvidence(build, requestedBy='user1', regressionJiras=['RJ1'], octaneIds={'id1': 123}, featureJiras=['FJ1'], replace=False, testEvidencePlatform='octane')
+    @patch('your_module.dag.ValidationResults')  # patch ValidationResults object
+    def test_validate_upload_regression_test_evidence_with_no_octane_id(self, mock_validation_results):
+        # Arrange
+        self.obj.UploadRegressionTestEvidence.return_value = 'Some Octane Test Evidence'
+        self.obj.RegressionJiraId.return_value = 'JIRA-1234'
+        self.obj.RequestOnly.return_value = True
+        
+        mock_fetch_octane_id = MagicMock()
+        mock_fetch_octane_id.get.return_value = False  # Simulate missing OctaneId
+        
+        build_mock = MagicMock()
+        build_mock.fetchOctaneIDFromJiras.return_value = mock_fetch_octane_id
+        self.obj.Build.return_value = build_mock
 
-        mock_upload_octane.assert_called_once_with(build, ['RJ1'], ['FJ1'], {'id1': 123})
-        mock_upload_jira.assert_not_called()
-        mock_logger.info.assert_called_with('only Octane')
+        # Act
+        result = self.obj.ValidateUploadRegressionTestEvidence()
 
-    @patch('your_module_name._uploadTestResultsToOctane')
-    @patch('your_module_name._uploadJiraTestEvidence')
-    @patch('your_module_name.logger')
-    def test_upload_only_landing_zone(self, mock_logger, mock_upload_jira, mock_upload_octane):
-        build = MagicMock()
-        build.releaseTrain.name = 'Train_2'
+        # Assert
+        mock_validation_results.assert_called_once_with(
+            errors=["JIRA-1234 does not have OctaneId, Please check the SPK is onboarded to Octane."]
+        )
+        self.assertEqual(result, mock_validation_results())
 
-        _uploadTestEvidence(build, requestedBy='user2', regressionJiras=['RJ2'], octaneIds={'id2': 456}, featureJiras=['FJ2'], replace=True, testEvidencePlatform='landing_zone')
+    def test_validate_upload_regression_test_evidence_no_octane_keyword(self):
+        # Arrange
+        self.obj.UploadRegressionTestEvidence.return_value = 'Some other evidence'
+        self.obj.RegressionJiraId.return_value = 'JIRA-5678'
+        self.obj.RequestOnly.return_value = True
+        
+        # Act
+        result = self.obj.ValidateUploadRegressionTestEvidence()
 
-        # Should call _uploadJiraTestEvidence twice
-        self.assertEqual(mock_upload_jira.call_count, 2)
-        mock_upload_octane.assert_not_called()
-        mock_logger.info.assert_called_with('only Landingzone')
-
-    @patch('your_module_name._uploadTestResultsToOctane')
-    @patch('your_module_name._uploadJiraTestEvidence')
-    @patch('your_module_name.logger')
-    def test_upload_both(self, mock_logger, mock_upload_jira, mock_upload_octane):
-        build = MagicMock()
-        build.releaseTrain.name = 'Train_3'
-
-        _uploadTestEvidence(build, requestedBy='user3', regressionJiras=['RJ3'], octaneIds={'id3': 789}, featureJiras=['FJ3'], replace=True, testEvidencePlatform='both')
-
-        # Should call _uploadJiraTestEvidence twice
-        self.assertEqual(mock_upload_jira.call_count, 2)
-        # Should call _uploadTestResultsToOctane once
-        mock_upload_octane.assert_called_once_with(build, ['RJ3'], ['FJ3'], {'id3': 789})
-        mock_logger.info.assert_called_with('Landing Zone and  Octane')
-
-    @patch('your_module_name._uploadTestEvidence')
-    def test_run_upload_action(self, mock_upload_test_evidence):
-        config = {'some_key': 'some_value'}
-        run(config=config, action='upload', regressionJiras=['RJ4'], featureJiras=['FJ4'], octaneIds={'id4': 999}, requestedBy='user4', buildname='build_1', testEvidencePlatform='octane')
-
-        mock_upload_test_evidence.assert_called_once()
-
-    @patch('your_module_name._deleteTestEvidence')
-    def test_run_delete_action(self, mock_delete_test_evidence):
-        config = {'some_key': 'some_value'}
-        run(config=config, action='delete')
-
-        mock_delete_test_evidence.assert_called_once()
-
-    @patch('your_module_name._uploadTestEvidence')
-    def test_run_replace_action(self, mock_upload_test_evidence):
-        config = {'some_key': 'some_value'}
-        run(config=config, action='replace')
-
-        mock_upload_test_evidence.assert_called_once()
-
-    def test_run_no_config(self):
-        result = run(config=None)
-        self.assertIsNone(result)  # Should return None if config is None
+        # Assert
+        self.assertIsNone(result)  # Should not trigger validation error if no 'Octane' keyword
 
 if __name__ == '__main__':
     unittest.main()
