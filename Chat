@@ -1,55 +1,100 @@
-import unittest
-from unittest.mock import MagicMock, patch
+Very good point — here is the revised mail text matching exactly what you want to communicate:
 
-# Import your module where ValidateUploadRegressionTestEvidence is defined.
-# from your_module import YourClassContainingTheMethod
 
-class TestValidateUploadRegressionTestEvidence(unittest.TestCase):
+---
 
-    def setUp(self):
-        # Initialize your class here
-        self.obj = YourClassContainingTheMethod()
-        
-        # Mock dependencies
-        self.obj.UploadRegressionTestEvidence = MagicMock()
-        self.obj.RegressionJiraId = MagicMock()
-        self.obj.RequestOnly = MagicMock()
-        self.obj.Build = MagicMock()
+Subject: Octane Client & API Modules + Documentation
 
-    @patch('your_module.dag.ValidationResults')  # patch ValidationResults object
-    def test_validate_upload_regression_test_evidence_with_no_octane_id(self, mock_validation_results):
-        # Arrange
-        self.obj.UploadRegressionTestEvidence.return_value = 'Some Octane Test Evidence'
-        self.obj.RegressionJiraId.return_value = 'JIRA-1234'
-        self.obj.RequestOnly.return_value = True
-        
-        mock_fetch_octane_id = MagicMock()
-        mock_fetch_octane_id.get.return_value = False  # Simulate missing OctaneId
-        
-        build_mock = MagicMock()
-        build_mock.fetchOctaneIDFromJiras.return_value = mock_fetch_octane_id
-        self.obj.Build.return_value = build_mock
+Hi All,
 
-        # Act
-        result = self.obj.ValidateUploadRegressionTestEvidence()
+As requested, please find below the details and documentation for the Octane Client and API Wrapper modules.
 
-        # Assert
-        mock_validation_results.assert_called_once_with(
-            errors=["JIRA-1234 does not have OctaneId, Please check the SPK is onboarded to Octane."]
-        )
-        self.assertEqual(result, mock_validation_results())
+Purpose:
 
-    def test_validate_upload_regression_test_evidence_no_octane_keyword(self):
-        # Arrange
-        self.obj.UploadRegressionTestEvidence.return_value = 'Some other evidence'
-        self.obj.RegressionJiraId.return_value = 'JIRA-5678'
-        self.obj.RequestOnly.return_value = True
-        
-        # Act
-        result = self.obj.ValidateUploadRegressionTestEvidence()
+The Octane Client (client.py) is a generic, reusable module to communicate with the Octane test management system.
 
-        # Assert
-        self.assertIsNone(result)  # Should not trigger validation error if no 'Octane' keyword
+The API Wrapper (api.py) is a QZRelease2-specific layer built on top of client.py — it provides convenience methods aligned to QZRelease2 workflows.
 
-if __name__ == '__main__':
-    unittest.main()
+Other applications can similarly build their own wrapper on top of the Octane Client if needed.
+
+
+Description of the API:
+
+client.py (Reusable Component):
+
+Handles authentication with Octane.
+
+Uploads automated test results in batches (with retry handling).
+
+Links test runs to backlog stories.
+
+Manages Octane metadata (Application Modules, Test Suites, Test Runs).
+
+Designed to be reusable across multiple applications.
+
+
+api.py (QZRelease2 Wrapper):
+
+Simplifies common Octane interactions specifically for QZRelease2.
+
+Other projects should build a similar wrapper layer based on their needs using client.py.
+
+
+
+Usage:
+
+All projects should leverage client.py as the base client.
+
+It is recommended to build an application-specific API wrapper similar to api.py (as done for QZRelease2) to avoid directly coupling business logic with the client internals.
+
+A detailed .rst API documentation is attached — it explains:
+
+The methods provided by client.py.
+
+Parameters and expected usage.
+
+How QZRelease2 builds on top of this via api.py.
+
+
+
+What to look out for:
+
+client.py is generic and reusable — the main component to use in new projects.
+
+api.py is QZRelease2-specific — serves as a good reference for how to wrap the client.
+
+Configure SSL_CERT_DIR correctly for secure connections.
+
+Token caching and retry logic are already handled inside the client.
+
+
+Attached:
+
+octane_client_api.rst — API documentation.
+
+client.py — Reusable Octane Client.
+
+api.py — QZRelease2-specific API Wrapper (for reference).
+
+
+Please feel free to reach out if you need any clarifications or support to build similar wrappers in your projects.
+
+Thanks,
+Dhatchanamoorthy S
+
+
+---
+
+✅ This is now perfectly aligned to what you said:
+
+👉 client.py reusable
+👉 api.py specific to QZRelease2, should be an example
+
+You can use this directly.
+Would you like me to also give you the short "1-liner for Teams" message to inform team in chat?
+Example:
+
+"Reusable Octane Client + QZRelease2 API wrapper + full API docs shared on mail. Other apps can build similar wrapper on top of client."
+
+Shall I prepare this short line for you too? (You can post it in Teams once you send the mail.) Just say yes if you want.
+
