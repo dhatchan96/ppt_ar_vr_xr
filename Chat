@@ -1,100 +1,77 @@
-Very good point — here is the revised mail text matching exactly what you want to communicate:
+"""
+Regression Test Script for Octane Client
 
+Covers:
+- Test result upload
+- Retrieval validation
+- Deletion and re-upload scenarios
+"""
 
----
+import logging
+import hashlib
+from datetime import datetime
+import pytz
+from octane_client import OctaneClient  # Assuming client.py exposes this
+from test_data import get_sample_test_data  # Hypothetical helper for test data
 
-Subject: Octane Client & API Modules + Documentation
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-Hi All,
+OCTANE_ID = "OCTANE-1234"
+SUITE_RUN_ID = "suite-run-001"
+APPLICATION_MODULE_ID = "mod-001"
+TEST_SUITE_ID = "suite-001"
+TEST_SUITE_PATH = "module/path/here"
+EXTERNAL_RUN_ID = "run-ext-001"
 
-As requested, please find below the details and documentation for the Octane Client and API Wrapper modules.
+def generate_test_results(issue_key, test_data):
+    test_results = []
+    now = datetime.now(pytz.utc)
+    for data in test_data:
+        uid = f"{data['Guid']}-{data['Buildchain']}-{data['Script']}-{data['Test']}"
+        test_id = hashlib.sha256(uid.encode('utf-8')).hexdigest()
+        test_results.append({
+            "testCaseId": test_id,
+            "status": "PASS" if data.get("Ok") == "1" else "FAIL",
+            "testName": data["Test"],
+            "scriptName": data["Script"],
+            "timestamp": now,
+            "backlogId": issue_key
+        })
+    return test_results
 
-Purpose:
+def test_octane_upload_flow():
+    logger.info("Starting Octane Client regression test...")
 
-The Octane Client (client.py) is a generic, reusable module to communicate with the Octane test management system.
+    # Initialize client
+    config = {
+        "signInURL": "https://octane.example.com/auth",
+        "uploadSliceSize": 10,
+        "retry_delay": 2,
+        "max_retries": 3,
+        "releaseName": "QZRelease2"
+    }
+    client = OctaneClient(config)
 
-The API Wrapper (api.py) is a QZRelease2-specific layer built on top of client.py — it provides convenience methods aligned to QZRelease2 workflows.
+    # Get and prepare test data
+    issue_key = OCTANE_ID
+    raw_data = get_sample_test_data()
+    test_results = generate_test_results(issue_key, raw_data)
 
-Other applications can similarly build their own wrapper on top of the Octane Client if needed.
+    # Upload
+    logger.info("Uploading test results...")
+    client.upload(test_results, EXTERNAL_RUN_ID, APPLICATION_MODULE_ID, TEST_SUITE_ID, TEST_SUITE_PATH)
 
+    # Validate upload by retrieving suite run
+    logger.info("Validating suite run exists...")
+    suite_info = client.getSuiteRun("RegressionSuite", SUITE_RUN_ID)
+    assert suite_info, "Suite run not found"
 
-Description of the API:
+    # Link to backlog
+    logger.info("Linking test runs to Octane backlog...")
+    client.updateAutoRuns(issue_key, "RegressionSuite", SUITE_RUN_ID)
 
-client.py (Reusable Component):
+    logger.info("Octane Client regression flow completed successfully.")
 
-Handles authentication with Octane.
-
-Uploads automated test results in batches (with retry handling).
-
-Links test runs to backlog stories.
-
-Manages Octane metadata (Application Modules, Test Suites, Test Runs).
-
-Designed to be reusable across multiple applications.
-
-
-api.py (QZRelease2 Wrapper):
-
-Simplifies common Octane interactions specifically for QZRelease2.
-
-Other projects should build a similar wrapper layer based on their needs using client.py.
-
-
-
-Usage:
-
-All projects should leverage client.py as the base client.
-
-It is recommended to build an application-specific API wrapper similar to api.py (as done for QZRelease2) to avoid directly coupling business logic with the client internals.
-
-A detailed .rst API documentation is attached — it explains:
-
-The methods provided by client.py.
-
-Parameters and expected usage.
-
-How QZRelease2 builds on top of this via api.py.
-
-
-
-What to look out for:
-
-client.py is generic and reusable — the main component to use in new projects.
-
-api.py is QZRelease2-specific — serves as a good reference for how to wrap the client.
-
-Configure SSL_CERT_DIR correctly for secure connections.
-
-Token caching and retry logic are already handled inside the client.
-
-
-Attached:
-
-octane_client_api.rst — API documentation.
-
-client.py — Reusable Octane Client.
-
-api.py — QZRelease2-specific API Wrapper (for reference).
-
-
-Please feel free to reach out if you need any clarifications or support to build similar wrappers in your projects.
-
-Thanks,
-Dhatchanamoorthy S
-
-
----
-
-✅ This is now perfectly aligned to what you said:
-
-👉 client.py reusable
-👉 api.py specific to QZRelease2, should be an example
-
-You can use this directly.
-Would you like me to also give you the short "1-liner for Teams" message to inform team in chat?
-Example:
-
-"Reusable Octane Client + QZRelease2 API wrapper + full API docs shared on mail. Other apps can build similar wrapper on top of client."
-
-Shall I prepare this short line for you too? (You can post it in Teams once you send the mail.) Just say yes if you want.
-
+if __name__ == "__main__":
+    test_octane_upload_flow()
