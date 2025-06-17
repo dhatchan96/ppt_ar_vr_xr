@@ -1,31 +1,40 @@
-Here’s a refined and professional email draft you can use to respond:
+def update_dashboard_fullscreen(dashboard_id, chart_id, headers):
+    DASHBOARD_ENDPOINT = f"https://<your-host>/api/v1/dashboard/{dashboard_id}"
 
+    layout = {
+        "ROOT_ID": {
+            "type": "ROOT",
+            "id": "ROOT_ID",
+            "children": ["GRID_ID"]
+        },
+        "GRID_ID": {
+            "type": "GRID",
+            "id": "GRID_ID",
+            "children": [f"CHART-{chart_id}"]
+        },
+        f"CHART-{chart_id}": {
+            "type": "CHART",
+            "id": f"CHART-{chart_id}",
+            "meta": {
+                "chartId": chart_id,
+                "sliceName": "Table View"
+            },
+            "parents": ["ROOT_ID", "GRID_ID"],
+            "children": [],
+            "size_x": 12,
+            "size_y": 50,
+            "grid_width": 12,
+            "grid_height": 50
+        }
+    }
 
----
+    data = {
+        "position_json": layout,
+        "json_metadata": "{}"
+    }
 
-Subject: Octane Integration Guide & Regression Test Script
-
-Hi Grant,
-
-As discussed, I’ve prepared the documentation outlining how Octane integration is implemented for QZRelease2, specifically covering how test uploads are structured, authenticated, and linked (or delinked) to JIRA.
-
-In addition, I’ve created a regression test script that exercises all the key APIs—covering upload, test suite creation, automated run linking, and de-linking scenarios. This script should help illustrate how to organize and interact with test data using the provided Octane client interfaces.
-
-📎 Attached:
-
-Octane Integration Guide (Word document)
-
-Script path reference:
-/qz/sdlc/rm/utils/test_upload_octane_integration_test.py
-
-
-Please let me know if you need a walkthrough or if you'd like me to assist in adapting this for your platform’s context.
-
-Best regards,
-Dhatchanamoorthy
-
-
----
-
-Let me know if you want a slightly shorter or more technical version for peer engineers.
-
+    response = requests.put(DASHBOARD_ENDPOINT, headers=headers, json=data)
+    if response.status_code == 200:
+        print("Dashboard layout updated to fullscreen table chart")
+    else:
+        print(f"Failed to update layout: {response.status_code} - {response.text}")
