@@ -3,36 +3,47 @@
     <img src="/logo.png" alt="Logo" className="logo" />
     <span className="app-title">Application Engineering Services Tool</span>
   </div>
-
   <div className="navbar-right">
-    <span className="username">Janakiraman, Karthikeyan</span>
+    <div className="user-info">
+      <img src="/avatar.png" alt="User Avatar" className="avatar" />
+      <span className="username">Janakiraman, Karthikeyan</span>
+    </div>
     <button className="new-inventory">New Inventory</button>
   </div>
 </header>
+
+<div className="sub-header">
+  <div className="sub-left">
+    <strong>Tools Inventory</strong>
+  </div>
+  <div className="sub-right">
+    <strong>AES Current state analysis (CSA)</strong> | <span className="highlight-red">LLE management</span>
+  </div>
+</div>
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  padding: 12px 24px;
+  padding: 10px 24px;
+  background-color: #fff;
   border-bottom: 1px solid #ccc;
-}
-
-.logo {
-  height: 30px;
-  margin-right: 12px;
-}
-
-.app-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1a1a1a;
 }
 
 .navbar-left {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  height: 28px;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .navbar-right {
@@ -41,9 +52,21 @@
   gap: 14px;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+}
+
 .username {
   font-size: 14px;
-  color: #333;
+  color: #222;
 }
 
 .new-inventory {
@@ -55,3 +78,41 @@
   font-weight: 500;
   cursor: pointer;
 }
+
+.sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+}
+
+.sub-left {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.sub-right {
+  font-size: 14px;
+  color: #444;
+}
+
+.highlight-red {
+  color: #b00020;
+}
+
+✅ Now:
+
+The logo, app title, profile info, and New Inventory button are in the top navbar.
+
+The sub-header has:
+
+Left: "Tools Inventory"
+
+Right: "AES Current state analysis (CSA) | LLE management"
+
+
+
+This exactly mirrors your screenshot layout. Let me know if you'd like this navbar sticky on scroll or mobile-optimized.
+
