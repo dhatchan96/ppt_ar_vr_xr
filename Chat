@@ -1,61 +1,10 @@
-npm install ag-grid-community ag-grid-react
-
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
 
-export default function BigTable() {
-  const [columnDefs, setColumnDefs] = useState([]);
-  const [rowData, setRowData] = useState([]);
+// ✅ New required import for v33+
+import { ModuleRegistry, AllCommunityModules } from 'ag-grid-community';
+ModuleRegistry.registerModules(AllCommunityModules);
 
-  useEffect(() => {
-    fetch("/data.json")
-      .then((res) => res.json())
-      .then((json) => {
-        const schema = json.schema || [];
-        const data = json.data || [];
-
-        // 🧠 Convert schema to column definitions
-        const cols = schema.map((col) => ({
-          headerName: col.colName,
-          field: col.colName,
-          sortable: true,
-          filter: true,
-          resizable: true,
-        }));
-
-        // 🧠 Convert rows (array of arrays) into array of objects
-        const rows = data.map((rowArr) => {
-          const obj = {};
-          schema.forEach((col, index) => {
-            obj[col.colName] = rowArr[index];
-          });
-          return obj;
-        });
-
-        setColumnDefs(cols);
-        setRowData(rows);
-      });
-  }, []);
-
-  const defaultColDef = useMemo(() => ({
-    flex: 1,
-    minWidth: 120,
-  }), []);
-
-  return (
-    <div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        pagination
-        paginationPageSize={100}
-        animateRows
-      />
-    </div>
-  );
-}
-
-
+// ✅ Required AG Grid styles
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
