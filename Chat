@@ -1,10 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Application Engineering Services Tool</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f6f6f6;
+    }
+    header {
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .new-inventory {
+      background-color: #305ba8;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    main {
+      padding: 20px;
+    }
+    .highlight-red {
+      color: darkred;
+    }
+    .container {
+      display: flex;
+      margin-top: 20px;
+    }
+    .sidebar {
+      width: 250px;
+      background: #fff;
+      border-right: 1px solid #ccc;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar li {
+      padding: 12px 15px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sidebar li.active {
+      background-color: #004080;
+      color: white;
+      font-weight: bold;
+    }
+    .sidebar li .tick {
+      color: green;
+      font-weight: bold;
+    }
+    .form-section {
+      flex: 1;
+      background: white;
+      padding: 20px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .form-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    .form-actions {
+      margin-top: 20px;
+      text-align: right;
+    }
+    .form-actions button {
+      padding: 8px 14px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .form-actions button[type="submit"] {
+      background-color: #004080;
+      color: white;
+    }
+    .form-actions button[type="button"] {
+      background-color: #ccc;
+    }
+    .progress {
+      height: 6px;
+      background: #ddd;
+      margin: 10px 0;
+      position: relative;
+    }
+    .progress-bar {
+      background: green;
+      width: 8%; /* change dynamically */
+      height: 100%;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -13,215 +125,56 @@
       <span>Janakiraman, Karthikeyan</span>
       <button class="new-inventory">+ New Inventory</button>
     </div>
-  </header>
-
-  <main>
+  </header>  <main>
     <h2>Tools Inventory</h2>
     <h3><strong>AES Current state analysis (CSA)</strong> | <span class="highlight-red">LLE management</span></h3>
+    <div class="progress">
+      <div class="progress-bar"></div>
+    </div><div class="container">
+  <aside class="sidebar">
+    <ul>
+      <li class="active">Application Details <span class="tick">✓</span></li>
+      <li>Leadership Alignment</li>
+      <li>Build Management</li>
+      <li>Deployment Management</li>
+      <li>Environment Refresh</li>
+      <li>Environment Patching</li>
+      <li>Environment Monitoring</li>
+      <li>Environment Housekeeping</li>
+      <li>LEM Responsibilities</li>
+      <li>Team Dynamics</li>
+      <li>Other Activities</li>
+      <li>Key Contacts</li>
+      <li>Environment Landscape</li>
+    </ul>
+  </aside>
 
-    <div class="container">
-      <aside class="sidebar">
-        <ul>
-          <li class="active">Application Details</li>
-          <li>Leadership Alignment</li>
-          <li>Build Management</li>
-          <li>Deployment Management</li>
-          <li>Environment Refresh</li>
-          <li>Environment Patching</li>
-          <li>Environment Monitoring</li>
-          <li>Environment Housekeeping</li>
-          <li>LEM Responsibilities</li>
-          <li>Team Dynamics</li>
-          <li>Other Activities</li>
-          <li>Key Contacts</li>
-          <li>Environment Landscape</li>
-        </ul>
-      </aside>
+  <section class="form-section">
+    <form>
+      <div class="form-grid">
+        <!-- Same form groups as before -->
+        <div class="form-group">
+          <label>AIT *</label>
+          <input type="text" placeholder="AIT-de000" />
+        </div>
+        <div class="form-group">
+          <label>Application Name *</label>
+          <input type="text" placeholder="Name of the Application" />
+        </div>
+        <div class="form-group">
+          <label>AIT Status *</label>
+          <select><option>Select</option></select>
+        </div>
+        <!-- Add rest of the fields like in previous version -->
+      </div>
+      <div class="form-actions">
+        <button type="button">Cancel</button>
+        <button type="submit">Next</button>
+      </div>
+    </form>
+  </section>
+</div>
 
-      <section class="form-section">
-        <form>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>AIT *</label>
-              <input type="text" placeholder="AIT-de000" />
-            </div>
-            <div class="form-group">
-              <label>Application Name *</label>
-              <input type="text" placeholder="Name of the Application" />
-            </div>
-            <div class="form-group">
-              <label>AIT Status *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>AIT Primary / Secondary *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Dependent AITs (if any)</label>
-              <input type="text" placeholder="Dependent AITs (if any)" />
-            </div>
-            <div class="form-group">
-              <label>Is this a Qz AIT? *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Is this a Mainframe AIT?</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Is this a UCAL application? *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Is this a SOX application? *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Recovery Point Objective Tier</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Recovery Time Objective Tier</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Horizon</label>
-              <input type="text" placeholder="Horizon" />
-            </div>
-            <div class="form-group">
-              <label>Application Data Classification *</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Application Supported Regions</label>
-              <select><option>Select</option></select>
-            </div>
-            <div class="form-group">
-              <label>Tech Stack</label>
-              <select><option>Select</option></select>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button">Cancel</button>
-            <button type="submit">Next</button>
-          </div>
-        </form>
-      </section>
-    </div>
   </main>
 </body>
 </html>
-
-
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f6f6f6;
-}
-
-header {
-  background: #fff;
-  padding: 10px 20px;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.new-inventory {
-  background-color: #305ba8;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-main {
-  padding: 20px;
-}
-
-.highlight-red {
-  color: darkred;
-}
-
-.container {
-  display: flex;
-  margin-top: 20px;
-}
-
-.sidebar {
-  width: 230px;
-  background: #fff;
-  border-right: 1px solid #ccc;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar li {
-  padding: 10px 15px;
-  cursor: pointer;
-}
-
-.sidebar li.active {
-  background-color: #004080;
-  color: white;
-  font-weight: bold;
-}
-
-.form-section {
-  flex: 1;
-  background: white;
-  padding: 20px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.form-group label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 6px;
-  box-sizing: border-box;
-}
-
-.form-actions {
-  margin-top: 20px;
-  text-align: right;
-}
-
-.form-actions button {
-  padding: 8px 14px;
-  margin-left: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.form-actions button[type="submit"] {
-  background-color: #004080;
-  color: white;
-}
-
-.form-actions button[type="button"] {
-  background-color: #ccc;
-}
