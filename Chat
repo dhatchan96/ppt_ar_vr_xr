@@ -3,40 +3,25 @@
     <img src="/logo.png" alt="Logo" className="logo" />
     <span className="app-title">Application Engineering Services Tool</span>
   </div>
+
   <div className="navbar-right">
-    <div className="user-block">
-      <img src="/avatar.png" alt="User Avatar" className="avatar" />
-      <span className="username">Janakiraman, Karthikeyan</span>
-    </div>
+    <span className="username">Janakiraman, Karthikeyan</span>
     <button className="new-inventory">New Inventory</button>
   </div>
 </header>
-
-<div className="sub-header">
-  <div className="tools-label">Tools Inventory</div>
-  <div className="section-sub">
-    <strong>AES Current state analysis (CSA)</strong> | <span className="highlight-red">LLE management</span>
-  </div>
-</div>
-
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #ffffff;
-  padding: 10px 24px;
+  background-color: #ffffff;
+  padding: 12px 24px;
   border-bottom: 1px solid #ccc;
 }
 
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .logo {
-  height: 28px;
+  height: 30px;
+  margin-right: 12px;
 }
 
 .app-title {
@@ -45,27 +30,20 @@
   color: #1a1a1a;
 }
 
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.user-block {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  gap: 14px;
 }
 
 .username {
   font-size: 14px;
-  color: #222;
+  color: #333;
 }
 
 .new-inventory {
@@ -74,26 +52,6 @@
   border: none;
   padding: 6px 14px;
   border-radius: 4px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
-}
-
-.sub-header {
-  padding: 10px 24px;
-  background: #f9f9f9;
-  border-bottom: 1px solid #ddd;
-}
-
-.tools-label {
-  font-weight: 600;
-  font-size: 15px;
-  margin-bottom: 2px;
-}
-
-.section-sub {
-  font-size: 14px;
-}
-
-.highlight-red {
-  color: #b00020;
 }
