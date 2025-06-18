@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 
-// ✅ New required import for v33+
-import { ModuleRegistry, AllCommunityModules } from 'ag-grid-community';
-ModuleRegistry.registerModules(AllCommunityModules);
-
-// ✅ Required AG Grid styles
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+// AG Grid styles
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
