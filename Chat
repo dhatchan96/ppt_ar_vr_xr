@@ -40,11 +40,9 @@ export default function App() {
   const [current, setCurrent] = useState(0);
 
   const markCompleted = () => {
-    // Mark current section complete ✅
     setSections((prev) =>
       prev.map((s, i) => (i === current ? { ...s, completed: true } : s))
     );
-    // Auto‑advance to next section if available
     if (current < sections.length - 1) setCurrent(current + 1);
   };
 
@@ -91,67 +89,69 @@ export default function App() {
 
 ---
 
-2. src/components/Sidebar.js
+2. src/components/FormSection.js
 
 import React from "react";
-import "./Sidebar.css";
-
-export default function Sidebar({ sections, current, onSelect }) {
-  return (
-    <aside className="sidebar">
-      <ul>
-        {sections.map((s, idx) => (
-          <li
-            key={s.name}
-            className={idx === current ? "active" : ""}
-            onClick={() => onSelect(idx)}
-          >
-            <span>{s.name}</span>
-            {s.completed && <span className="tick">✓</span>}
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
-
-
----
-
-3. src/components/ProgressBar.js
-
-import React from "react";
-import "./ProgressBar.css";
-
-export default function ProgressBar({ value }) {
-  return (
-    <div className="progress">
-      <div className="progress-bar" style={{ width: `${value}%` }} />
-    </div>
-  );
-}
-
-
----
-
-4. src/components/FormSection.js
-
-import React from "react";
-import "./FormSection.css";
+import ApplicationDetails from "./forms/ApplicationDetails";
+import LeadershipAlignment from "./forms/LeadershipAlignment";
+import BuildManagement from "./forms/BuildManagement";
+import DeploymentManagement from "./forms/DeploymentManagement";
+import EnvironmentRefresh from "./forms/EnvironmentRefresh";
+import EnvironmentPatching from "./forms/EnvironmentPatching";
+import EnvironmentMonitoring from "./forms/EnvironmentMonitoring";
+import EnvironmentHousekeeping from "./forms/EnvironmentHousekeeping";
+import LEMResponsibilities from "./forms/LEMResponsibilities";
+import TeamDynamics from "./forms/TeamDynamics";
+import OtherActivities from "./forms/OtherActivities";
+import KeyContacts from "./forms/KeyContacts";
+import EnvironmentLandscape from "./forms/EnvironmentLandscape";
 
 export default function FormSection({ section, onNext, isLast }) {
-  // Only first section contains real form fields for now.
-  if (section.name !== "Application Details")
-    return (
-      <section className="form-section placeholder">
-        <h4>{section.name}</h4>
-        <p>Static / placeholder content goes here.</p>
-        <div className="form-actions">
-          <button onClick={onNext}>{isLast ? "Finish" : "Next"}</button>
-        </div>
-      </section>
-    );
+  const renderForm = () => {
+    switch (section.name) {
+      case "Application Details":
+        return <ApplicationDetails onNext={onNext} />;
+      case "Leadership Alignment":
+        return <LeadershipAlignment onNext={onNext} />;
+      case "Build Management":
+        return <BuildManagement onNext={onNext} />;
+      case "Deployment Management":
+        return <DeploymentManagement onNext={onNext} />;
+      case "Environment Refresh":
+        return <EnvironmentRefresh onNext={onNext} />;
+      case "Environment Patching":
+        return <EnvironmentPatching onNext={onNext} />;
+      case "Environment Monitoring":
+        return <EnvironmentMonitoring onNext={onNext} />;
+      case "Environment Housekeeping":
+        return <EnvironmentHousekeeping onNext={onNext} />;
+      case "LEM Responsibilities":
+        return <LEMResponsibilities onNext={onNext} />;
+      case "Team Dynamics":
+        return <TeamDynamics onNext={onNext} />;
+      case "Other Activities":
+        return <OtherActivities onNext={onNext} />;
+      case "Key Contacts":
+        return <KeyContacts onNext={onNext} />;
+      case "Environment Landscape":
+        return <EnvironmentLandscape onNext={onNext} />;
+      default:
+        return null;
+    }
+  };
 
+  return renderForm();
+}
+
+
+---
+
+3. Each file in src/components/forms/ (13 total) has this template:
+
+import React from "react";
+import "../FormSection.css";
+
+export default function [ComponentName]({ onNext }) {
   return (
     <section className="form-section">
       <form
@@ -161,23 +161,7 @@ export default function FormSection({ section, onNext, isLast }) {
         }}
       >
         <div className="form-grid">
-          <div className="form-group">
-            <label>AIT *</label>
-            <input type="text" placeholder="AIT-de000" required />
-          </div>
-          <div className="form-group">
-            <label>Application Name *</label>
-            <input type="text" placeholder="Name of the Application" required />
-          </div>
-          <div className="form-group">
-            <label>AIT Status *</label>
-            <select required>
-              <option value="">Select</option>
-              <option>Active</option>
-              <option>Retired</option>
-            </select>
-          </div>
-          {/* Add the remaining fields the same way */}
+          {/* Add form fields here for [ComponentName] */}
         </div>
         <div className="form-actions">
           <button type="submit">Next</button>
@@ -187,188 +171,34 @@ export default function FormSection({ section, onNext, isLast }) {
   );
 }
 
+Replace [ComponentName] with:
 
----
+ApplicationDetails
 
-5. src/App.css
+LeadershipAlignment
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f6f6f6;
-}
+BuildManagement
 
-.app-header {
-  background: #fff;
-  padding: 10px 20px;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+DeploymentManagement
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+EnvironmentRefresh
 
-.new-inventory {
-  background-color: #305ba8;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-}
+EnvironmentPatching
 
-main {
-  padding: 20px;
-}
+EnvironmentMonitoring
 
-.highlight-red {
-  color: darkred;
-}
+EnvironmentHousekeeping
 
-.container {
-  display: flex;
-  margin-top: 20px;
-}
+LEMResponsibilities
+
+TeamDynamics
+
+OtherActivities
+
+KeyContacts
+
+EnvironmentLandscape
 
 
----
-
-6. src/components/Sidebar.css
-
-.sidebar {
-  width: 250px;
-  background: #fff;
-  border-right: 1px solid #ccc;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  cursor: pointer;
-}
-
-.sidebar li.active {
-  background-color: #004080;
-  color: #fff;
-  font-weight: bold;
-}
-
-.tick {
-  color: green;
-  font-weight: bold;
-}
-
-
----
-
-7. src/components/ProgressBar.css
-
-.progress {
-  height: 6px;
-  background: #ddd;
-  margin: 10px 0 20px;
-  width: 100%;
-}
-
-.progress-bar {
-  height: 100%;
-  background: green;
-  transition: width 0.3s ease;
-}
-
-
----
-
-8. src/components/FormSection.css
-
-.form-section {
-  flex: 1;
-  background: #fff;
-  padding: 20px;
-}
-
-.placeholder {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.form-group label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 6px;
-  box-sizing: border-box;
-}
-
-.form-actions {
-  margin-top: 20px;
-  text-align: right;
-}
-
-.form-actions button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 4px;
-  background-color: #004080;
-  color: #fff;
-  cursor: pointer;
-}
-
-
----
-
-🏃‍♂️ How to run
-
-1. Install & start
-
-npm start
-
-This launches the development server on http://localhost:3000.
-
-
-2. Build for production
-
-npm run build
-
-Creates an optimized production bundle in build/.
-
-
-
-You now have a fully‑functional React version:
-
-Sidebar navigation with active state
-
-✓ green ticks for completed sections
-
-Dynamic progress bar
-
-Placeholder pages for the remaining categories (fill them out as needed)
-
-
-Feel free to ask for enhancements—form validation, API integration, or routing—if required.
+You now have placeholder forms ready for all sidebar sections. Add fields to each as needed. Let me know if you want sample fields or connected API logic!
 
