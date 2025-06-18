@@ -1,130 +1,49 @@
-# Project setup commands
-npx create-react-app aes-tool
-cd aes-tool
-npm install
-npm start
+import React from "react";
+import ApplicationDetails from "./forms/ApplicationDetails";
+import LeadershipAlignment from "./forms/LeadershipAlignment";
+import BuildManagement from "./forms/BuildManagement";
+import DeploymentManagement from "./forms/DeploymentManagement";
+import EnvironmentRefresh from "./forms/EnvironmentRefresh";
+import EnvironmentPatching from "./forms/EnvironmentPatching";
+import EnvironmentMonitoring from "./forms/EnvironmentMonitoring";
+import EnvironmentHousekeeping from "./forms/EnvironmentHousekeeping";
+import LEMResponsibilities from "./forms/LEMResponsibilities";
+import TeamDynamics from "./forms/TeamDynamics";
+import OtherActivities from "./forms/OtherActivities";
+import KeyContacts from "./forms/KeyContacts";
+import EnvironmentLandscape from "./forms/EnvironmentLandscape";
 
-After creating the project, replace the contents of src/ with the files below.
+export default function FormSection({ section, onNext, onPrev, isFirst, isLast }) {
+  const formProps = { onNext, onPrev, isFirst, isLast };
 
-
----
-
-1. src/App.js
-
-import React, { useState } from "react";
-import Sidebar from "./components/Sidebar";
-import ProgressBar from "./components/ProgressBar";
-import FormSection from "./components/FormSection";
-import "./App.css";
-
-const SECTION_NAMES = [
-  "Application Details",
-  "Leadership Alignment",
-  "Build Management",
-  "Deployment Management",
-  "Environment Refresh",
-  "Environment Patching",
-  "Environment Monitoring",
-  "Environment Housekeeping",
-  "LEM Responsibilities",
-  "Team Dynamics",
-  "Other Activities",
-  "Key Contacts",
-  "Environment Landscape",
-];
-
-export default function App() {
-  const [sections, setSections] = useState(
-    SECTION_NAMES.map((name) => ({ name, completed: false }))
-  );
-  const [current, setCurrent] = useState(0);
-
-  const markCompleted = () => {
-    setSections((prev) =>
-      prev.map((s, i) => (i === current ? { ...s, completed: true } : s))
-    );
-    if (current < sections.length - 1) setCurrent(current + 1);
-  };
-
-  const goBack = () => {
-    if (current > 0) setCurrent(current - 1);
-  };
-
-  const completedCount = sections.filter((s) => s.completed).length;
-  const progress = (completedCount / sections.length) * 100;
-
-  return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Application Engineering Services Tool</h1>
-        <div className="user-info">
-          <span>Janakiraman, Karthikeyan</span>
-          <button className="new-inventory">+ New Inventory</button>
-        </div>
-      </header>
-
-      <main>
-        <h2>Tools Inventory</h2>
-        <h3>
-          <strong>AES Current state analysis (CSA)</strong> |
-          <span className="highlight-red"> LLE management</span>
-        </h3>
-
-        <ProgressBar value={progress} />
-
-        <div className="container">
-          <Sidebar
-            sections={sections}
-            current={current}
-            onSelect={setCurrent}
-          />
-
-          <FormSection
-            section={sections[current]}
-            onNext={markCompleted}
-            onPrev={goBack}
-            isFirst={current === 0}
-            isLast={current === sections.length - 1}
-          />
-        </div>
-      </main>
-    </div>
-  );
+  switch (section.name) {
+    case "Application Details":
+      return <ApplicationDetails {...formProps} />;
+    case "Leadership Alignment":
+      return <LeadershipAlignment {...formProps} />;
+    case "Build Management":
+      return <BuildManagement {...formProps} />;
+    case "Deployment Management":
+      return <DeploymentManagement {...formProps} />;
+    case "Environment Refresh":
+      return <EnvironmentRefresh {...formProps} />;
+    case "Environment Patching":
+      return <EnvironmentPatching {...formProps} />;
+    case "Environment Monitoring":
+      return <EnvironmentMonitoring {...formProps} />;
+    case "Environment Housekeeping":
+      return <EnvironmentHousekeeping {...formProps} />;
+    case "LEM Responsibilities":
+      return <LEMResponsibilities {...formProps} />;
+    case "Team Dynamics":
+      return <TeamDynamics {...formProps} />;
+    case "Other Activities":
+      return <OtherActivities {...formProps} />;
+    case "Key Contacts":
+      return <KeyContacts {...formProps} />;
+    case "Environment Landscape":
+      return <EnvironmentLandscape {...formProps} />;
+    default:
+      return null;
+  }
 }
-
-
----
-
-2. Update all form components to accept onPrev, isFirst, and isLast props
-
-Example:
-
-export default function ApplicationDetails({ onNext, onPrev, isFirst, isLast }) {
-  return (
-    <section className="form-section">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onNext();
-        }}
-      >
-        <div className="form-grid">
-          {/* Form fields */}
-        </div>
-        <div className="form-actions">
-          {!isFirst && (
-            <button type="button" onClick={onPrev}>
-              Previous
-            </button>
-          )}
-          <button type="submit">{isLast ? "Save" : "Next"}</button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-Apply this to all 13 form components. The "Previous" button will now appear on all but the first form, and the last form's button will read Save instead of Next.
-
-Let me know if you'd like the Save button to perform a final data submission or download as file!
-
