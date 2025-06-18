@@ -1,180 +1,374 @@
-<!DOCTYPE html><html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Application Engineering Services Tool</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f6f6f6;
-    }
-    header {
-      background: #fff;
-      padding: 10px 20px;
-      border-bottom: 1px solid #ccc;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .new-inventory {
-      background-color: #305ba8;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    main {
-      padding: 20px;
-    }
-    .highlight-red {
-      color: darkred;
-    }
-    .container {
-      display: flex;
-      margin-top: 20px;
-    }
-    .sidebar {
-      width: 250px;
-      background: #fff;
-      border-right: 1px solid #ccc;
-    }
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
-    .sidebar li {
-      padding: 12px 15px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .sidebar li.active {
-      background-color: #004080;
-      color: white;
-      font-weight: bold;
-    }
-    .sidebar li .tick {
-      color: green;
-      font-weight: bold;
-    }
-    .form-section {
-      flex: 1;
-      background: white;
-      padding: 20px;
-    }
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    .form-group label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
-    }
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 6px;
-      box-sizing: border-box;
-    }
-    .form-actions {
-      margin-top: 20px;
-      text-align: right;
-    }
-    .form-actions button {
-      padding: 8px 14px;
-      margin-left: 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .form-actions button[type="submit"] {
-      background-color: #004080;
-      color: white;
-    }
-    .form-actions button[type="button"] {
-      background-color: #ccc;
-    }
-    .progress {
-      height: 6px;
-      background: #ddd;
-      margin: 10px 0;
-      position: relative;
-    }
-    .progress-bar {
-      background: green;
-      width: 8%; /* change dynamically */
-      height: 100%;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Application Engineering Services Tool</h1>
-    <div class="user-info">
-      <span>Janakiraman, Karthikeyan</span>
-      <button class="new-inventory">+ New Inventory</button>
+# Project setup commands
+npx create-react-app aes-tool
+cd aes-tool
+npm install
+npm start
+
+After creating the project, replace the contents of src/ with the files below.
+
+
+---
+
+1. src/App.js
+
+import React, { useState } from "react";
+import Sidebar from "./components/Sidebar";
+import ProgressBar from "./components/ProgressBar";
+import FormSection from "./components/FormSection";
+import "./App.css";
+
+const SECTION_NAMES = [
+  "Application Details",
+  "Leadership Alignment",
+  "Build Management",
+  "Deployment Management",
+  "Environment Refresh",
+  "Environment Patching",
+  "Environment Monitoring",
+  "Environment Housekeeping",
+  "LEM Responsibilities",
+  "Team Dynamics",
+  "Other Activities",
+  "Key Contacts",
+  "Environment Landscape",
+];
+
+export default function App() {
+  const [sections, setSections] = useState(
+    SECTION_NAMES.map((name) => ({ name, completed: false }))
+  );
+  const [current, setCurrent] = useState(0);
+
+  const markCompleted = () => {
+    // Mark current section complete ✅
+    setSections((prev) =>
+      prev.map((s, i) => (i === current ? { ...s, completed: true } : s))
+    );
+    // Auto‑advance to next section if available
+    if (current < sections.length - 1) setCurrent(current + 1);
+  };
+
+  const completedCount = sections.filter((s) => s.completed).length;
+  const progress = (completedCount / sections.length) * 100;
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>Application Engineering Services Tool</h1>
+        <div className="user-info">
+          <span>Janakiraman, Karthikeyan</span>
+          <button className="new-inventory">+ New Inventory</button>
+        </div>
+      </header>
+
+      <main>
+        <h2>Tools Inventory</h2>
+        <h3>
+          <strong>AES Current state analysis (CSA)</strong> |
+          <span className="highlight-red"> LLE management</span>
+        </h3>
+
+        <ProgressBar value={progress} />
+
+        <div className="container">
+          <Sidebar
+            sections={sections}
+            current={current}
+            onSelect={setCurrent}
+          />
+
+          <FormSection
+            section={sections[current]}
+            onNext={markCompleted}
+            isLast={current === sections.length - 1}
+          />
+        </div>
+      </main>
     </div>
-  </header>  <main>
-    <h2>Tools Inventory</h2>
-    <h3><strong>AES Current state analysis (CSA)</strong> | <span class="highlight-red">LLE management</span></h3>
-    <div class="progress">
-      <div class="progress-bar"></div>
-    </div><div class="container">
-  <aside class="sidebar">
-    <ul>
-      <li class="active">Application Details <span class="tick">✓</span></li>
-      <li>Leadership Alignment</li>
-      <li>Build Management</li>
-      <li>Deployment Management</li>
-      <li>Environment Refresh</li>
-      <li>Environment Patching</li>
-      <li>Environment Monitoring</li>
-      <li>Environment Housekeeping</li>
-      <li>LEM Responsibilities</li>
-      <li>Team Dynamics</li>
-      <li>Other Activities</li>
-      <li>Key Contacts</li>
-      <li>Environment Landscape</li>
-    </ul>
-  </aside>
+  );
+}
 
-  <section class="form-section">
-    <form>
-      <div class="form-grid">
-        <!-- Same form groups as before -->
-        <div class="form-group">
-          <label>AIT *</label>
-          <input type="text" placeholder="AIT-de000" />
-        </div>
-        <div class="form-group">
-          <label>Application Name *</label>
-          <input type="text" placeholder="Name of the Application" />
-        </div>
-        <div class="form-group">
-          <label>AIT Status *</label>
-          <select><option>Select</option></select>
-        </div>
-        <!-- Add rest of the fields like in previous version -->
-      </div>
-      <div class="form-actions">
-        <button type="button">Cancel</button>
-        <button type="submit">Next</button>
-      </div>
-    </form>
-  </section>
-</div>
 
-  </main>
-</body>
-</html>
+---
+
+2. src/components/Sidebar.js
+
+import React from "react";
+import "./Sidebar.css";
+
+export default function Sidebar({ sections, current, onSelect }) {
+  return (
+    <aside className="sidebar">
+      <ul>
+        {sections.map((s, idx) => (
+          <li
+            key={s.name}
+            className={idx === current ? "active" : ""}
+            onClick={() => onSelect(idx)}
+          >
+            <span>{s.name}</span>
+            {s.completed && <span className="tick">✓</span>}
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+
+---
+
+3. src/components/ProgressBar.js
+
+import React from "react";
+import "./ProgressBar.css";
+
+export default function ProgressBar({ value }) {
+  return (
+    <div className="progress">
+      <div className="progress-bar" style={{ width: `${value}%` }} />
+    </div>
+  );
+}
+
+
+---
+
+4. src/components/FormSection.js
+
+import React from "react";
+import "./FormSection.css";
+
+export default function FormSection({ section, onNext, isLast }) {
+  // Only first section contains real form fields for now.
+  if (section.name !== "Application Details")
+    return (
+      <section className="form-section placeholder">
+        <h4>{section.name}</h4>
+        <p>Static / placeholder content goes here.</p>
+        <div className="form-actions">
+          <button onClick={onNext}>{isLast ? "Finish" : "Next"}</button>
+        </div>
+      </section>
+    );
+
+  return (
+    <section className="form-section">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onNext();
+        }}
+      >
+        <div className="form-grid">
+          <div className="form-group">
+            <label>AIT *</label>
+            <input type="text" placeholder="AIT-de000" required />
+          </div>
+          <div className="form-group">
+            <label>Application Name *</label>
+            <input type="text" placeholder="Name of the Application" required />
+          </div>
+          <div className="form-group">
+            <label>AIT Status *</label>
+            <select required>
+              <option value="">Select</option>
+              <option>Active</option>
+              <option>Retired</option>
+            </select>
+          </div>
+          {/* Add the remaining fields the same way */}
+        </div>
+        <div className="form-actions">
+          <button type="submit">Next</button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+
+---
+
+5. src/App.css
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f6f6f6;
+}
+
+.app-header {
+  background: #fff;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-inventory {
+  background-color: #305ba8;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+main {
+  padding: 20px;
+}
+
+.highlight-red {
+  color: darkred;
+}
+
+.container {
+  display: flex;
+  margin-top: 20px;
+}
+
+
+---
+
+6. src/components/Sidebar.css
+
+.sidebar {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #ccc;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+}
+
+.sidebar li.active {
+  background-color: #004080;
+  color: #fff;
+  font-weight: bold;
+}
+
+.tick {
+  color: green;
+  font-weight: bold;
+}
+
+
+---
+
+7. src/components/ProgressBar.css
+
+.progress {
+  height: 6px;
+  background: #ddd;
+  margin: 10px 0 20px;
+  width: 100%;
+}
+
+.progress-bar {
+  height: 100%;
+  background: green;
+  transition: width 0.3s ease;
+}
+
+
+---
+
+8. src/components/FormSection.css
+
+.form-section {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.form-group label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.form-actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #004080;
+  color: #fff;
+  cursor: pointer;
+}
+
+
+---
+
+🏃‍♂️ How to run
+
+1. Install & start
+
+npm start
+
+This launches the development server on http://localhost:3000.
+
+
+2. Build for production
+
+npm run build
+
+Creates an optimized production bundle in build/.
+
+
+
+You now have a fully‑functional React version:
+
+Sidebar navigation with active state
+
+✓ green ticks for completed sections
+
+Dynamic progress bar
+
+Placeholder pages for the remaining categories (fill them out as needed)
+
+
+Feel free to ask for enhancements—form validation, API integration, or routing—if required.
+
