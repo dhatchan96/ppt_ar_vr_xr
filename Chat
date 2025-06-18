@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { AgGridReact } from "ag-grid-react";
-
-// AG Grid styles
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
+"overrides": {
+  "ag-grid-react": {
+    "module": "ag-grid-react",
+    "sideEffects": false
+  }
+}
