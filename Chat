@@ -1,51 +1,95 @@
-<header className="navbar">
+<header className="main-navbar">
   <div className="navbar-left">
+    <img src="/logo.png" alt="logo" className="logo" />
     <h1>Application Engineering Services Tool</h1>
   </div>
   <div className="navbar-right">
-    <span className="user-name">Janakiraman, Karthikeyan</span>
-    <button className="new-inventory">+ New Inventory</button>
+    <div className="user-info">
+      <img src="/avatar.png" alt="user" className="avatar" />
+      <span>Janakiraman, Karthikeyan</span>
+    </div>
+    <button className="new-inventory">New Inventory</button>
   </div>
 </header>
 
-<nav className="sub-navbar">
-  <h2>Tools Inventory</h2>
-</nav>
-.navbar {
+<div className="sub-header">
+  <div className="section-title">Tools Inventory</div>
+  <div className="section-subtitle">
+    <strong>AES Current state analysis (CSA)</strong> | <span className="highlight-red">LLE management</span>
+  </div>
+</div>
+
+
+.main-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #f8f9fa;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-bottom: 1px solid #ccc;
 }
 
-.navbar h1 {
-  font-size: 20px;
-  margin: 0;
+.logo {
+  height: 30px;
+  margin-right: 12px;
 }
 
-.user-name {
-  margin-right: 10px;
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-left h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
 }
 
 .new-inventory {
   background-color: #004080;
-  color: #fff;
+  color: white;
   border: none;
   padding: 6px 12px;
-  border-radius: 5px;
+  border-radius: 4px;
+  font-weight: 500;
   cursor: pointer;
 }
 
-.sub-navbar {
-  background-color: #e6f0ff;
-  padding: 8px 20px;
-  border-bottom: 1px solid #d0d0d0;
+.sub-header {
+  padding: 12px 24px;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
 }
 
-.sub-navbar h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
+.section-title {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.section-subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.highlight-red {
+  color: #b00020;
 }
