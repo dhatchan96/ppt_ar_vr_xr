@@ -1,188 +1,51 @@
-# Project setup commands
-npx create-react-app aes-tool
-cd aes-tool
-npm install
-npm start
+<header className="navbar">
+  <div className="navbar-left">
+    <h1>Application Engineering Services Tool</h1>
+  </div>
+  <div className="navbar-right">
+    <span className="user-name">Janakiraman, Karthikeyan</span>
+    <button className="new-inventory">+ New Inventory</button>
+  </div>
+</header>
 
-After creating the project, replace the contents of src/ with the files below.
-
-
----
-
-1. src/App.js
-
-import React, { useEffect, useState } from "react";
-import Sidebar from "./components/Sidebar";
-import ProgressBar from "./components/ProgressBar";
-import FormSection from "./components/FormSection";
-import "./App.css";
-
-const SECTION_NAMES = [
-  "Application Details",
-  "Leadership Alignment",
-  "Build Management",
-  "Deployment Management",
-  "Environment Refresh",
-  "Environment Patching",
-  "Environment Monitoring",
-  "Environment Housekeeping",
-  "LEM Responsibilities",
-  "Team Dynamics",
-  "Other Activities",
-  "Key Contacts",
-  "Environment Landscape",
-];
-
-export default function App() {
-  const [sections, setSections] = useState(
-    SECTION_NAMES.map((name) => ({ name, completed: false }))
-  );
-  const [current, setCurrent] = useState(0);
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("aesFormData");
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem("aesFormData", JSON.stringify(formData));
-  }, [formData]);
-
-  const handleDataChange = (sectionName, data) => {
-    setFormData((prev) => ({ ...prev, [sectionName]: data }));
-  };
-
-  const markCompleted = () => {
-    setSections((prev) =>
-      prev.map((s, i) => (i === current ? { ...s, completed: true } : s))
-    );
-    if (current < sections.length - 1) setCurrent(current + 1);
-  };
-
-  const goBack = () => {
-    if (current > 0) setCurrent(current - 1);
-  };
-
-  const completedCount = sections.filter((s) => s.completed).length;
-  const progress = (completedCount / sections.length) * 100;
-
-  return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Application Engineering Services Tool</h1>
-        <div className="user-info">
-          <span>Janakiraman, Karthikeyan</span>
-          <button className="new-inventory">+ New Inventory</button>
-        </div>
-      </header>
-
-      <main>
-        <h2>Tools Inventory</h2>
-        <h3>
-          <strong>AES Current state analysis (CSA)</strong> |
-          <span className="highlight-red"> LLE management</span>
-        </h3>
-
-        <ProgressBar value={progress} />
-
-        <div className="container">
-          <Sidebar
-            sections={sections}
-            current={current}
-            onSelect={setCurrent}
-          />
-
-          <FormSection
-            section={sections[current]}
-            onNext={markCompleted}
-            onPrev={goBack}
-            isFirst={current === 0}
-            isLast={current === sections.length - 1}
-            onChange={handleDataChange}
-            values={formData[sections[current].name] || {}}
-          />
-        </div>
-      </main>
-    </div>
-  );
+<nav className="sub-navbar">
+  <h2>Tools Inventory</h2>
+</nav>
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
 }
 
-
----
-
-2. Form Component Example (ApplicationDetails.js)
-
-import React, { useEffect, useState } from "react";
-import "../FormSection.css";
-
-export default function ApplicationDetails({ onNext, onPrev, isFirst, isLast, onChange, values }) {
-  const [formState, setFormState] = useState(values);
-
-  useEffect(() => {
-    setFormState(values);
-  }, [values]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const updated = { ...formState, [name]: value };
-    setFormState(updated);
-    onChange("Application Details", updated);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onNext();
-  };
-
-  return (
-    <section className="form-section">
-      <form onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="form-group">
-            <label>AIT *</label>
-            <input name="ait" value={formState.ait || ""} onChange={handleChange} required />
-          </div>
-          <div className="form-group">
-            <label>Application Name *</label>
-            <input name="appName" value={formState.appName || ""} onChange={handleChange} required />
-          </div>
-          <div className="form-group">
-            <label>AIT Status *</label>
-            <select name="aitStatus" value={formState.aitStatus || ""} onChange={handleChange} required>
-              <option value="">Select</option>
-              <option>Active</option>
-              <option>Retired</option>
-            </select>
-          </div>
-        </div>
-        <div className="form-actions">
-          {!isFirst && <button type="button" onClick={onPrev}>Previous</button>}
-          <button type="submit">{isLast ? "Save" : "Next"}</button>
-        </div>
-      </form>
-    </section>
-  );
+.navbar h1 {
+  font-size: 20px;
+  margin: 0;
 }
 
+.user-name {
+  margin-right: 10px;
+}
 
----
+.new-inventory {
+  background-color: #004080;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
 
-Repeat the pattern for other form components:
+.sub-navbar {
+  background-color: #e6f0ff;
+  padding: 8px 20px;
+  border-bottom: 1px solid #d0d0d0;
+}
 
-Accept onChange, values props
-
-Maintain local state synced with parent
-
-Call onChange(sectionName, data) on field changes
-
-
-Now your form:
-
-✅ Persists data across steps
-
-✅ Saves to localStorage on every change
-
-✅ Restores data even after reload
-
-
-Let me know if you want a Download JSON button or to Submit to API on Save!
-
+.sub-navbar h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
