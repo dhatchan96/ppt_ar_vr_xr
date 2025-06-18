@@ -1,118 +1,195 @@
-<header className="navbar">
-  <div className="navbar-left">
-    <img src="/logo.png" alt="Logo" className="logo" />
-    <span className="app-title">Application Engineering Services Tool</span>
-  </div>
-  <div className="navbar-right">
-    <div className="user-info">
-      <img src="/avatar.png" alt="User Avatar" className="avatar" />
-      <span className="username">Janakiraman, Karthikeyan</span>
+✅ Updated App Structure with Navigation Tabs (React Router)
+
+
+---
+
+🔧 Step 1: Install React Router
+
+npm install react-router-dom
+
+
+---
+
+🔧 Step 2: Update App.js
+
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
+import ProgressBar from "./components/ProgressBar";
+import FormSection from "./components/FormSection";
+import AESToolsReport from "./components/AESToolsReport"; // new dummy page
+import "./App.css";
+
+const SECTION_NAMES = [
+  "Application Details",
+  "Leadership Alignment",
+  "Build Management",
+  "Deployment Management",
+  "Environment Refresh",
+  "Environment Patching",
+  "Environment Monitoring",
+  "Environment Housekeeping",
+  "LEM Responsibilities",
+  "Team Dynamics",
+  "Other Activities",
+  "Key Contacts",
+  "Environment Landscape",
+];
+
+function ToolsInventoryPage() {
+  const [sections, setSections] = React.useState(
+    SECTION_NAMES.map((name) => ({ name, completed: false }))
+  );
+  const [current, setCurrent] = React.useState(0);
+  const [formData, setFormData] = React.useState(() => {
+    const saved = localStorage.getItem("aesFormData");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("aesFormData", JSON.stringify(formData));
+  }, [formData]);
+
+  const handleDataChange = (sectionName, data) => {
+    setFormData((prev) => ({ ...prev, [sectionName]: data }));
+  };
+
+  const markCompleted = () => {
+    setSections((prev) =>
+      prev.map((s, i) => (i === current ? { ...s, completed: true } : s))
+    );
+    if (current < sections.length - 1) setCurrent(current + 1);
+  };
+
+  const goBack = () => {
+    if (current > 0) setCurrent(current - 1);
+  };
+
+  const completedCount = sections.filter((s) => s.completed).length;
+  const progress = (completedCount / sections.length) * 100;
+
+  return (
+    <main>
+      <ProgressBar value={progress} />
+      <div className="container">
+        <Sidebar sections={sections} current={current} onSelect={setCurrent} />
+        <FormSection
+          section={sections[current]}
+          onNext={markCompleted}
+          onPrev={goBack}
+          isFirst={current === 0}
+          isLast={current === sections.length - 1}
+          onChange={handleDataChange}
+          values={formData[sections[current].name] || {}}
+        />
+      </div>
+    </main>
+  );
+}
+
+function App() {
+  const location = useLocation();
+  const activeTab = location.pathname;
+
+  return (
+    <div className="app">
+      <header className="navbar">
+        <div className="navbar-left">
+          <img src="/logo.png" alt="Logo" className="logo" />
+          <span className="app-title">Application Engineering Services Tool</span>
+        </div>
+        <div className="navbar-right">
+          <div className="user-info">
+            <img src="/avatar.png" alt="User" className="avatar" />
+            <span className="username">Janakiraman, Karthikeyan</span>
+          </div>
+          <button className="new-inventory">New Inventory</button>
+        </div>
+      </header>
+
+      <div className="sub-header">
+        <div className="sub-nav-tabs">
+          <Link to="/tools" className={`sub-tab ${activeTab === "/tools" ? "active" : ""}`}>Tools Inventory</Link>
+          <Link to="/report" className={`sub-tab ${activeTab === "/report" ? "active" : ""}`}>AES Tools Report</Link>
+        </div>
+        <div className="sub-context">
+          <strong>AES Current state analysis (CSA)</strong> | <span className="highlight-red">LLE management</span>
+        </div>
+      </div>
+
+      <Routes>
+        <Route path="/tools" element={<ToolsInventoryPage />} />
+        <Route path="/report" element={<AESToolsReport />} />
+      </Routes>
     </div>
-    <button className="new-inventory">New Inventory</button>
-  </div>
-</header>
-
-<div className="sub-header">
-  <div className="sub-left">
-    <strong>Tools Inventory</strong>
-  </div>
-  <div className="sub-right">
-    <strong>AES Current state analysis (CSA)</strong> | <span className="highlight-red">LLE management</span>
-  </div>
-</div>
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 24px;
-  background-color: #fff;
-  border-bottom: 1px solid #ccc;
+  );
 }
 
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+export default function WrappedApp() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
 }
 
-.logo {
-  height: 28px;
+
+---
+
+📁 Add src/components/AESToolsReport.js
+
+import React from "react";
+
+export default function AESToolsReport() {
+  return (
+    <div className="report-section">
+      <h2>AES Tools Report</h2>
+      <p>This is the AES report page. Add your content here.</p>
+    </div>
+  );
 }
 
-.app-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
 
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
+---
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.avatar {
-  height: 32px;
-  width: 32px;
-  border-radius: 50%;
-}
-
-.username {
-  font-size: 14px;
-  color: #222;
-}
-
-.new-inventory {
-  background-color: #004080;
-  color: white;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-}
+🎨 CSS additions for tabs (App.css)
 
 .sub-header {
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ccc;
+  padding: 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 24px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #ddd;
 }
 
-.sub-left {
-  font-weight: bold;
-  font-size: 16px;
+.sub-nav-tabs {
+  display: flex;
+  gap: 20px;
 }
 
-.sub-right {
+.sub-tab {
+  font-weight: 500;
   font-size: 14px;
-  color: #444;
+  text-decoration: none;
+  color: #004080;
+  padding: 6px 12px;
+  border-radius: 4px;
 }
 
-.highlight-red {
-  color: #b00020;
+.sub-tab.active {
+  background-color: #004080;
+  color: white;
 }
 
-✅ Now:
+✅ You now have:
 
-The logo, app title, profile info, and New Inventory button are in the top navbar.
+Working route-based sub-navbar
 
-The sub-header has:
+Tabs that highlight on active route
 
-Left: "Tools Inventory"
-
-Right: "AES Current state analysis (CSA) | LLE management"
+Two pages: Tools Inventory and AES Tools Report
 
 
-
-This exactly mirrors your screenshot layout. Let me know if you'd like this navbar sticky on scroll or mobile-optimized.
+Let me know if you want mock data, charts, or download options inside AES Tools Report!
 
