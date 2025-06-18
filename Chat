@@ -1,50 +1,128 @@
-import React, { useEffect, useMemo, useState, useRef } from "react"; import { AgGridReact } from "ag-grid-react"; import "ag-grid-community/styles/ag-grid.css"; import "ag-grid-community/styles/ag-theme-alpine.css";
+import React, { useState, useEffect } from "react";
+import ApplicationDetails from "./forms/ApplicationDetails";
+import LeadershipAlignment from "./forms/LeadershipAlignment";
+import BuildManagement from "./forms/BuildManagement";
+import DeploymentManagement from "./forms/DeploymentManagement";
+import EnvironmentRefresh from "./forms/EnvironmentRefresh";
+import EnvironmentPatching from "./forms/EnvironmentPatching";
+import EnvironmentMonitoring from "./forms/EnvironmentMonitoring";
+import EnvironmentHousekeeping from "./forms/EnvironmentHousekeeping";
+import LEMResponsibilities from "./forms/LEMResponsibilities";
+import TeamDynamics from "./forms/TeamDynamics";
+import OtherActivities from "./forms/OtherActivities";
+import KeyContacts from "./forms/KeyContacts";
+import EnvironmentLandscape from "./forms/EnvironmentLandscape";
+import ProgressBar from "./ProgressBar";
 
-export default function AESToolsReport() { const [columnDefs, setColumnDefs] = useState([]); const [rowData, setRowData] = useState([]); const [quickFilterText, setQuickFilterText] = useState(""); const gridRef = useRef();
+const sections = [
+  { name: "Application Details" },
+  { name: "Leadership Alignment" },
+  { name: "Build Management" },
+  { name: "Deployment Management" },
+  { name: "Environment Refresh" },
+  { name: "Environment Patching" },
+  { name: "Environment Monitoring" },
+  { name: "Environment Housekeeping" },
+  { name: "LEM Responsibilities" },
+  { name: "Team Dynamics" },
+  { name: "Other Activities" },
+  { name: "Key Contacts" },
+  { name: "Environment Landscape" },
+];
 
-useEffect(() => { fetch("/data.json") .then((res) => res.json()) .then((json) => { const schema = json.schema || []; const data = json.data || [];
+export default function FormSection({ editData = null, onCancel }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formValues, setFormValues] = useState({});
 
-const cols = schema.map((col) => ({
-      headerName: col.colName,
-      field: col.colName,
-      sortable: true,
-      filter: true,
-      resizable: true,
+  useEffect(() => {
+    if (editData) {
+      setFormValues(editData);
+    }
+  }, [editData]);
+
+  const section = sections[currentStep];
+  const values = formValues[section.name] || {};
+
+  const handleChange = (sectionName, updatedValues) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [sectionName]: updatedValues,
     }));
+  };
 
-    const rows = data.map((rowArr) => {
-      const obj = {};
-      schema.forEach((col, index) => {
-        obj[col.colName] = rowArr[index];
-      });
-      return obj;
-    });
+  const handlePrev = () => setCurrentStep((s) => s - 1);
+  const handleNext = () => setCurrentStep((s) => s + 1);
 
-    setColumnDefs(cols);
-    setRowData(rows);
-  });
+  const handleSave = () => {
+    const allData = JSON.parse(localStorage.getItem("aesFormData")) || {};
+    const updatedData = { ...allData, ...formValues };
+    localStorage.setItem("aesFormData", JSON.stringify(updatedData));
+    localStorage.removeItem("editItem");
+    onCancel();
+  };
 
-}, []);
+  const formProps = {
+    onNext: handleNext,
+    onPrev: handlePrev,
+    isFirst: currentStep === 0,
+    isLast: currentStep === sections.length - 1,
+    onChange: handleChange,
+    values,
+  };
 
-const defaultColDef = useMemo(() => ({ flex: 1, minWidth: 120, }), []);
+  const renderSection = () => {
+    switch (section.name) {
+      case "Application Details":
+        return <ApplicationDetails {...formProps} />;
+      case "Leadership Alignment":
+        return <LeadershipAlignment {...formProps} />;
+      case "Build Management":
+        return <BuildManagement {...formProps} />;
+      case "Deployment Management":
+        return <DeploymentManagement {...formProps} />;
+      case "Environment Refresh":
+        return <EnvironmentRefresh {...formProps} />;
+      case "Environment Patching":
+        return <EnvironmentPatching {...formProps} />;
+      case "Environment Monitoring":
+        return <EnvironmentMonitoring {...formProps} />;
+      case "Environment Housekeeping":
+        return <EnvironmentHousekeeping {...formProps} />;
+      case "LEM Responsibilities":
+        return <LEMResponsibilities {...formProps} />;
+      case "Team Dynamics":
+        return <TeamDynamics {...formProps} />;
+      case "Other Activities":
+        return <OtherActivities {...formProps} />;
+      case "Key Contacts":
+        return <KeyContacts {...formProps} />;
+      case "Environment Landscape":
+        return <EnvironmentLandscape {...formProps} />;
+      default:
+        return null;
+    }
+  };
 
-const onExport = () => { gridRef.current.api.exportDataAsCsv(); };
+  return (
+    <div>
+      {editData && (
+        <div style={{ background: "#fdf2d9", padding: 10, marginBottom: 16, borderLeft: "4px solid #ffa500" }}>
+          <strong>Editing existing inventory record.</strong>
+        </div>
+      )}
 
-return ( <div style={{ padding: 16 }}> <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between" }}> <input type="text" placeholder="Search across all columns..." style={{ width: 300, padding: 6 }} onChange={(e) => setQuickFilterText(e.target.value)} /> <button onClick={onExport} style={{ padding: "6px 12px", background: "#004080", color: "white", border: "none", borderRadius: 4 }}> Export CSV </button> </div>
+      <ProgressBar currentStep={currentStep} totalSteps={sections.length} />
 
-<div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
-    <AgGridReact
-      ref={gridRef}
-      rowData={rowData}
-      columnDefs={columnDefs}
-      defaultColDef={defaultColDef}
-      pagination
-      paginationPageSize={100}
-      animateRows
-      quickFilterText={quickFilterText}
-    />
-  </div>
-</div>
+      {renderSection()}
 
-); }
-
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
+        <button onClick={onCancel}>Cancel</button>
+        {currentStep === sections.length - 1 ? (
+          <button onClick={handleSave}>Save</button>
+        ) : (
+          <button onClick={handleNext}>Next</button>
+        )}
+      </div>
+    </div>
+  );
+}
