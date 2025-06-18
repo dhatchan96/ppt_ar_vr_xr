@@ -46,6 +46,10 @@ export default function App() {
     if (current < sections.length - 1) setCurrent(current + 1);
   };
 
+  const goBack = () => {
+    if (current > 0) setCurrent(current - 1);
+  };
+
   const completedCount = sections.filter((s) => s.completed).length;
   const progress = (completedCount / sections.length) * 100;
 
@@ -78,6 +82,8 @@ export default function App() {
           <FormSection
             section={sections[current]}
             onNext={markCompleted}
+            onPrev={goBack}
+            isFirst={current === 0}
             isLast={current === sections.length - 1}
           />
         </div>
@@ -89,69 +95,11 @@ export default function App() {
 
 ---
 
-2. src/components/FormSection.js
+2. Update all form components to accept onPrev, isFirst, and isLast props
 
-import React from "react";
-import ApplicationDetails from "./forms/ApplicationDetails";
-import LeadershipAlignment from "./forms/LeadershipAlignment";
-import BuildManagement from "./forms/BuildManagement";
-import DeploymentManagement from "./forms/DeploymentManagement";
-import EnvironmentRefresh from "./forms/EnvironmentRefresh";
-import EnvironmentPatching from "./forms/EnvironmentPatching";
-import EnvironmentMonitoring from "./forms/EnvironmentMonitoring";
-import EnvironmentHousekeeping from "./forms/EnvironmentHousekeeping";
-import LEMResponsibilities from "./forms/LEMResponsibilities";
-import TeamDynamics from "./forms/TeamDynamics";
-import OtherActivities from "./forms/OtherActivities";
-import KeyContacts from "./forms/KeyContacts";
-import EnvironmentLandscape from "./forms/EnvironmentLandscape";
+Example:
 
-export default function FormSection({ section, onNext, isLast }) {
-  const renderForm = () => {
-    switch (section.name) {
-      case "Application Details":
-        return <ApplicationDetails onNext={onNext} />;
-      case "Leadership Alignment":
-        return <LeadershipAlignment onNext={onNext} />;
-      case "Build Management":
-        return <BuildManagement onNext={onNext} />;
-      case "Deployment Management":
-        return <DeploymentManagement onNext={onNext} />;
-      case "Environment Refresh":
-        return <EnvironmentRefresh onNext={onNext} />;
-      case "Environment Patching":
-        return <EnvironmentPatching onNext={onNext} />;
-      case "Environment Monitoring":
-        return <EnvironmentMonitoring onNext={onNext} />;
-      case "Environment Housekeeping":
-        return <EnvironmentHousekeeping onNext={onNext} />;
-      case "LEM Responsibilities":
-        return <LEMResponsibilities onNext={onNext} />;
-      case "Team Dynamics":
-        return <TeamDynamics onNext={onNext} />;
-      case "Other Activities":
-        return <OtherActivities onNext={onNext} />;
-      case "Key Contacts":
-        return <KeyContacts onNext={onNext} />;
-      case "Environment Landscape":
-        return <EnvironmentLandscape onNext={onNext} />;
-      default:
-        return null;
-    }
-  };
-
-  return renderForm();
-}
-
-
----
-
-3. Each file in src/components/forms/ (13 total) has this template:
-
-import React from "react";
-import "../FormSection.css";
-
-export default function [ComponentName]({ onNext }) {
+export default function ApplicationDetails({ onNext, onPrev, isFirst, isLast }) {
   return (
     <section className="form-section">
       <form
@@ -161,44 +109,22 @@ export default function [ComponentName]({ onNext }) {
         }}
       >
         <div className="form-grid">
-          {/* Add form fields here for [ComponentName] */}
+          {/* Form fields */}
         </div>
         <div className="form-actions">
-          <button type="submit">Next</button>
+          {!isFirst && (
+            <button type="button" onClick={onPrev}>
+              Previous
+            </button>
+          )}
+          <button type="submit">{isLast ? "Save" : "Next"}</button>
         </div>
       </form>
     </section>
   );
 }
 
-Replace [ComponentName] with:
+Apply this to all 13 form components. The "Previous" button will now appear on all but the first form, and the last form's button will read Save instead of Next.
 
-ApplicationDetails
-
-LeadershipAlignment
-
-BuildManagement
-
-DeploymentManagement
-
-EnvironmentRefresh
-
-EnvironmentPatching
-
-EnvironmentMonitoring
-
-EnvironmentHousekeeping
-
-LEMResponsibilities
-
-TeamDynamics
-
-OtherActivities
-
-KeyContacts
-
-EnvironmentLandscape
-
-
-You now have placeholder forms ready for all sidebar sections. Add fields to each as needed. Let me know if you want sample fields or connected API logic!
+Let me know if you'd like the Save button to perform a final data submission or download as file!
 
