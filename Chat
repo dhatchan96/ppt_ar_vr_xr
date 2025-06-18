@@ -1,40 +1,227 @@
-def update_dashboard_fullscreen(dashboard_id, chart_id, headers):
-    DASHBOARD_ENDPOINT = f"https://<your-host>/api/v1/dashboard/{dashboard_id}"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Application Engineering Services Tool</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Application Engineering Services Tool</h1>
+    <div class="user-info">
+      <span>Janakiraman, Karthikeyan</span>
+      <button class="new-inventory">+ New Inventory</button>
+    </div>
+  </header>
 
-    layout = {
-        "ROOT_ID": {
-            "type": "ROOT",
-            "id": "ROOT_ID",
-            "children": ["GRID_ID"]
-        },
-        "GRID_ID": {
-            "type": "GRID",
-            "id": "GRID_ID",
-            "children": [f"CHART-{chart_id}"]
-        },
-        f"CHART-{chart_id}": {
-            "type": "CHART",
-            "id": f"CHART-{chart_id}",
-            "meta": {
-                "chartId": chart_id,
-                "sliceName": "Table View"
-            },
-            "parents": ["ROOT_ID", "GRID_ID"],
-            "children": [],
-            "size_x": 12,
-            "size_y": 50,
-            "grid_width": 12,
-            "grid_height": 50
-        }
-    }
+  <main>
+    <h2>Tools Inventory</h2>
+    <h3><strong>AES Current state analysis (CSA)</strong> | <span class="highlight-red">LLE management</span></h3>
 
-    data = {
-        "position_json": layout,
-        "json_metadata": "{}"
-    }
+    <div class="container">
+      <aside class="sidebar">
+        <ul>
+          <li class="active">Application Details</li>
+          <li>Leadership Alignment</li>
+          <li>Build Management</li>
+          <li>Deployment Management</li>
+          <li>Environment Refresh</li>
+          <li>Environment Patching</li>
+          <li>Environment Monitoring</li>
+          <li>Environment Housekeeping</li>
+          <li>LEM Responsibilities</li>
+          <li>Team Dynamics</li>
+          <li>Other Activities</li>
+          <li>Key Contacts</li>
+          <li>Environment Landscape</li>
+        </ul>
+      </aside>
 
-    response = requests.put(DASHBOARD_ENDPOINT, headers=headers, json=data)
-    if response.status_code == 200:
-        print("Dashboard layout updated to fullscreen table chart")
-    else:
-        print(f"Failed to update layout: {response.status_code} - {response.text}")
+      <section class="form-section">
+        <form>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>AIT *</label>
+              <input type="text" placeholder="AIT-de000" />
+            </div>
+            <div class="form-group">
+              <label>Application Name *</label>
+              <input type="text" placeholder="Name of the Application" />
+            </div>
+            <div class="form-group">
+              <label>AIT Status *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>AIT Primary / Secondary *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Dependent AITs (if any)</label>
+              <input type="text" placeholder="Dependent AITs (if any)" />
+            </div>
+            <div class="form-group">
+              <label>Is this a Qz AIT? *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Is this a Mainframe AIT?</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Is this a UCAL application? *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Is this a SOX application? *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Recovery Point Objective Tier</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Recovery Time Objective Tier</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Horizon</label>
+              <input type="text" placeholder="Horizon" />
+            </div>
+            <div class="form-group">
+              <label>Application Data Classification *</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Application Supported Regions</label>
+              <select><option>Select</option></select>
+            </div>
+            <div class="form-group">
+              <label>Tech Stack</label>
+              <select><option>Select</option></select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button">Cancel</button>
+            <button type="submit">Next</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
+
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f6f6f6;
+}
+
+header {
+  background: #fff;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-inventory {
+  background-color: #305ba8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+main {
+  padding: 20px;
+}
+
+.highlight-red {
+  color: darkred;
+}
+
+.container {
+  display: flex;
+  margin-top: 20px;
+}
+
+.sidebar {
+  width: 230px;
+  background: #fff;
+  border-right: 1px solid #ccc;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.sidebar li.active {
+  background-color: #004080;
+  color: white;
+  font-weight: bold;
+}
+
+.form-section {
+  flex: 1;
+  background: white;
+  padding: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.form-group label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.form-actions button {
+  padding: 8px 14px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #004080;
+  color: white;
+}
+
+.form-actions button[type="button"] {
+  background-color: #ccc;
+}
