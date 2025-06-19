@@ -1,79 +1,62 @@
-const handleEdit = (rowData) => {
-  const fullData = JSON.parse(localStorage.getItem("toolsData") || "[]");
-  const index = rowData.id - 1;
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-  const selectedEntry = fullData[index];
-  localStorage.setItem("aesFormData", JSON.stringify(selectedEntry));
-  localStorage.setItem("editIndex", index);
+export default function FormSection({ section, onNext, onPrev, isFirst, isLast, onChange, values }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [sectionData, setSectionData] = useState(section);
 
-  navigate("/tools/edit/" + index);
-};
+  useEffect(() => {
+    if (!section && id !== undefined) {
+      const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+      const selected = toolsData[parseInt(id, 10)];
 
-const handleDelete = (rowData) => {
-  const fullData = JSON.parse(localStorage.getItem("toolsData") || "[]");
-  const updatedData = fullData.filter((_, i) => i !== rowData.id - 1);
-
-  localStorage.setItem("toolsData", JSON.stringify(updatedData));
-  window.location.reload();
-};
-
-
-useEffect(() => {
-  const stored = JSON.parse(localStorage.getItem("toolsData") || "[]");
-
-  const data = stored.map((entry, index) => {
-    const row = { id: index + 1 };
-
-    // Choose specific section fields to flatten
-    const selectedSections = [
-      "Application Details",
-      "Leadership Alignment",
-      "Build Management",
-      "Deployment Management",
-      "Environment Refresh"
-    ];
-
-    selectedSections.forEach(section => {
-      const sectionData = entry[section] || {};
-      const firstKey = Object.keys(sectionData)[0];
-      row[section] = firstKey ? sectionData[firstKey] : "";
-    });
-
-    return row;
-  });
-
-  const allCols = Object.keys(data[0] || {});
-  const gridCols = allCols.map((key) => ({
-    headerName: key.toUpperCase(),
-    field: key,
-    sortable: true,
-    filter: true,
-  }));
-
-  gridCols.push({
-    headerName: "Actions",
-    field: "actions",
-    cellRenderer: (params) => (
-      <>
-        <button onClick={() => handleEdit(params.data)}>Edit</button>
-        {" "}
-        <button onClick={() => handleDelete(params.data)}>Delete</button>
-      </>
-    )
-  });
-
-  setColumnDefs(gridCols);
-  setRowData(data);
-}, []);
+      if (selected) {
+        // Load section keys and values from stored data
+        const sectionKeys = Object.keys(selected);
+        const defaultSection = sectionKeys[0]; // assuming one section per edit
+        setSectionData({ name: defaultSection });
+        localStorage.setItem("aesFormData", JSON.stringify(selected));
+      } else {
+        navigate("/tools");
+      }
+    }
+  }, [id, section, navigate]);
 
 
+function renderSection() {
+  if (!sectionData || !sectionData.name) {
+    return <p>Loading section...</p>;
+  }
 
-<button
-  onClick={() => {
-    localStorage.removeItem("aesFormData");
-    localStorage.removeItem("editIndex");
-    navigate("/tools/new");
-  }}
->
-  New Inventory
-</button>
+  switch (sectionData.name) {
+    case "Application Details":
+      return <ApplicationDetails {...formProps} />;
+    case "Leadership Alignment":
+      return <LeadershipAlignment {...formProps} />;
+    case "Build Management":
+      return <BuildManagement {...formProps} />;
+    case "Deployment Management":
+      return <DeploymentManagement {...formProps} />;
+    case "Environment Refresh":
+      return <EnvironmentRefresh {...formProps} />;
+    case "Environment Patching":
+      return <EnvironmentPatching {...formProps} />;
+    case "Environment Monitoring":
+      return <EnvironmentMonitoring {...formProps} />;
+    case "Environment Housekeeping":
+      return <EnvironmentHousekeeping {...formProps} />;
+    case "LEM Responsibilities":
+      return <LEMResponsibilities {...formProps} />;
+    case "Team Dynamics":
+      return <TeamDynamics {...formProps} />;
+    case "Other Activities":
+      return <OtherActivities {...formProps} />;
+    case "Key Contacts":
+      return <KeyContacts {...formProps} />;
+    case "Environment Landscape":
+      return <EnvironmentLandscape {...formProps} />;
+    default:
+      return null;
+  }
+}
