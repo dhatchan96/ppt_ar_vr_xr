@@ -6,21 +6,15 @@ export default function Sidebar({ sections, current, onSelect }) {
     <aside className="sidebar">
       <ul>
         {sections.map((s, idx) => (
-          <li
-            key={s.name}
-            className={idx === current ? "active" : ""}
-            onClick={() => onSelect(idx)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelect(idx);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            <span>{s.name}</span>
-            {s.completed && <span className="tick">✔</span>}
+          <li key={s.name} className={idx === current ? "active" : ""}>
+            <button
+              type="button"
+              className="sidebar-button"
+              onClick={() => onSelect(idx)}
+            >
+              <span>{s.name}</span>
+              {s.completed && <span className="tick">✔</span>}
+            </button>
           </li>
         ))}
       </ul>
