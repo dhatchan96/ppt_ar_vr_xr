@@ -1,32 +1,20 @@
-import React from "react";
-import "../Sidebar.css";
-
-export default function Sidebar({ sections, current, onSelect }) {
-  return (
-    <aside className="sidebar">
-      <ul>
-        {sections.map((s, idx) => (
-          <li key={s.name} className={idx === current ? "active" : ""}>
-            <button
-              type="button"
-              className="sidebar-button"
-              onClick={() => onSelect(idx)}
-            >
-              <span>{s.name}</span>
-              {s.completed && <span className="tick">✔</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
-
-
 .sidebar-button {
-  all: unset; /* resets all default button styles */
+  all: unset;
   cursor: pointer;
   display: flex;
   align-items: center;
   width: 100%;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* adds space between text and tick */
+}
+
+.tick {
+  color: green;
+  font-weight: bold;
+  font-size: 1rem;
+  line-height: 1;
 }
