@@ -1,140 +1,110 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AgGridReact } from "ag-grid-react";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
-import { AllCommunityModules } from "ag-grid-community";
-import { ModuleRegistry } from "ag-grid-community";
+import React, { useEffect, useState, useMemo, useRef } from "react"; import { AgGridReact } from "ag-grid-react"; import "ag-grid-community/styles/ag-grid.css"; import "ag-grid-community/styles/ag-theme-alpine.css"; import { AllCommunityModules } from "ag-grid-community"; import { ModuleRegistry } from "ag-grid-community";
+
 ModuleRegistry.registerModules([AllCommunityModules]);
 
-export default function AESToolsReport() {
-  const gridRef = useRef();
-  const [columnDefs, setColumnDefs] = useState([]);
-  const [rowData, setRowData] = useState([]);
-  const [schema, setSchema] = useState([]);
-  const [originalData, setOriginalData] = useState([]);
-  const [quickFilterText, setQuickFilterText] = useState("");
+export default function AESToolsReport() { const [columnDefs, setColumnDefs] = useState([]); const [rowData, setRowData] = useState([]); const [quickFilterText, setQuickFilterText] = useState(""); const gridRef = useRef();
 
-  const [filters, setFilters] = useState({
-    techExec: "",
-    aitNumber: "",
-    toolType: "",
-  });
+const [filteredData, setFilteredData] = useState([]); const [dropdowns, setDropdowns] = useState({ techExec: "", ait: "", toolType: "", parentTool: "" });
 
-  useEffect(() => {
-    fetch("/data.json")
-      .then((res) => res.json())
-      .then((json) => {
-        const schema = json.schema || [];
-        const data = json.data || [];
+useEffect(() => { fetch("/data.json") .then((res) => res.json()) .then((json) => { const schema = json.schema || []; const data = json.data || [];
 
-        const cols = schema.map((col) => ({
-          headerName: col.colName,
-          field: col.colName,
-          sortable: true,
-          filter: true,
-          resizable: true,
-        }));
+const cols = schema.map((col) => ({
+      headerName: col.colName,
+      field: col.colName,
+      sortable: true,
+      filter: true,
+      resizable: true,
+    }));
 
-        const rows = data.map((rowArr) => {
-          const obj = {};
-          schema.forEach((col, i) => {
-            obj[col.colName] = rowArr[i];
-          });
-          return obj;
-        });
-
-        setSchema(schema);
-        setColumnDefs(cols);
-        setRowData(rows);
-        setOriginalData(rows);
+    const rows = data.map((rowArr) => {
+      const obj = {};
+      schema.forEach((col, index) => {
+        obj[col.colName] = rowArr[index];
       });
-  }, []);
-
-  // Dropdown logic
-  const execNames = [...new Set(originalData.map((d) => d["TECH_EXEC_FULL_NAME"]))];
-  const aitNumbers = [...new Set(
-    originalData
-      .filter((d) => !filters.techExec || d["TECH_EXEC_FULL_NAME"] === filters.techExec)
-      .map((d) => d["AIT_NUMBER"])
-  )];
-  const toolTypes = [...new Set(
-    originalData
-      .filter((d) => (!filters.techExec || d["TECH_EXEC_FULL_NAME"] === filters.techExec) &&
-                    (!filters.aitNumber || d["AIT_NUMBER"] === filters.aitNumber))
-      .map((d) => d["TOOL_TYPE"])
-  )];
-
-  const handleFilterChange = (key, value) => {
-    const updatedFilters = { ...filters, [key]: value };
-    setFilters(updatedFilters);
-
-    const filtered = originalData.filter((row) => {
-      return (
-        (!updatedFilters.techExec || row["TECH_EXEC_FULL_NAME"] === updatedFilters.techExec) &&
-        (!updatedFilters.aitNumber || row["AIT_NUMBER"] === updatedFilters.aitNumber) &&
-        (!updatedFilters.toolType || row["TOOL_TYPE"] === updatedFilters.toolType)
-      );
+      return obj;
     });
 
-    setRowData(filtered);
-  };
+    setColumnDefs(cols);
+    setRowData(rows);
+    setFilteredData(rows);
+  });
 
-  const defaultColDef = useMemo(() => ({
-    flex: 1,
-    minWidth: 120,
-  }), []);
+}, []);
 
-  const onExport = () => {
-    gridRef.current.api.exportDataAsCsv();
-  };
+const defaultColDef = useMemo(() => ({ flex: 1, minWidth: 120 }), []);
 
-  return (
-    <>
-      <h3>AES Tools Report</h3>
-      <div style={{ display: "flex", gap: "1rem", marginBottom: 10 }}>
-        <select onChange={(e) => handleFilterChange("techExec", e.target.value)} value={filters.techExec}>
-          <option value="">-- TECH_EXEC_FULL_NAME --</option>
-          {execNames.map((val, idx) => <option key={idx}>{val}</option>)}
-        </select>
+const onExport = () => { gridRef.current.api.exportDataAsCsv(); };
 
-        <select onChange={(e) => handleFilterChange("aitNumber", e.target.value)} value={filters.aitNumber}>
-          <option value="">-- AIT_NUMBER --</option>
-          {aitNumbers.map((val, idx) => <option key={idx}>{val}</option>)}
-        </select>
+const uniqueValues = (key) => [...new Set(rowData.map((row) => row[key]).filter(Boolean))];
 
-        <select onChange={(e) => handleFilterChange("toolType", e.target.value)} value={filters.toolType}>
-          <option value="">-- TOOL_TYPE --</option>
-          {toolTypes.map((val, idx) => <option key={idx}>{val}</option>)}
-        </select>
-      </div>
+const handleFilterChange = (key, value) => { const updated = { ...dropdowns, [key]: value }; setDropdowns(updated);
 
-      <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
-        <input
-          type="text"
-          placeholder="Search across all columns..."
-          style={{ width: 300, padding: 6 }}
-          onChange={(e) => setQuickFilterText(e.target.value)}
-        />
-        <button
-          onClick={onExport}
-          style={{ padding: "6px 12px", background: "#004080", color: "white", border: "none", borderRadius: 4 }}
-        >
-          Export CSV
-        </button>
-      </div>
+let filtered = rowData;
+if (updated.techExec) filtered = filtered.filter((row) => row["TECH_EXEC_FULL_NAME"] === updated.techExec);
+if (updated.ait) filtered = filtered.filter((row) => row["AIT_NUMBER"] === updated.ait);
+if (updated.toolType) filtered = filtered.filter((row) => row["TOOL_TYPE"] === updated.toolType);
+if (updated.parentTool) filtered = filtered.filter((row) => row["PARENT_TOOL_TYPE"] === updated.parentTool);
 
-      <div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
-        <AgGridReact
-          ref={gridRef}
-          rowData={rowData}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          pagination={true}
-          paginationPageSize={100}
-          animateRows={true}
-          quickFilterText={quickFilterText}
-        />
-      </div>
-    </>
-  );
-}
+setFilteredData(filtered);
+
+};
+
+const resetFilters = () => { setDropdowns({ techExec: "", ait: "", toolType: "", parentTool: "" }); setFilteredData(rowData); };
+
+return ( <> <h2>AES Tools Report</h2> <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}> <select value={dropdowns.techExec} onChange={(e) => handleFilterChange("techExec", e.target.value)}> <option value="">-- TECH_EXEC_FULL_NAME --</option> {uniqueValues("TECH_EXEC_FULL_NAME").map((val) => ( <option key={val} value={val}>{val}</option> ))} </select>
+
+<select value={dropdowns.ait} onChange={(e) => handleFilterChange("ait", e.target.value)}>
+      <option value="">-- AIT_NUMBER --</option>
+      {uniqueValues("AIT_NUMBER").map((val) => (
+        <option key={val} value={val}>{val}</option>
+      ))}
+    </select>
+
+    <select value={dropdowns.toolType} onChange={(e) => handleFilterChange("toolType", e.target.value)}>
+      <option value="">-- TOOL_TYPE --</option>
+      {uniqueValues("TOOL_TYPE").map((val) => (
+        <option key={val} value={val}>{val}</option>
+      ))}
+    </select>
+
+    <select value={dropdowns.parentTool} onChange={(e) => handleFilterChange("parentTool", e.target.value)}>
+      <option value="">-- PARENT_TOOL_TYPE --</option>
+      {uniqueValues("PARENT_TOOL_TYPE").map((val) => (
+        <option key={val} value={val}>{val}</option>
+      ))}
+    </select>
+
+    <button onClick={resetFilters}>Reset Filters</button>
+
+    <div style={{ marginLeft: "auto" }}>
+      <input
+        type="text"
+        placeholder="Search across all columns..."
+        style={{ padding: 6, width: 300 }}
+        onChange={(e) => setQuickFilterText(e.target.value)}
+      />
+    </div>
+  </div>
+
+  <div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
+    <AgGridReact
+      ref={gridRef}
+      rowData={filteredData}
+      columnDefs={columnDefs}
+      defaultColDef={defaultColDef}
+      pagination={true}
+      paginationPageSize={100}
+      animateRows={true}
+      quickFilterText={quickFilterText}
+    />
+  </div>
+
+  <div style={{ marginTop: 10 }}>
+    <button onClick={onExport} style={{ padding: "6px 12px", background: "#004080", color: "white", border: "none", borderRadius: 4 }}>
+      Export CSV
+    </button>
+  </div>
+</>
+
+); }
+
