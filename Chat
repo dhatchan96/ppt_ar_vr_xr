@@ -1,40 +1,49 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import ToolsInventory from "./components/ToolsInventory";
+import FormSection from "./components/FormSection";
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/tools" />} />
+        <Route path="/tools" element={<ToolsInventory />} />
+        <Route path="/tools/new" element={<FormSection />} />
+        <Route path="/tools/edit/:id" element={<FormSection />} />
+      </Routes>
+    </Router>
+  );
+}
+
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
-import FormSection from "./FormSection"; // Your multi-step form component
-
 export default function ToolsInventory() {
+  const navigate = useNavigate();
   const [columnDefs, setColumnDefs] = useState([]);
   const [rowData, setRowData] = useState([]);
   const [quickFilterText, setQuickFilterText] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [editData, setEditData] = useState(null);
 
-  // Load data from localStorage and set up columns
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem("aesFormData")) || {};
-    const mergedRows = Object.entries(storedData).map(([section, values], index) => ({
-      id: index,
-      section,
-      ...values,
+    const stored = JSON.parse(localStorage.getItem("aesFormData")) || {};
+    const data = Object.entries(stored).map(([key, value], index) => ({
+      id: key,
+      ...value["Application Details"], // Customize which section to show in table
     }));
 
-    const allKeys = new Set();
-    mergedRows.forEach((row) => {
-      Object.keys(row).forEach((key) => allKeys.add(key));
-    });
-
-    const cols = Array.from(allKeys).map((key) => ({
+    const allCols = Object.keys(data[0] || {});
+    const gridCols = allCols.map((key) => ({
       headerName: key.toUpperCase(),
       field: key,
       sortable: true,
       filter: true,
-      resizable: true,
     }));
 
-    cols.push({
+    gridCols.push({
       headerName: "ACTIONS",
       field: "actions",
       cellRenderer: (params) => (
@@ -45,76 +54,111 @@ export default function ToolsInventory() {
       ),
     });
 
-    setColumnDefs(cols);
-    setRowData(mergedRows);
-  }, [showForm]);
+    setColumnDefs(gridCols);
+    setRowData(data);
+  }, []);
 
-  // Handle edit button click
-  const handleEdit = (data) => {
-    localStorage.setItem("editItem", JSON.stringify(data));
-    setEditData(data);
-    setShowForm(true);
+  const handleEdit = (row) => {
+    localStorage.setItem("editItem", JSON.stringify(row));
+    navigate(`/tools/edit/${row.id}`);
   };
 
-  // Handle delete button click
-  const handleDelete = (data) => {
-    const currentData = JSON.parse(localStorage.getItem("aesFormData")) || {};
-    const updated = Object.fromEntries(
-      Object.entries(currentData).filter(([, values]) => JSON.stringify(values) !== JSON.stringify(data))
-    );
-    localStorage.setItem("aesFormData", JSON.stringify(updated));
+  const handleDelete = (row) => {
+    const data = JSON.parse(localStorage.getItem("aesFormData")) || {};
+    delete data[row.id];
+    localStorage.setItem("aesFormData", JSON.stringify(data));
     window.location.reload();
   };
 
   const defaultColDef = useMemo(() => ({
+    resizable: true,
     flex: 1,
-    minWidth: 120,
   }), []);
 
   return (
-    <div style={{ padding: 16 }}>
-      {!showForm ? (
-        <>
-          <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
-            <input
-              type="text"
-              placeholder="Search across all fields..."
-              style={{ width: 300, padding: 6 }}
-              onChange={(e) => setQuickFilterText(e.target.value)}
-            />
-            <button
-              onClick={() => {
-                localStorage.removeItem("editItem");
-                setEditData(null);
-                setShowForm(true);
-              }}
-              style={{ padding: "6px 12px", background: "#004080", color: "white", border: "none", borderRadius: 4 }}
-            >
-              New Inventory
-            </button>
-          </div>
-
-          <div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
-            <AgGridReact
-              rowData={rowData}
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              pagination
-              paginationPageSize={100}
-              animateRows
-              quickFilterText={quickFilterText}
-            />
-          </div>
-        </>
-      ) : (
-        <FormSection
-          editData={editData}
-          onCancel={() => {
-            setShowForm(false);
-            setEditData(null);
-          }}
+    <div style={{ padding: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+        <h2>Tools Inventory Summary</h2>
+        <button onClick={() => navigate("/tools/new")}>New Inventory</button>
+      </div>
+      <input
+        type="text"
+        placeholder="Search..."
+        onChange={(e) => setQuickFilterText(e.target.value)}
+        style={{ marginBottom: 10 }}
+      />
+      <div className="ag-theme-alpine" style={{ height: "80vh" }}>
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          pagination
+          quickFilterText={quickFilterText}
         />
-      )}
+      </div>
+    </div>
+  );
+}
+
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+// import all section components...
+
+const SECTIONS = [ /* your sections list */ ];
+
+export default function FormSection() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formValues, setFormValues] = useState({});
+
+  useEffect(() => {
+    const edit = localStorage.getItem("editItem");
+    if (edit) {
+      setFormValues(JSON.parse(edit));
+    }
+  }, []);
+
+  const section = SECTIONS[currentStep];
+  const values = formValues[section.name] || {};
+
+  const handleChange = (sectionName, data) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [sectionName]: data,
+    }));
+  };
+
+  const handleSave = () => {
+    const all = JSON.parse(localStorage.getItem("aesFormData")) || {};
+    const recordId = id || Date.now().toString();
+    all[recordId] = formValues;
+    localStorage.setItem("aesFormData", JSON.stringify(all));
+    localStorage.removeItem("editItem");
+    navigate("/tools");
+  };
+
+  const formProps = {
+    onNext: () => setCurrentStep((s) => s + 1),
+    onPrev: () => setCurrentStep((s) => s - 1),
+    isFirst: currentStep === 0,
+    isLast: currentStep === SECTIONS.length - 1,
+    onChange: handleChange,
+    values,
+  };
+
+  return (
+    <div>
+      {/* ProgressBar etc. */}
+      {/* Render correct section form with switch logic */}
+      <div style={{ marginTop: 20 }}>
+        <button onClick={() => navigate("/tools")}>Cancel</button>
+        {currentStep === SECTIONS.length - 1 ? (
+          <button onClick={handleSave}>Save</button>
+        ) : (
+          <button onClick={() => setCurrentStep((s) => s + 1)}>Next</button>
+        )}
+      </div>
     </div>
   );
 }
