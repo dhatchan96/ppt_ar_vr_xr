@@ -1,5 +1,25 @@
-function handleSectionChange(sectionName, updatedData) {
-  const currentData = JSON.parse(localStorage.getItem("aesFormData") || "{}");
-  const newData = { ...currentData, [sectionName]: updatedData };
-  localStorage.setItem("aesFormData", JSON.stringify(newData));
+useEffect(() => {
+  const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+  const selected = toolsData[parseInt(id, 10)];
+
+  if (!selected) {
+    navigate("/tools");
+    return;
+  }
+
+  const sectionKeys = Object.keys(selected);
+  const defaultSection = sectionKeys[0];
+
+  setSectionData({ name: defaultSection });
+  localStorage.setItem("aesFormData", JSON.stringify(selected));
+  setFormValues(selected);  // <-- sync current form values
+}, [id, section, navigate]);
+
+
+function handleSectionChange(sectionName, updatedSectionData) {
+  const updated = { ...formValues, [sectionName]: updatedSectionData };
+  setFormValues(updated);  // update state to pass in next render
+  localStorage.setItem("aesFormData", JSON.stringify(updated));
 }
+
+
