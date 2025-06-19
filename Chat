@@ -1,62 +1,106 @@
+// components/InventoryWizard.js
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import FormSection      from "./FormSection";
+import Sidebar          from "./Sidebar";
+import ProgressBar      from "./ProgressBar";
 
-export default function FormSection({ section, onNext, onPrev, isFirst, isLast, onChange, values }) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [sectionData, setSectionData] = useState(section);
+const SECTION_NAMES = [
+  "Application Details",
+  "Leadership Alignment",
+  "Build Management",
+  "Deployment Management",
+  "Environment Refresh",
+  "Environment Patching",
+  "Environment Monitoring",
+  "Environment Housekeeping",
+  "LEM Responsibilities",
+  "Team Dynamics",
+  "Other Activities",
+  "Key Contacts",
+  "Environment Landscape"
+];
 
+export default function InventoryWizard({ mode }) {
+  const { id }   = useParams();           // edit/:id  (undefined in “new” mode)
+  const nav      = useNavigate();
+
+  // 🗄️ combined form state, one key per section
+  const [formData,  setFormData]  = useState({});
+  const [sections,  setSections]  = useState(
+    SECTION_NAMES.map((name) => ({ name, completed: false }))
+  );
+  const [current,   setCurrent]   = useState(0);
+
+  // ───────────────────────── 1. LOAD DATA FOR EDIT ─────────────────────────
   useEffect(() => {
-    if (!section && id !== undefined) {
-      const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
-      const selected = toolsData[parseInt(id, 10)];
+    if (mode === "edit") {
+      const all = JSON.parse(localStorage.getItem("toolsData") || "[]");
+      const entry = all[Number(id)];
+      if (!entry) return nav("/tools");              // bad id ⇒ go back
 
-      if (selected) {
-        // Load section keys and values from stored data
-        const sectionKeys = Object.keys(selected);
-        const defaultSection = sectionKeys[0]; // assuming one section per edit
-        setSectionData({ name: defaultSection });
-        localStorage.setItem("aesFormData", JSON.stringify(selected));
-      } else {
-        navigate("/tools");
-      }
+      setFormData(entry);                            // preload values
+      localStorage.setItem("aesFormData", JSON.stringify(entry)); // optional
+    } else {
+      localStorage.removeItem("aesFormData");        // fresh form
     }
-  }, [id, section, navigate]);
+  }, [mode, id, nav]);
 
+  // ───────────────────────── 2. SAVE SECTION CHANGES ───────────────────────
+  const handleChange = (sectionName, data) => {
+    setFormData((p) => ({ ...p, [sectionName]: data }));
+  };
 
-function renderSection() {
-  if (!sectionData || !sectionData.name) {
-    return <p>Loading section...</p>;
-  }
+  // ───────────────────────── 3. NAVIGATION helpers ─────────────────────────
+  const markCompleted = () => {
+    setSections((prev) =>
+      prev.map((s, i) =>
+        i === current ? { ...s, completed: true } : s
+      )
+    );
+    if (current < sections.length - 1) setCurrent(current + 1);
+  };
 
-  switch (sectionData.name) {
-    case "Application Details":
-      return <ApplicationDetails {...formProps} />;
-    case "Leadership Alignment":
-      return <LeadershipAlignment {...formProps} />;
-    case "Build Management":
-      return <BuildManagement {...formProps} />;
-    case "Deployment Management":
-      return <DeploymentManagement {...formProps} />;
-    case "Environment Refresh":
-      return <EnvironmentRefresh {...formProps} />;
-    case "Environment Patching":
-      return <EnvironmentPatching {...formProps} />;
-    case "Environment Monitoring":
-      return <EnvironmentMonitoring {...formProps} />;
-    case "Environment Housekeeping":
-      return <EnvironmentHousekeeping {...formProps} />;
-    case "LEM Responsibilities":
-      return <LEMResponsibilities {...formProps} />;
-    case "Team Dynamics":
-      return <TeamDynamics {...formProps} />;
-    case "Other Activities":
-      return <OtherActivities {...formProps} />;
-    case "Key Contacts":
-      return <KeyContacts {...formProps} />;
-    case "Environment Landscape":
-      return <EnvironmentLandscape {...formProps} />;
-    default:
-      return null;
-  }
+  const goBack = () => current && setCurrent(current - 1);
+
+  // ───────────────────────── 4. FINAL SAVE ─────────────────────────────────
+  const saveAndExit = () => {
+    const all = JSON.parse(localStorage.getItem("toolsData") || "[]");
+
+    if (mode === "edit") {
+      all[Number(id)] = formData;                 // overwrite
+    } else {
+      all.push(formData);                         // append
+    }
+    localStorage.setItem("toolsData", JSON.stringify(all));
+    localStorage.removeItem("aesFormData");
+    nav("/tools");
+  };
+
+  // current section object
+  const sectionObj = sections[current];
+
+  return (
+    <main className="main-layout">
+      <aside className="sidebar"><Sidebar sections={sections} current={current}/></aside>
+
+      <section className="form-wrapper">
+        <ProgressBar sections={sections} current={current}/>
+        {sectionObj ? (
+          <FormSection
+            section={sectionObj}
+            values={formData[sectionObj.name] || {}}
+            onChange={handleChange}
+            onNext={markCompleted}
+            onPrev={goBack}
+            isFirst={current === 0}
+            isLast={current === sections.length - 1}
+            onSave={saveAndExit}
+          />
+        ) : (
+          <p>Loading section…</p>
+        )}
+      </section>
+    </main>
+  );
 }
