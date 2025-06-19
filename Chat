@@ -1,20 +1,53 @@
-.sidebar-button {
-  all: unset;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
+useEffect(() => {
+  const cached = localStorage.getItem("aesReportData");
+  if (cached) {
+    const json = JSON.parse(cached);
+    setupGrid(json);
+  } else {
+    fetchData();
+  }
+}, []);
 
-.label {
-  display: flex;
-  align-items: center;
-  gap: 6px; /* adds space between text and tick */
-}
+// ✅ Setup grid after data is loaded
+const setupGrid = (json) => {
+  const schema = json.schema || [];
+  const data = json.data || [];
 
-.tick {
-  color: green;
-  font-weight: bold;
-  font-size: 1rem;
-  line-height: 1;
-}
+  const cols = schema.map((col) => ({
+    headerName: col.colName,
+    field: col.colName,
+    sortable: true,
+    filter: true,
+    resizable: true,
+  }));
+
+  const rows = data.map((rowArr) => {
+    const obj = {};
+    schema.forEach((col, index) => {
+      obj[col.colName] = rowArr[index];
+    });
+    return obj;
+  });
+
+  setColumnDefs(cols);
+  setRowData(rows);
+  setFilteredData(rows);
+};
+
+// ✅ Load from remote and cache it
+const fetchData = () => {
+  fetch("https://uswxapqqzd613.us1ttrr.baml.com:65527/report", {
+    credentials: "include"
+  })
+    .then((res) => res.json())
+    .then((json) => {
+      localStorage.setItem("aesReportData", JSON.stringify(json));
+      setupGrid(json);
+    });
+};
+
+// ✅ Refresh button
+const handleRefresh = () => {
+  localStorage.removeItem("aesReportData");
+  fetchData();
+};
