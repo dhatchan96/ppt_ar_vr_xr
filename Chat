@@ -1,27 +1,53 @@
+const handleEdit = (rowData) => {
+  const fullData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+  const index = rowData.id - 1;
+
+  const selectedEntry = fullData[index];
+  localStorage.setItem("aesFormData", JSON.stringify(selectedEntry));
+  localStorage.setItem("editIndex", index);
+
+  navigate("/tools/edit/" + index);
+};
+
+const handleDelete = (rowData) => {
+  const fullData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+  const updatedData = fullData.filter((_, i) => i !== rowData.id - 1);
+
+  localStorage.setItem("toolsData", JSON.stringify(updatedData));
+  window.location.reload();
+};
+
+
 useEffect(() => {
   const stored = JSON.parse(localStorage.getItem("toolsData") || "[]");
 
-  const fieldMap = {
-    "Application Details": "applicationName",
-    "Leadership Alignment": "appManager",
-    "Build Management": "buildPath",
-    "Deployment Management": "deploymentTool",
-    "Environment Refresh": "componentsToRefresh"
-  };
+  const data = stored.map((entry, index) => {
+    const row = { id: index + 1 };
 
-  const displayData = stored.map((entry, index) => {
-    const row = { id: index + 1 }; // Optional: add row ID
-    Object.entries(fieldMap).forEach(([section, key]) => {
-      row[section] = entry[section]?.[key] || "—";
+    // Choose specific section fields to flatten
+    const selectedSections = [
+      "Application Details",
+      "Leadership Alignment",
+      "Build Management",
+      "Deployment Management",
+      "Environment Refresh"
+    ];
+
+    selectedSections.forEach(section => {
+      const sectionData = entry[section] || {};
+      const firstKey = Object.keys(sectionData)[0];
+      row[section] = firstKey ? sectionData[firstKey] : "";
     });
+
     return row;
   });
 
-  const gridCols = Object.keys(fieldMap).map((section) => ({
-    headerName: section,
-    field: section,
+  const allCols = Object.keys(data[0] || {});
+  const gridCols = allCols.map((key) => ({
+    headerName: key.toUpperCase(),
+    field: key,
     sortable: true,
-    filter: true
+    filter: true,
   }));
 
   gridCols.push({
@@ -29,12 +55,25 @@ useEffect(() => {
     field: "actions",
     cellRenderer: (params) => (
       <>
-        <button onClick={() => handleEdit(params.data)}>Edit</button>{" "}
+        <button onClick={() => handleEdit(params.data)}>Edit</button>
+        {" "}
         <button onClick={() => handleDelete(params.data)}>Delete</button>
       </>
     )
   });
 
   setColumnDefs(gridCols);
-  setRowData(displayData);
+  setRowData(data);
 }, []);
+
+
+
+<button
+  onClick={() => {
+    localStorage.removeItem("aesFormData");
+    localStorage.removeItem("editIndex");
+    navigate("/tools/new");
+  }}
+>
+  New Inventory
+</button>
