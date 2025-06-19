@@ -1,5 +1,13 @@
-const handleChange = (sectionName, data) => {
-  const updated = { ...formData, [sectionName]: data };
-  setFormData(updated);
-  localStorage.setItem("aesFormData", JSON.stringify(updated)); // 👈 add this
+const saveAndExit = () => {
+  const all = JSON.parse(localStorage.getItem("toolsData") || "[]");
+
+  if (mode === "edit") {
+    all[Number(id)] = formData; // ✅ Replace existing entry by ID
+  } else {
+    all.push(formData); // ✅ Only push new entry in "new" mode
+  }
+
+  localStorage.setItem("toolsData", JSON.stringify(all));
+  localStorage.removeItem("aesFormData");
+  nav("/tools");
 };
