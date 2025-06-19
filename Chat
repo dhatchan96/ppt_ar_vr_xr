@@ -1,64 +1,19 @@
-import React, { useState, useEffect } from "react";
-import FormSection from "./FormSection";
+.main-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
 
-const SECTION_NAMES = [
-  "Application Details",
-  "Leadership Alignment",
-  "Build Management",
-  "Deployment Management",
-  "Environment Refresh",
-  "Environment Patching",
-  "Environment Monitoring",
-  "Environment Housekeeping",
-  "LEM Responsibilities",
-  "Team Dynamics",
-  "Other Activities",
-  "Key Contacts",
-  "Environment Landscape",
-];
+.sidebar {
+  width: 250px; /* adjust as per your sidebar width */
+  background-color: #f8f9fa;
+  border-right: 1px solid #ccc;
+}
 
-export default function NewInventoryForm() {
-  const [sections, setSections] = useState(
-    SECTION_NAMES.map((name) => ({ name, completed: false }))
-  );
-  const [current, setCurrent] = useState(0);
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("aesFormData");
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const handleChange = (sectionName, data) => {
-    setFormData((prev) => ({ ...prev, [sectionName]: data }));
-  };
-
-  const goNext = () => {
-    setSections((prev) =>
-      prev.map((s, i) =>
-        i === current ? { ...s, completed: true } : s
-      )
-    );
-    if (current < sections.length - 1) setCurrent(current + 1);
-  };
-
-  const goBack = () => {
-    if (current > 0) setCurrent(current - 1);
-  };
-
-  useEffect(() => {
-    localStorage.setItem("aesFormData", JSON.stringify(formData));
-  }, [formData]);
-
-  if (!sections[current]) return <p>Loading...</p>;
-
-  return (
-    <FormSection
-      section={sections[current]}
-      onNext={goNext}
-      onPrev={goBack}
-      isFirst={current === 0}
-      isLast={current === sections.length - 1}
-      onChange={handleChange}
-      values={formData}
-    />
-  );
+.form-section {
+  flex: 1;
+  padding: 20px 30px;
+  background-color: #fff;
+  height: 100vh;
+  overflow-y: auto;
 }
