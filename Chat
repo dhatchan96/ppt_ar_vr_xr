@@ -1,10 +1,29 @@
-const uniqueValues = (key) => {
-  let base = rowData;
+import React from "react";
+import "../Sidebar.css";
 
-  if (dd.techExec) base = base.filter(r => r["TECH_EXEC_FULL_NAME"] === dd.techExec);
-  if (dd.ait) base = base.filter(r => r["AIT_NUMBER"] === dd.ait);
-  if (dd.parentTool && key !== "PARENT_TOOL_TYPE")
-    base = base.filter(r => r["PARENT_TOOL_TYPE"] === dd.parentTool);
-
-  return [...new Set(base.map(r => r[key]).filter(Boolean))];
-};
+export default function Sidebar({ sections, current, onSelect }) {
+  return (
+    <aside className="sidebar">
+      <ul>
+        {sections.map((s, idx) => (
+          <li
+            key={s.name}
+            className={idx === current ? "active" : ""}
+            onClick={() => onSelect(idx)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(idx);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <span>{s.name}</span>
+            {s.completed && <span className="tick">✔</span>}
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
