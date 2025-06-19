@@ -1,161 +1,140 @@
-// src/components/AESToolsReport.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-
-// one-time module registration (AG Grid v29+)
-ModuleRegistry.registerModules([AllCommunityModule]);
+import { AllCommunityModules } from "ag-grid-community";
+import { ModuleRegistry } from "ag-grid-community";
+ModuleRegistry.registerModules([AllCommunityModules]);
 
 export default function AESToolsReport() {
-  /* ────────────────────────────
-     grid / data state
-  ───────────────────────────── */
-  const [schema, setSchema]           = useState([]);
-  const [rowData, setRowData]         = useState([]);
-  const [columnDefs, setColumnDefs]   = useState([]);
-  const   gridApiRef                  = useRef(null);
+  const gridRef = useRef();
+  const [columnDefs, setColumnDefs] = useState([]);
+  const [rowData, setRowData] = useState([]);
+  const [schema, setSchema] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
+  const [quickFilterText, setQuickFilterText] = useState("");
 
-  /* ────────────────────────────
-     cascading-filter state
-  ───────────────────────────── */
-  const [exec,     setExec]     = useState("");   // TECH_EXEC_FULL_NAME
-  const [ait,      setAit]      = useState("");   // AIT_NUMBER
-  const [toolType, setToolType] = useState("");   // TOOL_TYPE
+  const [filters, setFilters] = useState({
+    techExec: "",
+    aitNumber: "",
+    toolType: "",
+  });
 
-  /* ────────────────────────────
-     1) load & transform data.json
-  ───────────────────────────── */
   useEffect(() => {
     fetch("/data.json")
-      .then((r) => r.json())
+      .then((res) => res.json())
       .then((json) => {
-        const sc     = json.schema || [];
-        const raw    = json.data   || [];
+        const schema = json.schema || [];
+        const data = json.data || [];
 
-        /* a) rows → objects */
-        const rows = raw.map((arr) => {
+        const cols = schema.map((col) => ({
+          headerName: col.colName,
+          field: col.colName,
+          sortable: true,
+          filter: true,
+          resizable: true,
+        }));
+
+        const rows = data.map((rowArr) => {
           const obj = {};
-          sc.forEach((col, i) => { obj[col.colName] = arr[i]; });
+          schema.forEach((col, i) => {
+            obj[col.colName] = rowArr[i];
+          });
           return obj;
         });
 
-        /* b) columns → ag-grid defs (dropdown filter per column) */
-        const cols = sc.map((col) => ({
-          headerName: col.colName,
-          field:      col.colName,
-          sortable:   true,
-          resizable:  true,
-          filter:     "agSetColumnFilter",   // dropdown filter
-        }));
-
-        setSchema(sc);
-        setRowData(rows);
+        setSchema(schema);
         setColumnDefs(cols);
+        setRowData(rows);
+        setOriginalData(rows);
       });
   }, []);
 
-  /* ────────────────────────────
-     2) options for each dropdown
-  ───────────────────────────── */
-  const execOptions = useMemo(() => {
-    const s = new Set(rowData.map((r) => r["TECH_EXEC_FULL_NAME"]));
-    return Array.from(s).filter(Boolean).sort();
-  }, [rowData]);
+  // Dropdown logic
+  const execNames = [...new Set(originalData.map((d) => d["TECH_EXEC_FULL_NAME"]))];
+  const aitNumbers = [...new Set(
+    originalData
+      .filter((d) => !filters.techExec || d["TECH_EXEC_FULL_NAME"] === filters.techExec)
+      .map((d) => d["AIT_NUMBER"])
+  )];
+  const toolTypes = [...new Set(
+    originalData
+      .filter((d) => (!filters.techExec || d["TECH_EXEC_FULL_NAME"] === filters.techExec) &&
+                    (!filters.aitNumber || d["AIT_NUMBER"] === filters.aitNumber))
+      .map((d) => d["TOOL_TYPE"])
+  )];
 
-  const aitOptions = useMemo(() => {
-    let base = rowData;
-    if (exec) base = base.filter((r) => r["TECH_EXEC_FULL_NAME"] === exec);
-    const s = new Set(base.map((r) => r["AIT_NUMBER"]));
-    return Array.from(s).filter(Boolean).sort();
-  }, [rowData, exec]);
+  const handleFilterChange = (key, value) => {
+    const updatedFilters = { ...filters, [key]: value };
+    setFilters(updatedFilters);
 
-  const toolTypeOptions = useMemo(() => {
-    let base = rowData;
-    if (exec) base = base.filter((r) => r["TECH_EXEC_FULL_NAME"] === exec);
-    if (ait)  base = base.filter((r) => r["AIT_NUMBER"]           === ait );
-    const s = new Set(base.map((r) => r["TOOL_TYPE"]));
-    return Array.from(s).filter(Boolean).sort();
-  }, [rowData, exec, ait]);
+    const filtered = originalData.filter((row) => {
+      return (
+        (!updatedFilters.techExec || row["TECH_EXEC_FULL_NAME"] === updatedFilters.techExec) &&
+        (!updatedFilters.aitNumber || row["AIT_NUMBER"] === updatedFilters.aitNumber) &&
+        (!updatedFilters.toolType || row["TOOL_TYPE"] === updatedFilters.toolType)
+      );
+    });
 
-  /* ────────────────────────────
-     3) push filter-model to grid
-  ───────────────────────────── */
-  useEffect(() => {
-    if (!gridApiRef.current) return;
+    setRowData(filtered);
+  };
 
-    const api   = gridApiRef.current;
-    const model = {};
+  const defaultColDef = useMemo(() => ({
+    flex: 1,
+    minWidth: 120,
+  }), []);
 
-    if (exec)     model["TECH_EXEC_FULL_NAME"] = { filterType: "set", values: [exec] };
-    if (ait)      model["AIT_NUMBER"]          = { filterType: "set", values: [ait]  };
-    if (toolType) model["TOOL_TYPE"]           = { filterType: "set", values: [toolType] };
+  const onExport = () => {
+    gridRef.current.api.exportDataAsCsv();
+  };
 
-    api.setFilterModel(model);
-    api.onFilterChanged();
-  }, [exec, ait, toolType]);
-
-  /* ────────────────────────────
-     4) render
-  ───────────────────────────── */
   return (
-    <div style={{ padding: 16 }}>
-      <h2>AES Tools Report</h2>
-
-      {/* top-level cascading dropdowns */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-        {/* 1. TECH_EXEC_FULL_NAME */}
-        <select
-          value={exec}
-          onChange={(e) => { setExec(e.target.value); setAit(""); setToolType(""); }}
-        >
-          <option value="">‒ TECH_EXEC_FULL_NAME ‒</option>
-          {execOptions.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
+    <>
+      <h3>AES Tools Report</h3>
+      <div style={{ display: "flex", gap: "1rem", marginBottom: 10 }}>
+        <select onChange={(e) => handleFilterChange("techExec", e.target.value)} value={filters.techExec}>
+          <option value="">-- TECH_EXEC_FULL_NAME --</option>
+          {execNames.map((val, idx) => <option key={idx}>{val}</option>)}
         </select>
 
-        {/* 2. AIT_NUMBER */}
-        <select
-          value={ait}
-          disabled={!exec}
-          onChange={(e) => { setAit(e.target.value); setToolType(""); }}
-        >
-          <option value="">‒ AIT_NUMBER ‒</option>
-          {aitOptions.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
+        <select onChange={(e) => handleFilterChange("aitNumber", e.target.value)} value={filters.aitNumber}>
+          <option value="">-- AIT_NUMBER --</option>
+          {aitNumbers.map((val, idx) => <option key={idx}>{val}</option>)}
         </select>
 
-        {/* 3. TOOL_TYPE */}
-        <select
-          value={toolType}
-          disabled={!ait && !exec}
-          onChange={(e) => setToolType(e.target.value)}
-        >
-          <option value="">‒ TOOL_TYPE ‒</option>
-          {toolTypeOptions.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
+        <select onChange={(e) => handleFilterChange("toolType", e.target.value)} value={filters.toolType}>
+          <option value="">-- TOOL_TYPE --</option>
+          {toolTypes.map((val, idx) => <option key={idx}>{val}</option>)}
         </select>
       </div>
 
-      {/* ag-Grid */}
-      <div className="ag-theme-alpine" style={{ height: "70vh", width: "100%" }}>
+      <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+        <input
+          type="text"
+          placeholder="Search across all columns..."
+          style={{ width: 300, padding: 6 }}
+          onChange={(e) => setQuickFilterText(e.target.value)}
+        />
+        <button
+          onClick={onExport}
+          style={{ padding: "6px 12px", background: "#004080", color: "white", border: "none", borderRadius: 4 }}
+        >
+          Export CSV
+        </button>
+      </div>
+
+      <div className="ag-theme-alpine" style={{ height: "85vh", width: "100%" }}>
         <AgGridReact
+          ref={gridRef}
           rowData={rowData}
           columnDefs={columnDefs}
-          defaultColDef={{
-            flex: 1,
-            minWidth: 140,
-            filter: true,
-            floatingFilter: true,
-          }}
-          onGridReady={(params) => { gridApiRef.current = params.api; }}
+          defaultColDef={defaultColDef}
+          pagination={true}
+          paginationPageSize={100}
+          animateRows={true}
+          quickFilterText={quickFilterText}
         />
       </div>
-    </div>
+    </>
   );
 }
