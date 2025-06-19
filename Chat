@@ -1,60 +1,64 @@
-import React from "react";
-import ApplicationDetails from "./forms/ApplicationDetails";
-import LeadershipAlignment from "./forms/LeadershipAlignment";
-import BuildManagement from "./forms/BuildManagement";
-import DeploymentManagement from "./forms/DeploymentManagement";
-import EnvironmentRefresh from "./forms/EnvironmentRefresh";
-import EnvironmentPatching from "./forms/EnvironmentPatching";
-import EnvironmentMonitoring from "./forms/EnvironmentMonitoring";
-import EnvironmentHousekeeping from "./forms/EnvironmentHousekeeping";
-import LEMResponsibilities from "./forms/LEMResponsibilities";
-import TeamDynamics from "./forms/TeamDynamics";
-import OtherActivities from "./forms/OtherActivities";
-import KeyContacts from "./forms/KeyContacts";
-import EnvironmentLandscape from "./forms/EnvironmentLandscape";
+import React, { useState, useEffect } from "react";
+import FormSection from "./FormSection";
 
-export default function FormSection({ section, onNext, onPrev, isFirst, isLast, onChange, values }) {
-  const formProps = {
-    onNext,
-    onPrev,
-    isFirst,
-    isLast,
-    onChange,
-    values,
+const SECTION_NAMES = [
+  "Application Details",
+  "Leadership Alignment",
+  "Build Management",
+  "Deployment Management",
+  "Environment Refresh",
+  "Environment Patching",
+  "Environment Monitoring",
+  "Environment Housekeeping",
+  "LEM Responsibilities",
+  "Team Dynamics",
+  "Other Activities",
+  "Key Contacts",
+  "Environment Landscape",
+];
+
+export default function NewInventoryForm() {
+  const [sections, setSections] = useState(
+    SECTION_NAMES.map((name) => ({ name, completed: false }))
+  );
+  const [current, setCurrent] = useState(0);
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("aesFormData");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleChange = (sectionName, data) => {
+    setFormData((prev) => ({ ...prev, [sectionName]: data }));
   };
 
-  function renderSection() {
-    switch (section.name) {
-      case "Application Details":
-        return <ApplicationDetails {...formProps} />;
-      case "Leadership Alignment":
-        return <LeadershipAlignment {...formProps} />;
-      case "Build Management":
-        return <BuildManagement {...formProps} />;
-      case "Deployment Management":
-        return <DeploymentManagement {...formProps} />;
-      case "Environment Refresh":
-        return <EnvironmentRefresh {...formProps} />;
-      case "Environment Patching":
-        return <EnvironmentPatching {...formProps} />;
-      case "Environment Monitoring":
-        return <EnvironmentMonitoring {...formProps} />;
-      case "Environment Housekeeping":
-        return <EnvironmentHousekeeping {...formProps} />;
-      case "LEM Responsibilities":
-        return <LEMResponsibilities {...formProps} />;
-      case "Team Dynamics":
-        return <TeamDynamics {...formProps} />;
-      case "Other Activities":
-        return <OtherActivities {...formProps} />;
-      case "Key Contacts":
-        return <KeyContacts {...formProps} />;
-      case "Environment Landscape":
-        return <EnvironmentLandscape {...formProps} />;
-      default:
-        return null;
-    }
-  }
+  const goNext = () => {
+    setSections((prev) =>
+      prev.map((s, i) =>
+        i === current ? { ...s, completed: true } : s
+      )
+    );
+    if (current < sections.length - 1) setCurrent(current + 1);
+  };
 
-  return <div>{renderSection()}</div>;
+  const goBack = () => {
+    if (current > 0) setCurrent(current - 1);
+  };
+
+  useEffect(() => {
+    localStorage.setItem("aesFormData", JSON.stringify(formData));
+  }, [formData]);
+
+  if (!sections[current]) return <p>Loading...</p>;
+
+  return (
+    <FormSection
+      section={sections[current]}
+      onNext={goNext}
+      onPrev={goBack}
+      isFirst={current === 0}
+      isLast={current === sections.length - 1}
+      onChange={handleChange}
+      values={formData}
+    />
+  );
 }
