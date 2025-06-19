@@ -1,19 +1,47 @@
-.main-container {
-  display: flex;
-  height: 100%;
-  width: 100%;
-}
+const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
 
-.sidebar {
-  width: 250px; /* adjust as per your sidebar width */
-  background-color: #f8f9fa;
-  border-right: 1px solid #ccc;
-}
+const sectionNames = Object.keys(toolsData[0] || {}); // dynamic based on form sections
 
-.form-section {
-  flex: 1;
-  padding: 20px 30px;
-  background-color: #fff;
-  height: 100vh;
-  overflow-y: auto;
-}
+const columnDefs = [
+  { headerName: "ID", field: "id", width: 70 },
+  ...sectionNames.map(name => ({
+    headerName: name,
+    field: name,
+    flex: 1,
+    cellRenderer: ({ value }) =>
+      value && typeof value === "object"
+        ? Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(", ")
+        : "-"
+  })),
+  {
+    headerName: "Actions",
+    field: "actions",
+    width: 150,
+    cellRendererFramework: ({ data }) => (
+      <>
+        <button onClick={() => handleEdit(data.id)}>Edit</button>
+        <button onClick={() => handleDelete(data.id)}>Delete</button>
+      </>
+    )
+  }
+];
+
+const rowData = toolsData.map((entry, index) => ({
+  id: index + 1,
+  ...entry
+}));
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  const form = JSON.parse(localStorage.getItem("aesFormData") || "{}");
+
+  const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+  const updated = [...toolsData, form];
+
+  localStorage.setItem("toolsData", JSON.stringify(updated));
+  localStorage.removeItem("aesFormData");
+
+  navigate("/tools");
+};
+
