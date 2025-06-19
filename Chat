@@ -21,3 +21,12 @@ export default function Sidebar({ sections, current, onSelect }) {
     </aside>
   );
 }
+
+
+.sidebar-button {
+  all: unset; /* resets all default button styles */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
