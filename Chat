@@ -1,88 +1,40 @@
-const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
-
-const sectionNames = Object.keys(toolsData[0] || {}); // dynamic based on form sections
-
-const columnDefs = [
-  { headerName: "ID", field: "id", width: 70 },
-  ...sectionNames.map(name => ({
-    headerName: name,
-    field: name,
-    flex: 1,
-    cellRenderer: ({ value }) =>
-      value && typeof value === "object"
-        ? Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(", ")
-        : "-"
-  })),
-  {
-    headerName: "Actions",
-    field: "actions",
-    width: 150,
-    cellRendererFramework: ({ data }) => (
-      <>
-        <button onClick={() => handleEdit(data.id)}>Edit</button>
-        <button onClick={() => handleDelete(data.id)}>Delete</button>
-      </>
-    )
-  }
-];
-
-const rowData = toolsData.map((entry, index) => ({
-  id: index + 1,
-  ...entry
-}));
-
-const handleSubmit = (e) => {
-  e.preventDefault();
-
-
 useEffect(() => {
-  const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+  const stored = JSON.parse(localStorage.getItem("toolsData") || "[]");
 
-  // Create columns dynamically based on sections
-  const sectionKeys = Object.keys(toolsData[0] || {});
-  const gridCols = sectionKeys.map((section) => ({
+  const fieldMap = {
+    "Application Details": "applicationName",
+    "Leadership Alignment": "appManager",
+    "Build Management": "buildPath",
+    "Deployment Management": "deploymentTool",
+    "Environment Refresh": "componentsToRefresh"
+  };
+
+  const displayData = stored.map((entry, index) => {
+    const row = { id: index + 1 }; // Optional: add row ID
+    Object.entries(fieldMap).forEach(([section, key]) => {
+      row[section] = entry[section]?.[key] || "—";
+    });
+    return row;
+  });
+
+  const gridCols = Object.keys(fieldMap).map((section) => ({
     headerName: section,
     field: section,
-    flex: 1,
-    cellRenderer: ({ value }) =>
-      value && typeof value === "object"
-        ? Object.entries(value)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join(", ")
-        : "-"
+    sortable: true,
+    filter: true
   }));
 
-  // Add action column
   gridCols.push({
     headerName: "Actions",
     field: "actions",
-    width: 160,
-    cellRendererFramework: ({ data }) => (
+    cellRenderer: (params) => (
       <>
-        <button onClick={() => handleEdit(data)}>Edit</button>{" "}
-        <button onClick={() => handleDelete(data)}>Delete</button>
+        <button onClick={() => handleEdit(params.data)}>Edit</button>{" "}
+        <button onClick={() => handleDelete(params.data)}>Delete</button>
       </>
     )
   });
 
-  // Set data and columns
   setColumnDefs(gridCols);
-  setRowData(
-    toolsData.map((item, index) => ({
-      id: index + 1,
-      ...item
-    }))
-  );
+  setRowData(displayData);
 }, []);
-
-  const form = JSON.parse(localStorage.getItem("aesFormData") || "{}");
-
-  const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
-  const updated = [...toolsData, form];
-
-  localStorage.setItem("toolsData", JSON.stringify(updated));
-  localStorage.removeItem("aesFormData");
-
-  navigate("/tools");
-};
-
