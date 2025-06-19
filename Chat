@@ -34,6 +34,47 @@ const rowData = toolsData.map((entry, index) => ({
 const handleSubmit = (e) => {
   e.preventDefault();
 
+
+useEffect(() => {
+  const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
+
+  // Create columns dynamically based on sections
+  const sectionKeys = Object.keys(toolsData[0] || {});
+  const gridCols = sectionKeys.map((section) => ({
+    headerName: section,
+    field: section,
+    flex: 1,
+    cellRenderer: ({ value }) =>
+      value && typeof value === "object"
+        ? Object.entries(value)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(", ")
+        : "-"
+  }));
+
+  // Add action column
+  gridCols.push({
+    headerName: "Actions",
+    field: "actions",
+    width: 160,
+    cellRendererFramework: ({ data }) => (
+      <>
+        <button onClick={() => handleEdit(data)}>Edit</button>{" "}
+        <button onClick={() => handleDelete(data)}>Delete</button>
+      </>
+    )
+  });
+
+  // Set data and columns
+  setColumnDefs(gridCols);
+  setRowData(
+    toolsData.map((item, index) => ({
+      id: index + 1,
+      ...item
+    }))
+  );
+}, []);
+
   const form = JSON.parse(localStorage.getItem("aesFormData") || "{}");
 
   const toolsData = JSON.parse(localStorage.getItem("toolsData") || "[]");
