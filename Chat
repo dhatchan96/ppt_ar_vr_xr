@@ -1,53 +1,19 @@
-useEffect(() => {
-  const cached = localStorage.getItem("aesReportData");
-  if (cached) {
-    const json = JSON.parse(cached);
-    setupGrid(json);
-  } else {
-    fetchData();
-  }
-}, []);
+Sure! Here's a short and concise version:
 
-// ✅ Setup grid after data is loaded
-const setupGrid = (json) => {
-  const schema = json.schema || [];
-  const data = json.data || [];
 
-  const cols = schema.map((col) => ({
-    headerName: col.colName,
-    field: col.colName,
-    sortable: true,
-    filter: true,
-    resizable: true,
-  }));
+---
 
-  const rows = data.map((rowArr) => {
-    const obj = {};
-    schema.forEach((col, index) => {
-      obj[col.colName] = rowArr[index];
-    });
-    return obj;
-  });
+Subject: Octane Helper Script Update
 
-  setColumnDefs(cols);
-  setRowData(rows);
-  setFilteredData(rows);
-};
+Hi [Recipient's Name],
 
-// ✅ Load from remote and cache it
-const fetchData = () => {
-  fetch("https://uswxapqqzd613.us1ttrr.baml.com:65527/report", {
-    credentials: "include"
-  })
-    .then((res) => res.json())
-    .then((json) => {
-      localStorage.setItem("aesReportData", JSON.stringify(json));
-      setupGrid(json);
-    });
-};
+As per Grant’s request, I’ve been working on the Octane helper script over the last two days. It’s still in progress — I’ll share the code by tomorrow, Tuesday EOD.
 
-// ✅ Refresh button
-const handleRefresh = () => {
-  localStorage.removeItem("aesReportData");
-  fetchData();
-};
+Best,
+[Your Name]
+
+
+---
+
+Let me know if you want it even shorter or for a chat message.
+
