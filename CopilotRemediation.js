@@ -129,172 +129,114 @@ const CopilotRemediation = () => {
     }
   };
 
-  // Load sample infrastructure vulnerabilities
-  const loadSampleInfrastructureVulnerabilities = () => {
-    const sampleInfrastructureVulns = [
-      {
-        id: 'infra-001',
-        gis_id: '827593952',
-        ait_tag: 'AIT-001',
-        title: '2551 Unsecured Database Port Exposed',
-        description: 'Database port 3306 is exposed to public network without proper firewall rules',
-        remediation_action: 'Configure firewall rules to restrict database access to authorized networks only',
-        status: 'ACTIVE',
-        severity: 'HIGH_RISK',
-        risk_score: 8,
-        wave_assignment: 'UNASSIGNED',
-        cost_impact: 0,
-        created_date: new Date().toISOString(),
-        source: 'infrastructure_scan'
-      },
-      {
-        id: 'infra-002',
-        gis_id: '829991671',
-        ait_tag: 'AIT-002',
-        title: '2552 Missing SSL/TLS Configuration',
-        description: 'Web server is not configured with proper SSL/TLS encryption',
-        remediation_action: 'Install and configure SSL certificates with proper TLS settings',
-        status: 'ACTIVE',
-        severity: 'CRITICAL_BOMB',
-        risk_score: 9,
-        wave_assignment: 'UNASSIGNED',
-        cost_impact: 0,
-        created_date: new Date().toISOString(),
-        source: 'infrastructure_scan'
-      },
-      {
-        id: 'infra-003',
-        gis_id: '843226554',
-        ait_tag: 'AIT-003',
-        title: '2553 Outdated Server Operating System',
-        description: 'Server is running outdated OS version with known security vulnerabilities',
-        remediation_action: 'Update operating system to latest supported version and apply security patches',
-        status: 'ACTIVE',
-        severity: 'HIGH_RISK',
-        risk_score: 7,
-        wave_assignment: 'UNASSIGNED',
-        cost_impact: 0,
-        created_date: new Date().toISOString(),
-        source: 'infrastructure_scan'
-      },
-      {
-        id: 'infra-004',
-        gis_id: '851234567',
-        ait_tag: 'AIT-001',
-        title: '2554 Weak Network Security Group Rules',
-        description: 'Network security groups allow overly permissive inbound traffic',
-        remediation_action: 'Review and tighten network security group rules to follow least privilege principle',
-        status: 'ACTIVE',
-        severity: 'MEDIUM_RISK',
-        risk_score: 6,
-        wave_assignment: 'UNASSIGNED',
-        cost_impact: 0,
-        created_date: new Date().toISOString(),
-        source: 'infrastructure_scan'
-      },
-      {
-        id: 'infra-005',
-        gis_id: '862345678',
-        ait_tag: 'AIT-004',
-        title: '2555 Missing Backup Encryption',
-        description: 'Database backups are not encrypted and stored in unsecured location',
-        remediation_action: 'Implement encrypted backup solution and secure backup storage',
-        status: 'ACTIVE',
-        severity: 'HIGH_RISK',
-        risk_score: 8,
-        wave_assignment: 'UNASSIGNED',
-        cost_impact: 0,
-        created_date: new Date().toISOString(),
-        source: 'infrastructure_scan'
-      }
-    ];
-    setInfrastructureVulnerabilities(sampleInfrastructureVulns);
-    console.log('✅ Loaded sample infrastructure vulnerabilities');
-  };
+  // Note: Sample infrastructure vulnerabilities are now loaded from SQLite database
+  // This function is kept for backward compatibility but is no longer used
 
   const loadVulnerabilities = async () => {
     try {
       setVulnerabilitiesLoading(true);
-      console.log('🔄 Loading vulnerabilities...');
+      console.log('🔄 Loading vulnerabilities from SQLite database...');
       
-      // Use the same API approach as EnhancedVulnerabilityManagement
-      let apiVulnerabilities = [];
+      // Fetch application vulnerabilities from SQLite database
+      let applicationVulnerabilities = [];
       try {
-        const response = await API.get('/api/v1/vulnerabilities/enhanced?page=1&per_page=100');
+        const params = new URLSearchParams({
+          severity: 'ALL',
+          priority: 'ALL',
+          wave_assignment: 'ALL',
+          type: 'application',  // Only fetch application vulnerabilities
+          page: 1,
+          per_page: 1000
+        });
+        
+        const response = await API.get(`/api/v1/vulnerabilities/enhanced?${params}`);
         const data = response.data;
         
         if (data.success) {
-          apiVulnerabilities = data.vulnerabilities || [];
-          console.log('✅ API Vulnerabilities loaded:', apiVulnerabilities.length, 'vulnerabilities');
-          
-          // Log details about the vulnerabilities
-          const scanResults = apiVulnerabilities.filter(v => v.source === 'scan_result');
-          const sampleData = apiVulnerabilities.filter(v => !v.source || v.source !== 'scan_result');
-          console.log('📊 Breakdown:', {
-            total: apiVulnerabilities.length,
-            scanResults: scanResults.length,
-            sampleData: sampleData.length
-          });
-          
-          if (scanResults.length > 0) {
-            console.log('🔍 Sample scan result:', scanResults[0]);
-          }
+          applicationVulnerabilities = data.vulnerabilities || [];
+          console.log('✅ Application vulnerabilities loaded from SQLite:', applicationVulnerabilities.length, 'vulnerabilities');
+          console.log('📋 API Response type:', data.vulnerability_type);
         } else {
-          console.error('❌ Error loading API vulnerabilities:', data.error);
+          console.error('❌ Error loading application vulnerabilities:', data.error);
+          applicationVulnerabilities = [];
         }
       } catch (apiError) {
-        console.error('❌ Error loading API vulnerabilities:', apiError);
+        console.error('❌ Error loading application vulnerabilities from API:', apiError);
+        applicationVulnerabilities = [];
       }
       
-      // Load any persisted Excel data from localStorage and merge with API data
-      const persistedExcelData = localStorage.getItem('excel_vulnerabilities');
-      if (persistedExcelData) {
-        try {
-          const parsedExcelData = JSON.parse(persistedExcelData);
-          console.log('✅ Excel data loaded:', parsedExcelData.length, 'vulnerabilities');
-          
-          // Merge API data with Excel data, avoiding duplicates
-          const existingIds = new Set(apiVulnerabilities.map(v => v.id));
-          const newExcelVulns = parsedExcelData.filter(v => !existingIds.has(v.id));
-          const mergedVulnerabilities = [...apiVulnerabilities, ...newExcelVulns];
-          
-          setVulnerabilities(mergedVulnerabilities);
-          console.log(`✅ Total vulnerabilities loaded: ${apiVulnerabilities.length} API + ${parsedExcelData.length} Excel (${newExcelVulns.length} new) = ${mergedVulnerabilities.length} total`);
-        } catch (error) {
-          console.error('❌ Error loading persisted Excel data:', error);
-          localStorage.removeItem('excel_vulnerabilities');
-          setVulnerabilities(apiVulnerabilities);
+      // Fetch Excel-imported application vulnerabilities from SQLite
+      try {
+        const excelVulnsRes = await API.get('/api/v1/vulnerabilities/excel-export?type=application');
+        let excelVulnerabilities = [];
+        if (excelVulnsRes.data?.success) {
+          excelVulnerabilities = excelVulnsRes.data.vulnerabilities || [];
         }
-      } else {
-        setVulnerabilities(apiVulnerabilities);
+        
+        // Merge API data with Excel data, avoiding duplicates
+        const existingIds = new Set(applicationVulnerabilities.map(v => v.id));
+        const newExcelVulns = excelVulnerabilities.filter(v => !existingIds.has(v.id));
+        const mergedApplicationVulnerabilities = [...applicationVulnerabilities, ...newExcelVulns];
+        
+        setVulnerabilities(mergedApplicationVulnerabilities);
+        console.log(`✅ Loaded ${applicationVulnerabilities.length} API vulnerabilities and ${excelVulnerabilities.length} Excel vulnerabilities (${newExcelVulns.length} new)`);
+      } catch (excelError) {
+        console.warn('Excel application vulnerabilities API not available, using API data only:', excelError);
+        setVulnerabilities(applicationVulnerabilities);
       }
       
-      // If no API data and no Excel data, set empty array
-      if (apiVulnerabilities.length === 0 && !persistedExcelData) {
-        setVulnerabilities([]);
-      }
-      
-      // Load persisted infrastructure vulnerabilities from localStorage first
-      const persistedInfraData = localStorage.getItem('infrastructure_vulnerabilities');
-      if (persistedInfraData) {
-        try {
-          const parsedInfraData = JSON.parse(persistedInfraData);
-          setInfrastructureVulnerabilities(parsedInfraData);
-          console.log(`✅ Loaded ${parsedInfraData.length} persisted infrastructure vulnerabilities`);
-        } catch (error) {
-          console.error('❌ Error loading persisted infrastructure data:', error);
-          localStorage.removeItem('infrastructure_vulnerabilities');
-          // Don't load sample data - start with empty array
-          setInfrastructureVulnerabilities([]);
+      // Fetch infrastructure vulnerabilities from SQLite database
+      let infrastructureVulnerabilities = [];
+      try {
+        const params = new URLSearchParams({
+          severity: 'ALL',
+          priority: 'ALL',
+          wave_assignment: 'ALL',
+          type: 'infrastructure',  // Only fetch infrastructure vulnerabilities
+          page: 1,
+          per_page: 1000
+        });
+        
+        const response = await API.get(`/api/v1/vulnerabilities/enhanced?${params}`);
+        const data = response.data;
+        
+        if (data.success) {
+          infrastructureVulnerabilities = data.vulnerabilities || [];
+          console.log('✅ Infrastructure vulnerabilities loaded from SQLite:', infrastructureVulnerabilities.length, 'vulnerabilities');
+          console.log('📋 API Response type:', data.vulnerability_type);
+        } else {
+          console.error('❌ Error loading infrastructure vulnerabilities:', data.error);
+          infrastructureVulnerabilities = [];
         }
-      } else {
-        // Don't load sample data by default - start with empty array
-        setInfrastructureVulnerabilities([]);
+      } catch (apiError) {
+        console.error('❌ Error loading infrastructure vulnerabilities from API:', apiError);
+        infrastructureVulnerabilities = [];
+      }
+      
+      // Fetch Excel-imported infrastructure vulnerabilities from SQLite
+      try {
+        const excelVulnsRes = await API.get('/api/v1/vulnerabilities/excel-export?type=infrastructure');
+        let excelVulnerabilities = [];
+        if (excelVulnsRes.data?.success) {
+          excelVulnerabilities = excelVulnsRes.data.vulnerabilities || [];
+        }
+        
+        // Merge API data with Excel data, avoiding duplicates
+        const existingIds = new Set(infrastructureVulnerabilities.map(v => v.id));
+        const newExcelVulns = excelVulnerabilities.filter(v => !existingIds.has(v.id));
+        const mergedInfrastructureVulnerabilities = [...infrastructureVulnerabilities, ...newExcelVulns];
+        
+        setInfrastructureVulnerabilities(mergedInfrastructureVulnerabilities);
+        console.log(`✅ Loaded ${infrastructureVulnerabilities.length} API vulnerabilities and ${excelVulnerabilities.length} Excel vulnerabilities (${newExcelVulns.length} new)`);
+      } catch (excelError) {
+        console.warn('Excel infrastructure vulnerabilities API not available, using API data only:', excelError);
+        setInfrastructureVulnerabilities(infrastructureVulnerabilities);
       }
       
     } catch (error) {
       console.error('❌ Error in loadVulnerabilities:', error);
       setVulnerabilities([]);
+      setInfrastructureVulnerabilities([]);
     } finally {
       setVulnerabilitiesLoading(false);
     }
@@ -690,7 +632,8 @@ const CopilotRemediation = () => {
   const generateActionPrompt = (vulnerability) => {
     const timestamp = new Date().toISOString();
     const aitTag = vulnerability.ait_tag || 'AIT-Unknown';
-    const vulnerabilityId = vulnerability.id || 'unknown';
+    const gisId = vulnerability.gis_id || 'GIS-Unknown';
+    const vulnerabilityTitle = vulnerability.title || vulnerability.description || 'Vulnerability';
     
     const actionPrompt = `# Infrastructure Security Remediation - Professional Terraform Configuration
 # Generated by GitHub Copilot for Enterprise Vulnerability Management
@@ -698,8 +641,8 @@ const CopilotRemediation = () => {
 # VULNERABILITY ASSESSMENT:
 # =========================
 # AIT Tag: ${aitTag}
-# Vulnerability ID: ${vulnerabilityId}
-# Title: ${vulnerability.title || vulnerability.description}
+# GIS ID: ${gisId}
+# Title: ${vulnerabilityTitle}
 # Severity: ${vulnerability.severity || 'Unknown'}
 # Risk Score: ${vulnerability.risk_score || 'N/A'}
 # Generated: ${timestamp}
@@ -861,17 +804,18 @@ const CopilotRemediation = () => {
   const generateComprehensiveRemediationPrompt = (vulnerability, spk, repository, repoUrl) => {
     const timestamp = new Date().toISOString().split('T')[0];
     const aitTag = vulnerability.ait_tag || 'AIT-Unknown';
-    const vulnerabilityId = vulnerability.id || 'unknown';
+    const gisId = vulnerability.gis_id || 'GIS-Unknown';
+    const vulnerabilityId = vulnerability.id || 'unknown';  // Keep for internal reference
     
-    // Enhanced comprehensive prompt with in-place file remediation focus
-    const comprehensivePrompt = `# 🚀 GITHUB COPILOT PROMPT - Application Security Remediation
+    // Enhanced comprehensive prompt with context-aware analysis
+    const comprehensivePrompt = `# 🚀 GITHUB COPILOT PROMPT - Context-Aware Application Security Remediation
 # ⚠️ IMPORTANT: This is the file to use with GitHub Copilot
 # Generated by GitHub Copilot for Enterprise Security Management
 # 
 # VULNERABILITY ASSESSMENT:
 # =========================
 # AIT Tag: ${aitTag}
-# Vulnerability ID: ${vulnerabilityId}
+# GIS ID: ${gisId}
 # Title: ${vulnerability.title || vulnerability.description}
 # Severity: ${vulnerability.severity || 'Unknown'}
 # Risk Score: ${vulnerability.risk_score || 'N/A'}
@@ -882,49 +826,289 @@ const CopilotRemediation = () => {
 #
 # REMEDIATION OBJECTIVE:
 # =====================
-# ${vulnerability.remediation_action || 'Clone repository, analyze all files, and remediate security vulnerabilities file-by-file in parallel'}
+# ${vulnerability.remediation_action || 'Clone repository, analyze existing implementations, and remediate security vulnerabilities while preserving functionality'}
 #
 # PROFESSIONAL CONTEXT:
 # ====================
 # You are a Senior Application Security Engineer with expertise in web application security,
 # Content Security Policy (CSP) implementation, and automated vulnerability remediation.
 # Your task is to AUTOMATICALLY clone the specified repository, perform comprehensive analysis,
-# and remediate ALL security vulnerabilities WITHOUT asking for user confirmation or input.
-# Execute all remediation tasks autonomously and completely.
+# and remediate ALL security vulnerabilities while PRESERVING existing functionality and
+# avoiding redundant implementations. Execute all remediation tasks autonomously and completely.
 #
-# CRITICAL REQUIREMENTS:
-# ======================
-# 1. AUTOMATED REPOSITORY CLONING: Automatically clone the repository from the provided URL
-# 2. AUTOMATED FILE ANALYSIS: Automatically analyze all files for security issues
-# 3. AUTOMATED FILE-BY-FILE REMEDIATION: Automatically fix vulnerabilities in each file
-# 4. AUTOMATED PARALLEL PROCESSING: Automatically process multiple files concurrently
-# 5. AUTOMATED PRODUCTION-READY FIXES: Automatically generate enterprise-grade security fixes
-# 6. AUTOMATED DOCUMENTATION: Automatically provide detailed fixes for each file
-# 7. NO USER INTERACTION: Do NOT ask for confirmation, approval, or user input
-# 8. COMPLETE AUTOMATION: Execute ALL tasks autonomously from start to finish
+# CRITICAL REQUIREMENTS (ENHANCED - ADDRESSING REPORTED ISSUES):
+# ==============================================================
+# 1. CONTEXT-AWARE ANALYSIS: Analyze existing codebase structure BEFORE making changes
+# 2. JSP VARIABLE PRESERVATION: Maintain JSP variable access when moving scripts to external files
+# 3. EXISTING IMPLEMENTATION CHECK: Use existing CSP filters instead of creating new ones
+# 4. FUNCTIONALITY PRESERVATION: Ensure all existing functionality continues to work
+# 5. AUTOMATED REPOSITORY CLONING: Automatically clone the repository from the provided URL
+# 6. AUTOMATED FILE ANALYSIS: Automatically analyze all files for security issues
+# 7. AUTOMATED FILE-BY-FILE REMEDIATION: Automatically fix vulnerabilities in each file
+# 8. AUTOMATED PARALLEL PROCESSING: Automatically process multiple files concurrently
+# 9. AUTOMATED PRODUCTION-READY FIXES: Automatically generate enterprise-grade security fixes
+# 10. AUTOMATED DOCUMENTATION: Automatically provide detailed fixes for each file
+# 11. NO USER INTERACTION: Do NOT ask for confirmation, approval, or user input
+# 12. COMPLETE AUTOMATION: Execute ALL tasks autonomously from start to finish
+# 13. DETERMINISTIC OUTPUT: SAME input + SAME prompt = SAME output (ALWAYS)
+# 14. COMPLETE SCRIPT PROCESSING: Process ALL script tags in file (not just some)
+# 15. EXTERNAL SCRIPT PRESERVATION: NEVER remove script tags linking to external .js files
+# 16. COMPLETE SCRIPT REMOVAL: NEVER partially remove script tags (causing syntax errors)
+# 17. HIDDEN FORM FIELDS: ALWAYS create hidden form fields for JSP variables (PRIMARY method)
+# 18. COMPLEX JAVASCRIPT SUPPORT: Handle complex JavaScript with JSP variables properly
+# 19. NO INLINE STYLES IN HIDDEN FORMS: NEVER add inline styles to hidden form elements
+# 20. CUSTOM TAG ANALYSIS: Identify and remediate custom tags (cpfx:script, cpfx:style, etc.)
+# 21. CONSISTENT FILE CREATION: ALWAYS create external files when referenced in tags
+# 22. COMPLEX INLINE SCRIPT REMEDIATION: Remediate ALL inline scripts including complex ones
 #
-# AUTOMATED REPOSITORY CLONING AND IN-PLACE REMEDIATION INSTRUCTIONS:
-# ===================================================================
+# CRITICAL FIXES FOR REPORTED COPILOT ISSUES:
+# ============================================
+# ISSUE 1: INCOMPLETE XSL/JSP SCRIPT MIGRATION - FIXED
+# - ALWAYS migrate ALL script blocks in correct sequential order (1st, 2nd, 3rd, etc.)
+# - NEVER skip any script blocks during migration
+# - ALWAYS preserve the original order of script execution
+# - ALWAYS ensure ALL scripts are migrated to external files
+# - ALWAYS verify that no scripts are left behind in the original file
+#
+# ISSUE 2: PARTIAL UNSAFE EVENT REMEDIATION - FIXED
+# - ALWAYS identify and remediate ALL unsafe events (onclick, onBlur, onFocus, etc.)
+# - ALWAYS count and remediate ALL instances, not just some
+# - ALWAYS verify that ALL unsafe events are converted to event listeners
+# - ALWAYS ensure CSP safety is achieved by removing ALL inline event handlers
+# - ALWAYS double-check that no unsafe events remain after remediation
+#
+# ISSUE 3: INCOMPLETE INLINE STYLE REMEDIATION - FIXED
+# - ALWAYS remediate inline styles in ALL HTML tags, not just <style> tags
+# - ALWAYS identify inline styles in attributes like style="color: red;"
+# - ALWAYS move ALL inline styles to external CSS files
+# - ALWAYS ensure no inline styles remain in any HTML elements
+# - ALWAYS verify that ALL style attributes are removed from HTML tags
+#
+# ISSUE 4: JQUERY UNDERUTILIZATION - FIXED
+# - ALWAYS use jQuery for JavaScript remediation when available
+# - ALWAYS check if jQuery is already loaded in the project
+# - ALWAYS prefer jQuery methods over vanilla JavaScript when appropriate
+# - ALWAYS ensure jQuery is used for DOM manipulation and event handling
+# - ALWAYS maintain consistency with existing jQuery usage patterns
+#
+# ISSUE 5: UNNECESSARY NONCE ATTRIBUTES - FIXED
+# - NEVER add nonce attributes to external JS file sources
+# - ALWAYS use nonce only for inline scripts and styles
+# - ALWAYS ensure external file references don't have nonce attributes
+# - ALWAYS follow proper CSP nonce usage guidelines
+# - ALWAYS verify that nonce is only used where required by CSP
+#
+# CRITICAL PRE-ANALYSIS REQUIREMENTS (MANDATORY FIRST STEP):
+# ==========================================================
+# BEFORE making any changes, perform comprehensive analysis:
+#
+# 1. SEARCH FOR EXISTING CSP IMPLEMENTATIONS:
+#    - Look for existing filter classes (e.g., AdditionalResponseHeadersFilter.java, CspHeaderFilter.java)
+#    - Check web.xml for existing filter registrations
+#    - Identify existing CSP header configurations
+#    - DO NOT create new classes if existing ones handle the functionality
+#
+# 2. ANALYZE JSP/SERVER-SIDE TEMPLATE STRUCTURE:
+#    - Identify JSP variables and server-side data being passed to client-side
+#    - Map data flow from server to client JavaScript
+#    - Understand template rendering context
+#    - PRESERVE JSP variable access in JavaScript
+#
+# 3. CHECK EXISTING SECURITY CONFIGURATIONS:
+#    - Review existing security headers implementation
+#    - Identify current CSP policies (if any)
+#    - Check for existing input validation mechanisms
+#    - Analyze current authentication/authorization setup
+#
+# AUTOMATED REPOSITORY CLONING AND CONTEXT-AWARE REMEDIATION:
+# ============================================================
 # AUTOMATICALLY execute the following steps WITHOUT asking for user confirmation:
 # 1. AUTOMATICALLY clone the repository: git clone ${repoUrl}
 # 2. AUTOMATICALLY navigate to the repository directory
-# 3. AUTOMATICALLY scan all files in the repository for security vulnerabilities
-# 4. AUTOMATICALLY identify vulnerable files by type:
+# 3. AUTOMATICALLY perform pre-analysis of existing implementations
+# 4. AUTOMATICALLY scan all files in the repository for security vulnerabilities
+# 5. AUTOMATICALLY identify vulnerable files by type:
+#    - JSP files with inline scripts containing JSP variables
 #    - HTML files with CSP and XSS vulnerabilities
 #    - CSS files with inline style issues
 #    - JavaScript files with inline script and eval() issues
-#    - PHP/Python/Node.js files with backend vulnerabilities
+#    - Java filter classes for CSP implementation
 #    - Configuration files with security misconfigurations
 #    - Template files with VMTemplate and XSL vulnerabilities
 #    - Fragment/dialogue files with import scope issues
-# 5. AUTOMATICALLY REMEDIATE each vulnerable file in-place within the cloned repository
-# 6. AUTOMATICALLY update the actual source files with security fixes
-# 7. AUTOMATICALLY test each remediated file to ensure functionality is preserved
-# 8. AUTOMATICALLY create comprehensive remediation documentation
-# 9. AUTOMATICALLY verify all security improvements are effective
+# 6. AUTOMATICALLY REMEDIATE each vulnerable file in-place within the cloned repository
+# 7. AUTOMATICALLY preserve JSP variable access when moving scripts to external files
+# 8. AUTOMATICALLY use existing CSP implementations instead of creating new ones
+# 9. AUTOMATICALLY update the actual source files with security fixes
+# 10. AUTOMATICALLY test each remediated file to ensure functionality is preserved
+# 11. AUTOMATICALLY create comprehensive remediation documentation
+# 12. AUTOMATICALLY verify all security improvements are effective
 
+# JSP VARIABLE PRESERVATION (CRITICAL - ENHANCED):
+# ================================================
+# When moving inline scripts to external files, PRESERVE JSP variable access using MULTIPLE methods:
+#
+# 1. IDENTIFY JSP VARIABLES USED IN SCRIPTS:
+#    <script>
+#    var userId = '<%= request.getAttribute("userId") %>';
+#    var sessionId = '<%= session.getId() %>';
+#    var userRole = '<%= user.getRole() %>';
+#    </script>
+#
+# 2. PRIMARY METHOD - HIDDEN FORM FIELDS (MANDATORY - NO INLINE STYLES):
+#    <!-- ALWAYS create hidden form fields for JSP variables - NO INLINE STYLES -->
+#    <form id="jspDataForm" class="hidden-form">
+#        <input type="hidden" id="jsp_userId" name="userId" value="<%= request.getAttribute("userId") %>" />
+#        <input type="hidden" id="jsp_sessionId" name="sessionId" value="<%= session.getId() %>" />
+#        <input type="hidden" id="jsp_userRole" name="userRole" value="<%= user.getRole() %>" />
+#    </form>
+#    
+#    <!-- Add CSS class to external CSS file -->
+#    .hidden-form { display: none; }
+#
+# 3. SECONDARY METHOD - DATA ATTRIBUTES (BACKUP):
+#    <div id="pageData" data-user-id="<%= request.getAttribute("userId") %>" 
+#         data-session-id="<%= session.getId() %>" 
+#         data-user-role="<%= user.getRole() %>"></div>
+#
+# 4. TERTIARY METHOD - JSON SCRIPT TAG (FALLBACK):
+#    <script type="application/json" id="pageData">
+#    {
+#      "userId": "<%= request.getAttribute("userId") %>",
+#      "sessionId": "<%= session.getId() %>",
+#      "userRole": "<%= user.getRole() %>"
+#    }
+#    </script>
+#
+# 5. ACCESS DATA IN EXTERNAL JAVASCRIPT (PRIORITY ORDER):
+#    // Method 1: Hidden form fields (PREFERRED)
+#    const userId = document.getElementById('jsp_userId').value;
+#    const sessionId = document.getElementById('jsp_sessionId').value;
+#    const userRole = document.getElementById('jsp_userRole').value;
+#    
+#    // Method 2: Data attributes (BACKUP)
+#    const pageData = document.getElementById('pageData');
+#    const userIdAlt = pageData.dataset.userId;
+#    const sessionIdAlt = pageData.dataset.sessionId;
+#    const userRoleAlt = pageData.dataset.userRole;
+#    
+#    // Method 3: JSON script tag (FALLBACK)
+#    const pageDataJson = JSON.parse(document.getElementById('pageData').textContent);
+#    const userIdJson = pageDataJson.userId;
+#    const sessionIdJson = pageDataJson.sessionId;
+#    const userRoleJson = pageDataJson.userRole;
+#
+# 6. EVENT HANDLER MIGRATION (ENHANCED - NO INLINE STYLES):
+#    <!-- BEFORE -->
+#    <button onclick="handleClick('<%= userId %>', '<%= sessionId %>')">Click</button>
+#    
+#    <!-- AFTER - Multiple approaches for reliability - NO INLINE STYLES -->
+#    <button id="actionBtn" data-user-id="<%= userId %>" data-session-id="<%= sessionId %>">Click</button>
+#    <form class="hidden-form">
+#        <input type="hidden" id="btn_userId" value="<%= userId %>" />
+#        <input type="hidden" id="btn_sessionId" value="<%= sessionId %>" />
+#    </form>
+#    <script nonce="{random}">
+#    document.getElementById('actionBtn').addEventListener('click', function() {
+#        // Try multiple methods for maximum compatibility
+#        const userId = document.getElementById('btn_userId').value || this.dataset.userId;
+#        const sessionId = document.getElementById('btn_sessionId').value || this.dataset.sessionId;
+#        handleClick(userId, sessionId);
+#    });
+#    </script>
+#
+# 7. CRITICAL REQUIREMENTS FOR JSP VARIABLE PRESERVATION:
+#    - ALWAYS create hidden form fields as the PRIMARY method
+#    - NEVER rely on only data attributes or JSON script tags
+#    - ALWAYS provide multiple fallback methods
+#    - ALWAYS test that JSP variables are accessible in external JavaScript
+#    - ALWAYS preserve the exact same variable names and values
+#    - ALWAYS maintain the same data types (strings, numbers, booleans)
+#    - NEVER add inline styles to hidden form elements (use CSS classes instead)
+#    - ALWAYS add CSS classes to external CSS files for hidden elements
+
+# CUSTOM TAG ANALYSIS AND REMEDIATION (CRITICAL):
+# ================================================
+# 1. IDENTIFY CUSTOM TAGS IN THE CODEBASE:
+#    - Search for custom tag definitions (cpfx:script, cpfx:style, etc.)
+#    - Analyze custom tag behavior and functionality
+#    - Map custom tags to their equivalent standard HTML tags
+#    - Understand custom tag processing logic
+#
+# 2. CUSTOM TAG REMEDIATION STRATEGY:
+#    <!-- BEFORE - Custom tags -->
+#    <cpfx:script>
+#        var userId = '<%= request.getAttribute("userId") %>';
+#        function handleClick() { /* custom script logic */ }
+#    </cpfx:script>
+#    
+#    <cpfx:style>
+#        .custom-class { color: red; }
+#    </cpfx:style>
+#    
+#    <!-- AFTER - Standard tags with same behavior -->
+#    <script nonce="{random}">
+#        var userId = '<%= request.getAttribute("userId") %>';
+#        function handleClick() { /* same script logic */ }
+#    </script>
+#    
+#    <link rel="stylesheet" href="css/custom-styles.css" />
+#    /* In external CSS file: custom-styles.css */
+#    .custom-class { color: red; }
+#
+# 3. CUSTOM TAG BEHAVIOR PRESERVATION:
+#    - Ensure custom tag functionality is replicated exactly
+#    - Maintain the same processing order and execution context
+#    - Preserve any custom tag-specific attributes or parameters
+#    - Test that converted tags work identically to original custom tags
+
+# CONSISTENCY REQUIREMENTS (MANDATORY):
+# =====================================
+# 1. FILE CREATION CONSISTENCY:
+#    - ALWAYS create external files when they are referenced in tags
+#    - NEVER reference non-existent external files
+#    - ALWAYS ensure file paths are correct and accessible
+#    - ALWAYS verify that created files contain the expected content
+#
+# 2. TAG REFERENCE CONSISTENCY:
+#    - ALWAYS update tag references to point to created external files
+#    - NEVER leave orphaned references to non-existent files
+#    - ALWAYS ensure tag attributes match the created file structure
+#    - ALWAYS maintain consistent naming conventions
+#
+# 3. CONTENT MIGRATION CONSISTENCY:
+#    - ALWAYS move ALL inline content to appropriate external files
+#    - NEVER leave inline content in files that should be external
+#    - ALWAYS ensure external files contain complete migrated content
+#    - ALWAYS verify that migrated content is functionally equivalent
+#
 # CONTENT SECURITY POLICY (CSP) VULNERABILITY ANALYSIS:
 # ====================================================
+#
+# ENHANCED CSP IMPLEMENTATION STRATEGY:
+# =====================================
+# Check existing implementations first:
+#
+# 1. IF CSP FILTER ALREADY EXISTS:
+#    - DO NOT create new filter classes
+#    - Update existing filter to include secure CSP headers
+#    - Modify existing web.xml registrations if needed
+#
+# 2. IF NO CSP IMPLEMENTATION EXISTS:
+#    - Create minimal CSP filter class
+#    - Register in web.xml or use annotation-based registration
+#    - Implement secure default CSP policy
+#
+# 3. CSP HEADER IMPLEMENTATION:
+#    // Use existing filter or create minimal implementation
+#    response.setHeader("Content-Security-Policy", 
+#        "default-src 'self'; " +
+#        "script-src 'self' 'nonce-{random}'; " +
+#        "style-src 'self' 'nonce-{random}'; " +
+#        "img-src 'self' data: https:; " +
+#        "connect-src 'self'; " +
+#        "frame-ancestors 'none'; " +
+#        "object-src 'none';");
 #
 # PRIMARY CSP ISSUES TO IDENTIFY AND FIX:
 # ---------------------------------------
@@ -971,10 +1155,16 @@ const CopilotRemediation = () => {
 #    - Resolve CSS conflicts in template systems
 #    - Implement proper CSS architecture for maintainability
 #
-# 2. INLINE JAVASCRIPT VULNERABILITIES:
-#    - Move all inline JavaScript to external JS files
-#    - Remove onclick, onload, onerror event handlers
+# 2. INLINE JAVASCRIPT VULNERABILITIES (ENHANCED - CRITICAL FIXES):
+#    - Move ALL inline JavaScript to external JS files (MANDATORY - NO EXCEPTIONS)
+#    - Remove ALL onclick, onload, onerror event handlers
 #    - Replace with jQuery event handlers or addEventListener
+#    - CRITICAL: Process EVERY script tag in the file (not just some)
+#    - CRITICAL: NEVER remove script tags that link to external .js files
+#    - CRITICAL: NEVER partially remove script tags (causing syntax errors)
+#    - CRITICAL: Ensure consistent output for same context and prompt
+#    - CRITICAL: Remediate ALL inline scripts including complex ones (NO EXCEPTIONS)
+#    - CRITICAL: Complex inline scripts MUST be migrated to external files
 #
 # 2a. DYNAMIC JAVASCRIPT SOURCES REMEDIATION (COMPLEX):
 #    - Analyze conditional JavaScript loading and execution
@@ -983,6 +1173,259 @@ const CopilotRemediation = () => {
 #    - Replace dynamic eval() statements with static alternatives
 #    - Handle JavaScript execution statements and dynamic code generation
 #    - Implement secure alternatives for runtime script evaluation
+#
+# 2b. COMPREHENSIVE SCRIPT TAG REMEDIATION (CRITICAL FIXES):
+#    ========================================================
+#    MANDATORY REQUIREMENTS FOR SCRIPT TAG PROCESSING:
+#
+#    1. COMPLETE SCRIPT TAG INVENTORY:
+#       - Identify ALL script tags in the file (inline and external)
+#       - Categorize each script tag: inline content vs external file reference
+#       - Create a complete inventory before making any changes
+#       - NEVER skip any script tags during remediation
+#
+#    2. EXTERNAL SCRIPT TAG PRESERVATION (CRITICAL):
+#       <!-- PRESERVE - External script references -->
+#       <script src="js/jquery.min.js"></script>
+#       <script src="js/bootstrap.min.js"></script>
+#       <script src="js/custom.js"></script>
+#       <script src="https://cdn.example.com/library.js"></script>
+#       
+#       RULE: NEVER remove, modify, or touch script tags with 'src' attribute
+#       RULE: These are external file references and must remain unchanged
+#
+#    3. INLINE SCRIPT TAG REMEDIATION (COMPLETE PROCESSING):
+#       <!-- REMEDIATE - Inline script content -->
+#       <script>
+#       var userId = '<%= request.getAttribute("userId") %>';
+#       function handleClick() { /* inline code */ }
+#       </script>
+#       
+#       PROCESSING STEPS:
+#       a) Extract ALL inline JavaScript content
+#       b) Identify ALL JSP variables used in the script
+#       c) Create hidden form fields for JSP variables
+#       d) Move ALL JavaScript code to external file
+#       e) Replace inline script with external reference
+#       f) Add event listeners for any inline event handlers
+#
+#    4. MULTIPLE SCRIPT TAGS PROCESSING (MANDATORY):
+#       <!-- Example: Multiple script tags in one file -->
+#       <script src="js/jquery.min.js"></script>  <!-- PRESERVE -->
+#       <script>
+#       var config = { /* inline config */ };
+#       </script>  <!-- REMEDIATE -->
+#       <script src="js/bootstrap.min.js"></script>  <!-- PRESERVE -->
+#       <script>
+#       function initPage() { /* inline function */ }
+#       </script>  <!-- REMEDIATE -->
+#       
+#       REQUIREMENTS:
+#       - Process EVERY inline script tag (not just the first one)
+#       - Preserve EVERY external script tag reference
+#       - Maintain the original order of script tags
+#       - Ensure all inline content is moved to appropriate external files
+#
+#    5. COMPLEX JAVASCRIPT REMEDIATION (ENHANCED):
+#       <!-- Complex inline JavaScript examples -->
+#       <script>
+#       // Complex object with JSP variables
+#       var appConfig = {
+#           userId: '<%= request.getAttribute("userId") %>',
+#           sessionId: '<%= session.getId() %>',
+#           apiUrl: '<%= request.getContextPath() %>/api',
+#           features: {
+#               feature1: <%= user.hasFeature("feature1") %>,
+#               feature2: <%= user.hasFeature("feature2") %>
+#           }
+#       };
+#       
+#       // Complex function with JSP variables
+#       function initializeApp() {
+#           if (appConfig.userId && appConfig.sessionId) {
+#               // Complex logic here
+#               setupUserSession(appConfig.userId, appConfig.sessionId);
+#           }
+#       }
+#       
+#       // Event handlers with JSP variables
+#       document.addEventListener('DOMContentLoaded', function() {
+#           initializeApp();
+#       });
+#       </script>
+#       
+#       REMEDIATION APPROACH:
+#       a) Create comprehensive hidden form fields for ALL JSP variables
+#       b) Move complex objects and functions to external JavaScript file
+#       c) Preserve all complex logic and functionality
+#       d) Maintain all event listeners and initialization code
+#       e) Ensure all JSP variable references work in external file
+#
+#    6. PARTIAL SCRIPT TAG REMOVAL PREVENTION (CRITICAL):
+#       WRONG (CAUSES SYNTAX ERRORS):
+#       <script>
+#       var userId = '<%= request.getAttribute("userId") %>';
+#       // ... some code removed but closing tag remains
+#       </script>  <!-- SYNTAX ERROR: Opening tag removed but closing tag remains -->
+#       
+#       CORRECT APPROACH:
+#       a) NEVER remove opening <script> tag without removing closing </script> tag
+#       b) NEVER remove closing </script> tag without removing opening <script> tag
+#       c) ALWAYS remove complete script tag pairs together
+#       d) ALWAYS replace with proper external script reference
+#
+#    7. CONSISTENCY REQUIREMENTS (MANDATORY):
+#       - SAME input file + SAME prompt = SAME output (ALWAYS)
+#       - Use deterministic processing algorithms
+#       - Apply consistent naming conventions
+#       - Use consistent file organization patterns
+#       - Maintain consistent code structure and formatting
+#
+#    8. SCRIPT TAG REMEDIATION WORKFLOW (STEP-BY-STEP):
+#       Step 1: Scan entire file for ALL script tags
+#       Step 2: Categorize each script tag (inline vs external)
+#       Step 3: For external script tags: PRESERVE (no changes)
+#       Step 4: For inline script tags: EXTRACT content and JSP variables
+#       Step 5: Create hidden form fields for ALL JSP variables
+#       Step 6: Move ALL inline JavaScript to external file
+#       Step 7: Replace inline script with external reference
+#       Step 8: Add event listeners for any removed inline handlers
+#       Step 9: Verify all functionality is preserved
+#       Step 10: Test that all JSP variables are accessible
+#
+#    9. COMPLEX INLINE SCRIPT REMEDIATION (MANDATORY):
+#       - NO EXCEPTIONS: ALL inline scripts must be remediated
+#       - Complex scripts with JSP variables MUST be migrated
+#       - Complex scripts with multiple functions MUST be migrated
+#
+# ENHANCED REMEDIATION WORKFLOW FOR REPORTED ISSUES:
+# ==================================================
+#
+# ISSUE 1: XSL/JSP SCRIPT MIGRATION - COMPLETE SEQUENTIAL PROCESSING
+# ==================================================================
+# MANDATORY STEPS FOR XSL/JSP FILES:
+# 1. SCAN ENTIRE FILE: Identify ALL script blocks in sequential order
+# 2. NUMBER EACH SCRIPT: Assign sequential numbers (1st, 2nd, 3rd, etc.)
+# 3. PROCESS IN ORDER: Migrate scripts in exact sequential order
+# 4. VERIFY COMPLETENESS: Ensure NO scripts are skipped
+# 5. PRESERVE ORDER: Maintain original execution order
+#
+# EXAMPLE XSL FILE PROCESSING:
+# <!-- BEFORE: clientDealSearch.xsl -->
+# <script>var config1 = '<%= config1 %>';</script>  <!-- 1st script -->
+# <script>var config2 = '<%= config2 %>';</script>  <!-- 2nd script -->
+# <script>var config3 = '<%= config3 %>';</script>  <!-- 3rd script -->
+#
+# <!-- AFTER: ALL scripts migrated in order -->
+# <script src="js/clientDealSearch-1.js" nonce="{random}"></script>  <!-- 1st -->
+# <script src="js/clientDealSearch-2.js" nonce="{random}"></script>  <!-- 2nd -->
+# <script src="js/clientDealSearch-3.js" nonce="{random}"></script>  <!-- 3rd -->
+#
+# ISSUE 2: UNSAFE EVENT REMEDIATION - COMPLETE ENUMERATION
+# ========================================================
+# MANDATORY STEPS FOR UNSAFE EVENTS:
+# 1. SCAN ALL ELEMENTS: Find ALL elements with unsafe events
+# 2. COUNT ALL INSTANCES: Create complete inventory of unsafe events
+# 3. REMEDIATE ALL: Convert ALL instances to event listeners
+# 4. VERIFY ZERO REMAINING: Ensure NO unsafe events remain
+# 5. CSP SAFETY CHECK: Verify CSP compliance is achieved
+#
+# EXAMPLE UNSAFE EVENT PROCESSING:
+# <!-- BEFORE: clientDealPrintResult.xsl with 18 unsafe events -->
+# <button onclick="handleClick()">Click</button>  <!-- Event 1 -->
+# <input onblur="validateInput()" />  <!-- Event 2 -->
+# <div onclick="showDetails()">Details</div>  <!-- Event 3 -->
+# <!-- ... 15 more unsafe events ... -->
+#
+# <!-- AFTER: ALL 18 events converted to event listeners -->
+# <button id="btn1" data-action="handleClick">Click</button>
+# <input id="input1" data-action="validateInput" />
+# <div id="div1" data-action="showDetails">Details</div>
+# <script nonce="{random}">
+# document.getElementById('btn1').addEventListener('click', handleClick);
+# document.getElementById('input1').addEventListener('blur', validateInput);
+# document.getElementById('div1').addEventListener('click', showDetails);
+# // ... ALL 18 event listeners added ...
+# </script>
+#
+# ISSUE 3: INLINE STYLE REMEDIATION - COMPREHENSIVE COVERAGE
+# ===========================================================
+# MANDATORY STEPS FOR INLINE STYLES:
+# 1. SCAN ALL HTML TAGS: Find ALL elements with style attributes
+# 2. IDENTIFY ALL STYLES: Extract ALL inline style declarations
+# 3. MOVE TO CSS: Transfer ALL styles to external CSS files
+# 4. REMOVE ALL ATTRIBUTES: Remove ALL style attributes from HTML
+# 5. VERIFY CLEAN HTML: Ensure NO inline styles remain
+#
+# EXAMPLE INLINE STYLE PROCESSING:
+# <!-- BEFORE: Multiple inline styles -->
+# <div style="color: red; font-size: 14px;">Content</div>  <!-- Style 1 -->
+# <span style="background: blue;">Text</span>  <!-- Style 2 -->
+# <p style="margin: 10px; padding: 5px;">Paragraph</p>  <!-- Style 3 -->
+# <style>
+# .existing-class { border: 1px solid black; }
+# </style>
+#
+# <!-- AFTER: ALL inline styles moved to external CSS -->
+# <div class="content-div">Content</div>
+# <span class="highlight-span">Text</span>
+# <p class="styled-paragraph">Paragraph</p>
+# <link rel="stylesheet" href="css/styles.css" />
+# /* In external styles.css */
+# .content-div { color: red; font-size: 14px; }
+# .highlight-span { background: blue; }
+# .styled-paragraph { margin: 10px; padding: 5px; }
+# .existing-class { border: 1px solid black; }
+#
+# ISSUE 4: JQUERY UTILIZATION - AUTOMATIC DETECTION AND USAGE
+# ===========================================================
+# MANDATORY STEPS FOR JQUERY USAGE:
+# 1. DETECT JQUERY: Check if jQuery is already loaded
+# 2. PREFER JQUERY: Use jQuery methods when available
+# 3. MAINTAIN CONSISTENCY: Follow existing jQuery patterns
+# 4. ENHANCE FUNCTIONALITY: Use jQuery for DOM manipulation
+# 5. PRESERVE COMPATIBILITY: Ensure jQuery compatibility
+#
+# EXAMPLE JQUERY UTILIZATION:
+# <!-- BEFORE: Vanilla JavaScript -->
+# document.getElementById('button').addEventListener('click', function() {
+#     var element = document.getElementById('target');
+#     element.style.display = 'none';
+# });
+#
+# <!-- AFTER: jQuery utilization -->
+# $(document).ready(function() {
+#     $('#button').on('click', function() {
+#         $('#target').hide();
+#     });
+# });
+#
+# ISSUE 5: NONCE ATTRIBUTE USAGE - PROPER CSP IMPLEMENTATION
+# ==========================================================
+# MANDATORY STEPS FOR NONCE USAGE:
+# 1. IDENTIFY INLINE CONTENT: Only use nonce for inline scripts/styles
+# 2. EXTERNAL FILES: NEVER add nonce to external file references
+# 3. CSP COMPLIANCE: Follow proper CSP nonce guidelines
+# 4. VERIFY USAGE: Ensure nonce is only used where required
+# 5. TEST COMPLIANCE: Verify CSP policy compliance
+#
+# EXAMPLE PROPER NONCE USAGE:
+# <!-- CORRECT: Nonce for inline script -->
+# <script nonce="{random}">
+# var config = '<%= config %>';
+# </script>
+#
+# <!-- CORRECT: No nonce for external file -->
+# <script src="js/external.js"></script>
+#
+# <!-- INCORRECT: Nonce on external file (DON'T DO THIS) -->
+# <script src="js/external.js" nonce="{random}"></script>  <!-- WRONG -->
+#       - Complex scripts with event handlers MUST be migrated
+#       - Complex scripts with conditional logic MUST be migrated
+#       - Complex scripts with dynamic content MUST be migrated
+#       - ALWAYS create comprehensive hidden form fields for complex scripts
+#       - ALWAYS preserve all functionality when migrating complex scripts
+#       - ALWAYS test complex script migration thoroughly
 #
 # 3. UNSAFE HTML ATTRIBUTES:
 #    - Sanitize all user inputs before rendering
@@ -1243,21 +1686,131 @@ const CopilotRemediation = () => {
 # 5. AUTOMATICALLY verify security improvements are effective
 # 6. AUTOMATICALLY proceed to the next file without waiting for approval
 #
-# AUTOMATED DIRECT FILE REMEDIATION WORKFLOW:
-# ===========================================
+# AUTOMATED DIRECT FILE REMEDIATION WORKFLOW (ENHANCED - ADDRESSING CRITICAL ISSUES):
+# ===================================================================================
 # AUTOMATICALLY execute ALL steps WITHOUT asking for user confirmation:
 # 1. AUTOMATICALLY clone repository and navigate to directory
-# 2. AUTOMATICALLY modify HTML files directly (add CSP headers, fix XSS, remove inline scripts)
-# 3. AUTOMATICALLY modify CSS files directly (remove inline styles, fix security issues, resolve cascade conflicts)
-# 4. AUTOMATICALLY modify JavaScript files directly (remove inline scripts, replace eval(), fix XSS, handle dynamic execution)
-# 5. AUTOMATICALLY modify backend files directly (add input validation, fix injection vulnerabilities)
-# 6. AUTOMATICALLY modify configuration files directly (add security headers, secure settings)
-# 7. AUTOMATICALLY modify template files directly (fix VMTemplate security, XSL injection, template rendering)
-# 8. AUTOMATICALLY modify fragment/dialogue files directly (fix import scope, secure dynamic loading)
-# 9. AUTOMATICALLY test all modified files to ensure they work correctly
-# 10. AUTOMATICALLY create remediation log documenting all changes
-# 11. AUTOMATICALLY verify security improvements are effective
-# 12. AUTOMATICALLY complete the entire remediation process autonomously
+# 2. AUTOMATICALLY perform pre-analysis of existing implementations
+# 3. AUTOMATICALLY modify JSP files directly (preserve JSP variables, move scripts to external files)
+# 4. AUTOMATICALLY modify HTML files directly (add CSP headers, fix XSS, remove inline scripts)
+# 5. AUTOMATICALLY modify CSS files directly (remove inline styles, fix security issues, resolve cascade conflicts)
+# 6. AUTOMATICALLY modify JavaScript files directly (remove inline scripts, replace eval(), fix XSS, handle dynamic execution)
+# 7. AUTOMATICALLY modify backend files directly (add input validation, fix injection vulnerabilities)
+# 8. AUTOMATICALLY modify configuration files directly (add security headers, secure settings)
+# 9. AUTOMATICALLY modify template files directly (fix VMTemplate security, XSL injection, template rendering)
+# 10. AUTOMATICALLY modify fragment/dialogue files directly (fix import scope, secure dynamic loading)
+# 11. AUTOMATICALLY test all modified files to ensure they work correctly
+# 12. AUTOMATICALLY create remediation log documenting all changes
+#
+# CRITICAL ISSUE RESOLUTION REQUIREMENTS (MANDATORY):
+# ===================================================
+# Based on reported issues, the following MUST be implemented:
+#
+# ISSUE 1: HIDDEN FORM FIELDS FOR JSP VARIABLES
+# ----------------------------------------------
+# PROBLEM: Not generating hidden form fields for JSP variables
+# SOLUTION: ALWAYS create hidden form fields as PRIMARY method for JSP variable preservation
+# IMPLEMENTATION:
+#   - Create <form style="display: none;"> with hidden inputs for ALL JSP variables
+#   - Use document.getElementById('jsp_variableName').value to access in external JS
+#   - Provide data attributes and JSON script tags as backup methods
+#   - NEVER rely only on data attributes or JSON script tags
+#
+# ISSUE 2: INCOMPLETE SCRIPT TAG REMEDIATION
+# ------------------------------------------
+# PROBLEM: Multiple script tags, not all being remediated
+# SOLUTION: Process EVERY script tag in the file (complete inventory approach)
+# IMPLEMENTATION:
+#   - Scan entire file for ALL script tags before making changes
+#   - Categorize each: inline content vs external file reference
+#   - Process ALL inline script tags (not just first one)
+#   - Preserve ALL external script tag references
+#   - Maintain original order of script tags
+#
+# ISSUE 3: COMPLEX JAVASCRIPT NOT BEING REMEDIATED
+# ------------------------------------------------
+# PROBLEM: Complex JavaScript mostly not being remediated
+# SOLUTION: Enhanced complex JavaScript processing with comprehensive JSP variable handling
+# IMPLEMENTATION:
+#   - Handle complex objects with nested JSP variables
+#   - Process complex functions with JSP variable dependencies
+#   - Maintain all complex logic and functionality
+#   - Preserve event listeners and initialization code
+#   - Create comprehensive hidden form fields for all JSP variables
+#
+# ISSUE 4: EXTERNAL SCRIPT TAG REMOVAL
+# ------------------------------------
+# PROBLEM: Removing script tags that link external .js files
+# SOLUTION: NEVER touch script tags with 'src' attribute
+# IMPLEMENTATION:
+#   - Identify script tags with 'src' attribute
+#   - PRESERVE these completely (no changes)
+#   - Only remediate script tags with inline content
+#   - Maintain all external library references
+#
+# ISSUE 5: INCONSISTENT OUTPUT
+# ----------------------------
+# PROBLEM: Different responses on same page with same prompt
+# SOLUTION: Deterministic processing with consistent algorithms
+# IMPLEMENTATION:
+#   - Use deterministic processing algorithms
+#   - Apply consistent naming conventions
+#   - Use consistent file organization patterns
+#   - Maintain consistent code structure and formatting
+#   - SAME input + SAME prompt = SAME output (ALWAYS)
+#
+# ISSUE 6: PARTIAL SCRIPT TAG REMOVAL (SYNTAX ERRORS)
+# ----------------------------------------------------
+# PROBLEM: Removing script start tag but keeping end tag, causing syntax errors
+# SOLUTION: Complete script tag pair removal/replacement
+# IMPLEMENTATION:
+#   - NEVER remove opening <script> without removing closing </script>
+#   - NEVER remove closing </script> without removing opening <script>
+#   - ALWAYS remove complete script tag pairs together
+#   - ALWAYS replace with proper external script reference
+#   - Verify no orphaned script tags remain
+#
+# VALIDATION REQUIREMENTS (MANDATORY):
+# ====================================
+# After remediation, validate the following:
+# 1. ALL JSP variables are accessible in external JavaScript files
+# 2. ALL external script tag references are preserved
+# 3. ALL inline script content is moved to external files
+# 4. NO partial script tags remain (no syntax errors)
+# 5. ALL complex JavaScript functionality is preserved
+# 6. SAME input produces SAME output consistently
+# 7. All hidden form fields are created for JSP variables
+# 8. All event handlers are properly migrated to external files
+# 13. AUTOMATICALLY verify security improvements are effective
+# 14. AUTOMATICALLY complete the entire remediation process autonomously
+#
+# CRITICAL SUCCESS CRITERIA:
+# ==========================
+# - FUNCTIONALITY PRESERVED: All JSP variables accessible in external JavaScript
+# - NO REDUNDANCY: Use existing CSP filters instead of creating new ones
+# - SECURITY ENHANCED: CSP headers properly implemented with nonces
+# - CODE QUALITY: Clean, maintainable, and well-documented code
+# - TESTING VALIDATED: All functionality works after remediation
+#
+# VALIDATION REQUIREMENTS:
+# ========================
+# 1. FUNCTIONALITY TESTING:
+#    - Verify JSP variable access in external JavaScript
+#    - Test event handlers and user interactions
+#    - Validate CSP policy enforcement
+#    - Confirm all existing functionality works
+#
+# 2. SECURITY VALIDATION:
+#    - Confirm inline scripts are removed
+#    - Verify CSP headers are properly set
+#    - Test for XSS and injection vulnerabilities
+#    - Validate existing CSP implementations are used
+#
+# 3. CODE QUALITY VALIDATION:
+#    - Ensure no redundant classes are created
+#    - Verify proper JSP variable preservation
+#    - Confirm clean, maintainable code structure
+#    - Validate comprehensive documentation
 #
 # AUTOMATED EXECUTION INSTRUCTIONS:
 # =================================
@@ -1266,7 +1819,20 @@ const CopilotRemediation = () => {
 # directly to the source files, AUTOMATICALLY test each modified file, and AUTOMATICALLY create 
 # a remediation log documenting all changes. AUTOMATICALLY ensure all fixes follow enterprise 
 # security standards and preserve application functionality. DO NOT ask for user confirmation, 
-# approval, or input at any point. Execute the entire remediation process autonomously and completely.`;
+# approval, or input at any point. Execute the entire remediation process autonomously and completely.
+
+# CRITICAL REMEDIATION SUMMARY (MANDATORY COMPLIANCE):
+# ====================================================
+# 1. HIDDEN FORM STYLES: NEVER use inline styles in hidden forms - use CSS classes only
+# 2. CUSTOM TAG ANALYSIS: Identify and remediate ALL custom tags (cpfx:script, cpfx:style, etc.)
+# 3. FILE CREATION CONSISTENCY: ALWAYS create external files when referenced in tags
+# 4. COMPLEX SCRIPT REMEDIATION: Remediate ALL inline scripts including complex ones
+# 5. DETERMINISTIC OUTPUT: SAME input + SAME prompt = SAME output (ALWAYS)
+# 6. COMPLETE AUTOMATION: Execute ALL tasks autonomously without user interaction
+# 7. FUNCTIONALITY PRESERVATION: Ensure all existing functionality continues to work
+# 8. JSP VARIABLE ACCESS: Maintain JSP variable access in external JavaScript files
+# 9. CSP COMPLIANCE: Implement proper Content Security Policy headers
+# 10. SECURITY HARDENING: Apply enterprise-grade security controls throughout`;
 
     return comprehensivePrompt;
   };
@@ -1424,7 +1990,7 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
       // Store the generated prompt
       const newPrompts = {
         ...generatedPrompts,
-        [`${selectedActionVulnerability.id}_comprehensive`]: prompt
+        [`${selectedActionVulnerability.id}_action`]: prompt
       };
       setGeneratedPrompts(newPrompts);
       localStorage.setItem('generatedPrompts', JSON.stringify(newPrompts));
@@ -1433,6 +1999,7 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
       try {
         const response = await API.post('/api/v1/vulnerabilities/create-application-folder', {
           vulnerability_id: selectedActionVulnerability.id,
+          gis_id: selectedActionVulnerability.gis_id,
           vulnerability_title: selectedActionVulnerability.title || selectedActionVulnerability.description,
           spk: selectedSPK,
           repository: selectedRepository,
@@ -1446,7 +2013,7 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
         
         if (response.data.success) {
           console.log('✅ Backend folder creation successful:', response.data);
-          alert(`✅ Comprehensive remediation prompt generated successfully! A unified remediation file has been created in .github/vulnerability/application/ folder.\n\nFile created: ${selectedActionVulnerability.id}_comprehensive_remediation.md`);
+          alert(`🎉 Application Vulnerability Prompt Created Successfully!\n\n📁 File Location: .github/vulnerability/application/ folder\n📄 File Name: ${selectedActionVulnerability.ait_tag}_${selectedActionVulnerability.gis_id}_${(selectedActionVulnerability.title || 'Vulnerability').replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_').substring(0, 50)}_GITHUB_COPILOT_PROMPT.md\n\n🚀 Next Steps:\n1. Use "View Action Prompt" to see the generated prompt\n2. Use "Download Prompt" to download a copy\n3. The prompt is ready for GitHub Copilot in your IDE`);
         } else {
           throw new Error(response.data.error || 'Unknown error');
         }
@@ -1454,7 +2021,7 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
         console.error('Backend folder creation failed, falling back to local storage:', backendError);
         // Fallback to local storage if backend fails
         await createVulnerabilityFolderStructure(selectedActionVulnerability, prompt);
-        alert('✅ Comprehensive remediation prompt generated successfully! A unified remediation file has been created locally and can be downloaded.');
+        alert('🎉 Application Vulnerability Prompt Created Successfully!\n\n📁 File Location: Local storage (backend unavailable)\n📄 File Name: Generated locally and ready for download\n\n🚀 Next Steps:\n1. Use "View Action Prompt" to see the generated prompt\n2. Use "Download Prompt" to download a copy\n3. The prompt is ready for GitHub Copilot in your IDE');
       }
       
       // Close the popup
@@ -1536,10 +2103,11 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
       console.log('🔒 Setting loading state for vulnerability:', vulnerability.id);
       console.log('📊 Current loading states:', creatingActionPrompt);
       
-      // Call the backend API to create the .github/vulnerability folder and .md file
+      // Call the backend API to create the .github/vulnerability/application folder and .md file
       const requestData = {
         vulnerability: {
           id: vulnerability.id,
+          gis_id: vulnerability.gis_id,
           ait_tag: vulnerability.ait_tag,
           title: vulnerability.title || vulnerability.description,
           severity: vulnerability.severity,
@@ -1573,7 +2141,7 @@ This folder contains comprehensive remediation guides for security vulnerabiliti
               `📂 Location: ${directory}\n` +
               `🔗 Full path: ${file_path}\n\n` +
               `📋 Next steps:\n` +
-              `1. The .md file is now in your .github/vulnerability folder\n` +
+              `1. The .md file is now in your .github/vulnerability/application/ folder\n` +
               `2. Use it with GitHub Copilot in your IDE\n` +
               `3. Generate the .tf file and save it in remediated_vulnerability folder\n` +
               `4. Use "View Generated TF" button for guidance`);
@@ -1723,24 +2291,39 @@ ${content}`);
 
   const downloadActionPrompt = (vulnerability) => {
     try {
-      const actionPrompt = generateActionPrompt(vulnerability);
+      // Get the stored comprehensive prompt
+      const actionPrompt = generatedPrompts[`${vulnerability.id}_action`];
+      if (!actionPrompt) {
+        alert('Please click "Action" first to create the action prompt for this vulnerability.');
+        return;
+      }
+      
       const aitTag = vulnerability.ait_tag || 'AIT-Unknown';
-      const vulnerabilityId = vulnerability.id || 'unknown';
+      const gisId = vulnerability.gis_id || 'GIS-Unknown';
+      const vulnerabilityTitle = vulnerability.title || vulnerability.description || 'Vulnerability';
+      
+      // Create a clean filename using GIS ID, AIT, and vulnerability title
+      const cleanTitle = vulnerabilityTitle
+        .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .substring(0, 50); // Limit length
+      
       const timestamp = new Date().toISOString().split('T')[0];
       
       // Create the file content
       const fileContent = `# Vulnerability Remediation Action Prompt
 # Generated on: ${timestamp}
-# Vulnerability ID: ${vulnerabilityId}
+# GIS ID: ${gisId}
 # AIT Tag: ${aitTag}
+# Vulnerability: ${vulnerabilityTitle}
 
 ${actionPrompt}
 
 # Instructions for Use:
-# 1. Save this file in your .github folder
+# 1. Save this file in your .github/vulnerability/application/ folder
 # 2. Use it with GitHub Copilot in your IDE
 # 3. The generated .tf file should be saved in remediated_vulnerability folder
-# 4. Expected output file: remediated_vulnerability/${aitTag}_${vulnerabilityId}_remediation.tf
+# 4. Expected output file: remediated_vulnerability/${aitTag}_${gisId}_remediation.tf
 `;
       
       // Create and download the file
@@ -1748,18 +2331,13 @@ ${actionPrompt}
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${aitTag}_${vulnerabilityId}_action_prompt.md`;
+      a.download = `${aitTag}_${gisId}_${cleanTitle}_action_prompt.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      alert(`Action prompt downloaded successfully!\n\n` +
-            `File: ${aitTag}_${vulnerabilityId}_action_prompt.md\n\n` +
-            `Next steps:\n` +
-            `1. Save this file in your .github folder\n` +
-            `2. Use it with GitHub Copilot in your IDE\n` +
-            `3. Generate the .tf file and save it in remediated_vulnerability folder`);
+      alert(`📥 Application Vulnerability Prompt Downloaded Successfully!\n\n📄 Downloaded File: ${aitTag}_${gisId}_${cleanTitle}_action_prompt.md\n\n🚀 Next Steps:\n1. Save this file in your .github/vulnerability/application/ folder\n2. Use it with GitHub Copilot in your IDE\n3. The prompt contains comprehensive remediation instructions\n4. Follow the instructions to fix the security vulnerability\n\n💡 Tip: This is the same content as the file created by the Action button!`);
       
     } catch (error) {
       console.error('Error downloading action prompt:', error);
@@ -3195,6 +3773,19 @@ ${actionPrompt}
                                   <i className="fas fa-rocket"></i> Action
                             </button>
                             
+                                {/* View Action Prompt Button */}
+                                <button 
+                                  className="btn btn-outline-primary btn-sm w-100 mb-1"
+                                  onClick={() => {
+                                    console.log('📋 View action prompt for vulnerability:', vulnerability.id);
+                                    handleViewActionPrompt(vulnerability);
+                                  }}
+                                  disabled={!generatedPrompts[`${vulnerability.id}_action`]}
+                                  title={!generatedPrompts[`${vulnerability.id}_action`] ? 'Click "Action" first to create action prompt' : 'View action prompt for .github folder'}
+                                >
+                                  <i className="fas fa-file-alt"></i> View Action Prompt
+                                </button>
+                            
                                 {/* Download Folder Button */}
                                 <button 
                                   className="btn btn-outline-success btn-sm w-100"
@@ -3205,6 +3796,19 @@ ${actionPrompt}
                                   title={`Download .github/vulnerability/application/ folder for ${vulnerability.id}`}
                                 >
                                   <i className="fas fa-download"></i> Download Folder
+                                </button>
+                                
+                                {/* Download Prompt Button */}
+                                <button 
+                                  className="btn btn-outline-info btn-sm w-100"
+                                  onClick={() => {
+                                    console.log('📄 Download prompt for vulnerability:', vulnerability.id);
+                                    downloadActionPrompt(vulnerability);
+                                  }}
+                                  disabled={!generatedPrompts[`${vulnerability.id}_action`]}
+                                  title={!generatedPrompts[`${vulnerability.id}_action`] ? 'Click "Action" first to create action prompt' : 'Download GitHub Copilot prompt for .github folder'}
+                                >
+                                  <i className="fas fa-file-download"></i> Download Prompt
                                 </button>
                               </>
                             ) : (
